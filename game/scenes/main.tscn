@@ -5,6 +5,8 @@
 [ext_resource type="Script" path="res://scripts/TrackRenderer.cs" id="3_track"]
 [ext_resource type="Script" path="res://scripts/ObstacleRenderer.cs" id="4_obstacles"]
 [ext_resource type="Script" path="res://scripts/Hud.cs" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/SpeedFx.cs" id="6_fx"]
+[ext_resource type="Script" path="res://scripts/EngineAudio.cs" id="7_audio"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wall"]
 shader = ExtResource("2_wall")
@@ -42,10 +44,16 @@ mesh = SubResource("PrismMesh_ship")
 material_override = SubResource("StandardMaterial3D_ship")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-fov = 80.0
+fov = 75.0
 
 [node name="HeadLight" type="DirectionalLight3D" parent="Camera3D"]
 light_energy = 1.4
 
+[node name="SpeedFx" type="CanvasLayer" parent="."]
+script = ExtResource("6_fx")
+
 [node name="Hud" type="CanvasLayer" parent="."]
 script = ExtResource("5_hud")
+
+[node name="EngineAudio" type="AudioStreamPlayer" parent="."]
+script = ExtResource("7_audio")

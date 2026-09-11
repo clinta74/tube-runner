@@ -30,27 +30,27 @@
     { "length": 150 },                                  //    0 - 150
     { "length": 160, "turn": 40 },                      //  150 - 310
     { "length": 140, "turn": -60, "climb": 10 },        //  310 - 450
-    { "length": 80,  "section": "oval", "turn": 15 },   //  450 - 530
+    { "length": 80,  "section": "oval", "turn": 15, "speed": 90 },    //  450 - 530
     { "length": 200, "turn": -30, "climb": -10 },       //  530 - 730
     { "length": 80,  "section": "tube" },               //  730 - 810
     { "length": 120, "turn": 30 },                      //  810 - 930
 
     // First flat section: unroll, run, roll back up. Flat pieces are straight.
-    { "length": 100, "section": "flat" },               //  930 - 1030
+    { "length": 100, "section": "flat", "speed": 100 }, //  930 - 1030
     { "length": 400 },                                  // 1030 - 1430
-    { "length": 120, "section": "tube" },               // 1430 - 1550
+    { "length": 120, "section": "tube", "speed": 90 },  // 1430 - 1550
 
     { "length": 150, "turn": -45, "climb": 15 },        // 1550 - 1700
-    { "length": 100, "section": "box" },                // 1700 - 1800
+    { "length": 100, "section": "box", "speed": 100 },  // 1700 - 1800
     { "length": 250, "turn": 40 },                      // 1800 - 2050
     { "length": 100, "section": "tube" },               // 2050 - 2150
     { "length": 200, "turn": -20, "climb": -15 },       // 2150 - 2350
 
-    { "length": 100, "section": "flat" },               // 2350 - 2450
+    { "length": 100, "section": "flat", "speed": 115 }, // 2350 - 2450
     { "length": 350 },                                  // 2450 - 2800
     { "length": 120, "section": "tube" },               // 2800 - 2920
 
-    { "length": 200 }                                   // 2920 - 3120
+    { "length": 200, "speed": 125 }                     // 2920 - 3120
   ],
 
   "obstacles": [

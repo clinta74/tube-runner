@@ -31,7 +31,7 @@ public static class LevelLoader
 
         if (data.Track.Count == 0) throw new LevelFormatException("Level has no track pieces.");
         var current = Lookup(sections, data.Start, "start");
-        var track = new Track(current);
+        var track = new Track(current, Positive(data.Speed, "speed"));
 
         for (int i = 0; i < data.Track.Count; i++)
         {
@@ -42,7 +42,8 @@ public static class LevelLoader
             // Level files turn positive-right and climb positive-up; the track yaws positive-left.
             var piece = new TrackPiece(p.Length, end,
                 YawRate: -Radians(p.Turn) / p.Length,
-                PitchRate: Radians(p.Climb) / p.Length);
+                PitchRate: Radians(p.Climb) / p.Length,
+                EndSpeed: p.Speed is float speed ? Positive(speed, $"Track piece {i}: speed") : null);
             try
             {
                 track.Append(piece);
@@ -233,6 +234,7 @@ public static class LevelLoader
         public string? Section { get; set; }
         public float Turn { get; set; }
         public float Climb { get; set; }
+        public float? Speed { get; set; }
     }
 
     private sealed class ThemeData

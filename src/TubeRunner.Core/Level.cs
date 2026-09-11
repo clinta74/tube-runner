@@ -8,7 +8,7 @@ public sealed class Level
     /// <summary>File name of the level that follows this one, if any.</summary>
     public string? Next { get; init; }
 
-    /// <summary>Forward speed in units per second.</summary>
+    /// <summary>Starting forward speed in units per second; track pieces can change it (see <see cref="Track.SpeedAt"/>).</summary>
     public required float Speed { get; init; }
 
     /// <summary>Distance between wall seams, where the checker pattern can change.</summary>

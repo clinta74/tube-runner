@@ -5,7 +5,8 @@ namespace TubeRunner.Game;
 
 /// <summary>
 /// Plays a level: loads it, runs a <see cref="GameSession"/>, and drives the track, obstacle, ship,
-/// camera, and HUD views. Everything is placed relative to the ship's track position (floating origin).
+/// camera, HUD, effects, and audio. Everything is placed relative to the ship's track position
+/// (floating origin).
 /// </summary>
 public partial class Main : Node3D
 {
@@ -22,15 +23,21 @@ public partial class Main : Node3D
     [Export] public float CameraHeight { get; set; } = 2.2f;
     [Export] public float CameraBehind { get; set; } = 6f;
     [Export] public float LookAhead { get; set; } = 14f;
+    [Export] public float BaseFov { get; set; } = 75f;
+    /// <summary>Field of view at full speed effect; widening it sells the speed.</summary>
+    [Export] public float MaxFov { get; set; } = 100f;
 
     private Level _level = null!;
     private GameSession _session = null!;
     private TrackRenderer _track = null!;
     private ObstacleRenderer _obstacles = null!;
     private Hud _hud = null!;
+    private SpeedFx _fx = null!;
+    private EngineAudio _audio = null!;
     private MeshInstance3D _ship = null!;
     private Camera3D _camera = null!;
     private float _bank;
+    private float _shake;
     private float _endedFor;
 
     public override void _Ready()
@@ -41,6 +48,8 @@ public partial class Main : Node3D
         _track = GetNode<TrackRenderer>("TrackRenderer");
         _obstacles = GetNode<ObstacleRenderer>("ObstacleRenderer");
         _hud = GetNode<Hud>("Hud");
+        _fx = GetNode<SpeedFx>("SpeedFx");
+        _audio = GetNode<EngineAudio>("EngineAudio");
 
         // `godot -- --level=res://levels/level_02.json` overrides the level, for testing.
         foreach (var arg in OS.GetCmdlineUserArgs())
@@ -61,7 +70,7 @@ public partial class Main : Node3D
             return;
         }
 
-        var settings = new SessionSettings(new ShipSettings(_level.Speed, SteerSpeed, MaxPlaneOffset));
+        var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
         // Start on the floor, far enough in that the camera has track behind it.
         var start = new TrackPosition(CameraBehind + 10.0, Surface.Floor, 0f);
         _session = new GameSession(_level.Track, _level.Obstacles, settings, start);
@@ -71,6 +80,7 @@ public partial class Main : Node3D
         _track.Init(_level.Track, WallMaterial, _level.SegmentLength);
         _obstacles.Init(_session, _level.Theme);
         _hud.Init(_level.Name, settings.Shields, _level.Theme.SeamLight.ToColor());
+        _fx.SetStreakColor(_level.Theme.SeamLight.ToColor());
     }
 
     public override void _Process(double delta)
@@ -92,6 +102,11 @@ public partial class Main : Node3D
 
         var ship = _session.Ship;
         var pos = ship.Position;
+        // Once the run is over the ship stops, so the speed effects and engine wind down.
+        float speed = _session.State == SessionState.Playing ? ship.ForwardSpeed : 0f;
+        _fx.Update(speed, dt);
+        _audio.SetSpeed(speed);
+
         var frame = _level.Track.FrameAt(pos.S);
         var origin = frame.Position;
         _track.UpdateView(pos.S, origin);
@@ -115,16 +130,20 @@ public partial class Main : Node3D
         var target = _level.Track.FrameAt(pos.S + LookAhead)
             .PointOnSection(point + up2 * 0.4f).RelativeTo(origin).ToGodot();
         _camera.LookAtFromPosition(camPos, target, up);
+        _camera.Fov = Mathf.Lerp(BaseFov, MaxFov, _fx.Intensity);
+        Shake(dt);
     }
 
     private void HandleEvents()
     {
         foreach (var e in _session.Events)
         {
+            _audio.OnEvent(e);
             switch (e)
             {
                 case SessionEvent.Hit:
                     _hud.Flash();
+                    _shake = 1f;
                     break;
                 case SessionEvent.GameOver:
                     _hud.ShowMessage("SHIELDS DOWN\nSpace or R to retry");
@@ -136,6 +155,17 @@ public partial class Main : Node3D
                     break;
             }
         }
+    }
+
+    // Camera shake: strong after a hit, plus a faint rumble at high speed.
+    private void Shake(float dt)
+    {
+        _shake = Mathf.Max(0f, _shake - 2f * dt);
+        float amount = 0.35f * _shake * _shake + 0.04f * _fx.Intensity;
+        if (amount <= 0f) return;
+
+        var basis = _camera.GlobalTransform.Basis;
+        _camera.GlobalPosition += (basis.X * (GD.Randf() * 2f - 1f) + basis.Y * (GD.Randf() * 2f - 1f)) * amount;
     }
 
     // After a run ends, jump or fire continues: to the next level if finished, otherwise a retry.

@@ -15,7 +15,13 @@ public readonly record struct TrackFrame(Vector3d Position, Vector3 Forward, Vec
 /// <summary>A stretch of track: curves at constant rates while blending to <paramref name="EndSection"/>.</summary>
 /// <param name="YawRate">Radians per unit around the frame's Up; positive turns left.</param>
 /// <param name="PitchRate">Radians per unit around the frame's Right; positive pitches up.</param>
-public readonly record struct TrackPiece(float Length, CrossSection EndSection, float YawRate = 0f, float PitchRate = 0f);
+/// <param name="EndSpeed">Forward speed to reach by the end of the piece; null keeps the current speed.</param>
+public readonly record struct TrackPiece(
+    float Length,
+    CrossSection EndSection,
+    float YawRate = 0f,
+    float PitchRate = 0f,
+    float? EndSpeed = null);
 
 /// <summary>
 /// The track centerline and cross-sections, built from appended pieces. Centerline frames are
@@ -28,11 +34,15 @@ public sealed class Track
     private readonly List<TrackFrame> _frames = new();
     private readonly List<PlacedPiece> _pieces = new();
     private readonly CrossSection _startSection;
+    private readonly float _startSpeed;
     private CrossSection _endSection;
+    private float _endSpeed;
 
-    public Track(CrossSection startSection)
+    /// <param name="startSpeed">Forward speed at the start, in units per second.</param>
+    public Track(CrossSection startSection, float startSpeed = 80f)
     {
         _startSection = _endSection = startSection;
+        _startSpeed = _endSpeed = startSpeed;
         // Starts at the origin heading -Z with +Y up (Godot's conventions).
         _frames.Add(new TrackFrame(default, -Vector3.UnitZ, Vector3.UnitY, Vector3.UnitX));
     }
@@ -51,8 +61,9 @@ public sealed class Track
             throw new ArgumentException("Pieces that open into flat planes must be straight.");
         }
 
-        _pieces.Add(new PlacedPiece(Length, piece, _endSection));
+        _pieces.Add(new PlacedPiece(Length, piece, _endSection, _endSpeed));
         _endSection = piece.EndSection;
+        _endSpeed = piece.EndSpeed ?? _endSpeed;
         Length += piece.Length;
 
         while (LastFrameS + SampleSpacing <= Length)
@@ -90,6 +101,19 @@ public sealed class Track
         return CrossSection.Lerp(p.StartSection, p.Piece.EndSection, MathUtil.SmoothStep(t));
     }
 
+    /// <summary>Forward speed at distance <paramref name="s"/>; blends smoothly across pieces that change it.</summary>
+    public float SpeedAt(double s)
+    {
+        int i = FindPiece(s);
+        if (i < 0) return _startSpeed;
+        if (s >= Length) return _endSpeed;
+
+        var p = _pieces[i];
+        float end = p.Piece.EndSpeed ?? p.StartSpeed;
+        float t = MathUtil.SmoothStep((float)((s - p.StartS) / p.Piece.Length));
+        return p.StartSpeed + (end - p.StartSpeed) * t;
+    }
+
     private static TrackFrame Advance(TrackFrame f, float yawRate, float pitchRate, float ds)
     {
         var q = Quaternion.CreateFromAxisAngle(f.Up, yawRate * ds) *
@@ -115,5 +139,5 @@ public sealed class Track
         return found;
     }
 
-    private readonly record struct PlacedPiece(double StartS, TrackPiece Piece, CrossSection StartSection);
+    private readonly record struct PlacedPiece(double StartS, TrackPiece Piece, CrossSection StartSection, float StartSpeed);
 }

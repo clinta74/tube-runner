@@ -6,7 +6,7 @@ public class GameSessionTests
 {
     private static readonly CrossSection Circle = CrossSection.Circle(6f);
     private static readonly CrossSection Open = Circle with { Opening = 1f };
-    private static readonly SessionSettings Settings = new(new ShipSettings(ForwardSpeed: 50f, SteerSpeed: 10f));
+    private static readonly SessionSettings Settings = new(new ShipSettings(SteerSpeed: 10f));
 
     [Fact]
     public void HittingABlock_CostsAShieldAndSlowsTheShip()
@@ -149,7 +149,7 @@ public class GameSessionTests
 
     private static GameSession Session(CrossSection section, Obstacle[] obstacles, float startX = 0f, float length = 2000f)
     {
-        var track = new Track(section);
+        var track = new Track(section, startSpeed: 50f);
         track.Append(new TrackPiece(length, section));
         return new GameSession(track, obstacles, Settings, new TrackPosition(0, Surface.Floor, startX));
     }

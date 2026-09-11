@@ -7,7 +7,7 @@ public class ShipSimTests
 {
     private static readonly CrossSection Circle = CrossSection.Circle(4f);
     private static readonly CrossSection Open = Circle with { Opening = 1f };
-    private static readonly ShipSettings Settings = new(ForwardSpeed: 50f, SteerSpeed: 10f, MaxPlaneOffset: 30f, JumpDuration: 0.5f);
+    private static readonly ShipSettings Settings = new(SteerSpeed: 10f, MaxPlaneOffset: 30f, JumpDuration: 0.5f);
 
     [Fact]
     public void Step_AdvancesAlongTrack()
@@ -125,7 +125,7 @@ public class ShipSimTests
 
     private static ShipSim Sim(CrossSection section, Surface surface = Surface.Floor, float x = 0f)
     {
-        var track = new Track(section);
+        var track = new Track(section, startSpeed: 50f);
         track.Append(new TrackPiece(1000f, section));
         return new ShipSim(Settings, track, new TrackPosition(0, surface, x));
     }

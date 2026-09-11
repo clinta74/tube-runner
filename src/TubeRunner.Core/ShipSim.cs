@@ -2,11 +2,10 @@ using System.Numerics;
 
 namespace TubeRunner.Core;
 
-/// <param name="ForwardSpeed">Units per second along the track.</param>
 /// <param name="SteerSpeed">Units per second across the surface at full steer, whatever the cross-section.</param>
 /// <param name="MaxPlaneOffset">How far the ship may stray from the center on open floor/ceiling planes.</param>
 /// <param name="JumpDuration">Seconds to cross between floor and ceiling.</param>
-public sealed record ShipSettings(float ForwardSpeed, float SteerSpeed, float MaxPlaneOffset = 40f, float JumpDuration = 0.55f);
+public sealed record ShipSettings(float SteerSpeed, float MaxPlaneOffset = 40f, float JumpDuration = 0.55f);
 
 /// <summary>
 /// Engine-independent ship simulation. In a closed tube the ship steers around the wall; on open
@@ -40,8 +39,8 @@ public sealed class ShipSim
     /// <summary>Multiplier on forward speed, e.g. slowed after a hit.</summary>
     public float SpeedScale { get; set; } = 1f;
 
-    /// <summary>Current forward speed in units per second.</summary>
-    public float ForwardSpeed => _settings.ForwardSpeed * SpeedScale;
+    /// <summary>Current forward speed in units per second: the track's speed here, times <see cref="SpeedScale"/>.</summary>
+    public float ForwardSpeed => _track.SpeedAt(Position.S) * SpeedScale;
 
     /// <param name="dt">Seconds to advance.</param>
     /// <param name="steer">Steering input in [-1, 1]; positive steers to the ship's right.</param>

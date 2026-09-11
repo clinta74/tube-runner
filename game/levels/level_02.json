@@ -31,23 +31,23 @@
     { "length": 150, "turn": -50 },                     //  200 - 350
     { "length": 150, "turn": 50, "climb": -12 },        //  350 - 500
 
-    { "length": 100, "section": "flat" },               //  500 - 600
+    { "length": 100, "section": "flat", "speed": 125 }, //  500 - 600
     { "length": 500 },                                  //  600 - 1100
     { "length": 120, "section": "tube" },               // 1100 - 1220
 
-    { "length": 100, "section": "oval", "turn": 20 },   // 1220 - 1320
+    { "length": 100, "section": "oval", "turn": 20, "speed": 110 },   // 1220 - 1320
     { "length": 250, "turn": -60 },                     // 1320 - 1570
     { "length": 100, "section": "tube", "turn": 20 },   // 1570 - 1670
     { "length": 200, "turn": 30, "climb": 20 },         // 1670 - 1870
 
-    { "length": 100, "section": "box" },                // 1870 - 1970
+    { "length": 100, "section": "box", "speed": 125 },  // 1870 - 1970
     { "length": 200, "turn": -40 },                     // 1970 - 2170
-    { "length": 100, "section": "box-flat" },           // 2170 - 2270
+    { "length": 100, "section": "box-flat", "speed": 145 },           // 2170 - 2270
     { "length": 400 },                                  // 2270 - 2670
     { "length": 120, "section": "tube" },               // 2670 - 2790
 
     { "length": 250, "turn": 60 },                      // 2790 - 3040
-    { "length": 200 }                                   // 3040 - 3240
+    { "length": 200, "speed": 160 }                     // 3040 - 3240
   ],
 
   "obstacles": [
