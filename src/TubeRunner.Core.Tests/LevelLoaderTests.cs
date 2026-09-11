@@ -123,6 +123,29 @@ public class LevelLoaderTests
         Assert.Equal(0f, top.X, precision: 2);
     }
 
+    [Fact]
+    public void PieceObstacles_ArePlacedFromThePieceStart()
+    {
+        var level = LevelLoader.Parse(Level("""
+            { "length": 100 },
+            { "length": 200, "obstacles": [ { "at": 30 }, { "at": 50, "count": 2, "spacing": 100 } ] }
+            """, """{ "at": 20 }"""));
+
+        Assert.Equal(new[] { 20.0, 130.0, 150.0, 250.0 }, level.Obstacles.Select(o => o.S).OrderBy(s => s));
+    }
+
+    [Fact]
+    public void PieceObstacleErrors_NameThePiece()
+    {
+        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse(Level("""
+            { "length": 100 },
+            { "length": 100, "obstacles": [ { "at": 500 } ] }
+            """)));
+
+        Assert.Contains("Track piece 1, obstacle 0", e.Message);
+        Assert.Contains("off the track", e.Message);
+    }
+
     [Theory]
     [InlineData("""{ "at": 50, "kind": "boulder" }""", "unknown kind 'boulder'")]
     [InlineData("""{ "at": 900 }""", "off the track")]

@@ -33,10 +33,12 @@ public static class LevelLoader
         if (data.Track.Count == 0) throw new LevelFormatException("Level has no track pieces.");
         var current = Lookup(sections, data.Start, "start");
         var track = new Track(current, Positive(data.Speed, "speed"));
+        var pieceStarts = new double[data.Track.Count];
 
         for (int i = 0; i < data.Track.Count; i++)
         {
             var p = data.Track[i];
+            pieceStarts[i] = track.Length;
             if (p.Length <= 0f) throw new LevelFormatException($"Track piece {i}: length must be positive.");
             var end = p.Section is null ? current : Lookup(sections, p.Section, $"track piece {i}");
 
@@ -67,6 +69,13 @@ public static class LevelLoader
             current = end;
         }
 
+        // Obstacles inside a piece are placed from its start; top-level ones from the track's start.
+        var obstacles = ToObstacles(data.Obstacles, track, 0, "Obstacle");
+        for (int i = 0; i < data.Track.Count; i++)
+        {
+            obstacles.AddRange(ToObstacles(data.Track[i].Obstacles, track, pieceStarts[i], $"Track piece {i}, obstacle"));
+        }
+
         return new Level
         {
             Name = data.Name,
@@ -76,7 +85,7 @@ public static class LevelLoader
             TimeLimit = data.TimeLimit is float limit ? Positive(limit, "timeLimit") : null,
             Theme = ToTheme(data.Theme),
             Track = track,
-            Obstacles = ToObstacles(data.Obstacles, track),
+            Obstacles = obstacles,
         };
     }
 
@@ -96,13 +105,14 @@ public static class LevelLoader
         return branches;
     }
 
-    private static List<Obstacle> ToObstacles(List<ObstacleData> list, Track track)
+    // Obstacles whose "at" is measured from `offset` along the track; `label` prefixes error messages.
+    private static List<Obstacle> ToObstacles(List<ObstacleData> list, Track track, double offset, string label)
     {
         var obstacles = new List<Obstacle>();
         for (int i = 0; i < list.Count; i++)
         {
             var o = list[i];
-            string where = $"Obstacle {i}";
+            string where = $"{label} {i}";
             var kind = o.Kind.ToLowerInvariant() switch
             {
                 "block" => ObstacleKind.Block,
@@ -122,7 +132,7 @@ public static class LevelLoader
 
             for (int n = 0; n < o.Count; n++)
             {
-                double s = o.At + n * o.Spacing;
+                double s = offset + o.At + n * o.Spacing;
                 if (s < 0 || s > track.Length)
                 {
                     throw new LevelFormatException($"{where}: 'at' {s:0} is off the track (0 to {track.Length:0}).");
@@ -279,6 +289,7 @@ public static class LevelLoader
         public float Climb { get; set; }
         public float? Speed { get; set; }
         public SplitData? Split { get; set; }
+        public List<ObstacleData> Obstacles { get; set; } = new();
     }
 
     private sealed class SplitData

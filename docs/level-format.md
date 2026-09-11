@@ -18,7 +18,7 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | `sections` | required | Named cross-sections used by the track. |
 | `start` | required | Section name the track starts with. |
 | `track` | required | Ordered list of track pieces. |
-| `obstacles` | none | Blocks to dodge and targets to shoot; see below. |
+| `obstacles` | none | Obstacles placed from the start of the track. Usually better inside track pieces; see below. |
 
 ## Sections
 
@@ -64,6 +64,7 @@ Each piece continues from the end of the previous one.
 | `section` | previous | Section to blend into over the piece. Omit to keep the current shape. |
 | `turn` | `0` | Total heading change over the piece, in degrees; positive turns right. |
 | `climb` | `0` | Total pitch change over the piece, in degrees; positive climbs. |
+| `obstacles` | none | Obstacles on this piece, placed from its start (see Obstacles). |
 | `speed` | previous | Speed to reach by the end of the piece (units per second), blended smoothly. The player's throttle multiplies it (0.5× to 1.75×). Screen effects, field of view, and engine sound follow the result. |
 
 ```json
@@ -79,7 +80,8 @@ Each piece continues from the end of the previous one.
 
 Keep curves gentle: a turn tighter than about 1° per unit length will fold the tube wall.
 
-Tip: annotate pieces with their start and end distance (`// 930 - 1030`) so obstacles are easy to place.
+Tip: annotate pieces with their start and end distance (`// 930 - 1030`); `play.ps1 -Start 930` then
+jumps straight to that piece for testing.
 
 ## Splits (forks)
 
@@ -115,9 +117,21 @@ A **block** is solid: hitting one breaks it, costs a shield, and slows the ship 
 A **target** is destroyed by shots for 100 points, and hurts like a block if you fly into it.
 The ship has three shields; losing them all ends the run.
 
+Put obstacles in the `obstacles` list of the track piece they belong to. Their `at` is measured from the
+start of that piece, so lengthening, shortening, or reordering pieces carries their obstacles along.
+Repeats may run past the end of the piece. A top-level `obstacles` list is also allowed; there `at` is
+measured from the start of the track.
+
+```json
+{ "length": 400, "obstacles": [
+  { "at": 50, "x": -6, "width": 8 },                 // 50 units into this piece
+  { "at": 220, "width": 80, "height": 2.5 }
+] }
+```
+
 | Field | Default | Meaning |
 |---|---|---|
-| `at` | required | Distance along the track of the obstacle's center. |
+| `at` | required | Distance of the obstacle's center from the start of its piece (or of the track, for top-level obstacles). |
 | `kind` | `"block"` | `"block"` or `"target"`. |
 | `surface` | `"floor"` | `"floor"` or `"ceiling"`. |
 | `branch` | none | Inside a split, which branch (0, 1, ...). Required there, not allowed elsewhere. |
@@ -131,11 +145,11 @@ The ship has three shields; losing them all ends the run.
 
 ```json
 "obstacles": [
-  { "at": 380 },                                                            // block, floor center
-  { "at": 700, "kind": "target", "angle": 90 },                             // target on the right wall
-  { "at": 1600, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 },   // spiral of blocks
-  { "at": 1250, "width": 80, "height": 2.5 },                               // full-width wall on a flat section: jump over it
-  { "at": 1320, "kind": "target", "surface": "ceiling", "x": -10 }
+  { "at": 70 },                                                          // block, floor center
+  { "at": 170, "kind": "target", "angle": 90 },                          // target on the right wall
+  { "at": 50, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 },  // spiral of blocks
+  { "at": 220, "width": 80, "height": 2.5 },                             // full-width wall on a flat section: jump over it
+  { "at": 290, "kind": "target", "surface": "ceiling", "x": -10 }
 ]
 ```
 
