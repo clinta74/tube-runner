@@ -54,6 +54,13 @@ public sealed class Track
 
     public void Append(TrackPiece piece)
     {
+        // Open planes extend toward the horizon; bending them would fold them through themselves.
+        bool open = !_endSection.IsClosed || !piece.EndSection.IsClosed;
+        if (open && (piece.YawRate != 0f || piece.PitchRate != 0f))
+        {
+            throw new ArgumentException("Pieces that open into flat planes must be straight.", nameof(piece));
+        }
+
         _pieces.Add(new PlacedPiece(Length, piece, _endSection));
         _endSection = piece.EndSection;
         Length += piece.Length;

@@ -17,6 +17,11 @@ glow_hdr_threshold = 1.0
 [sub_resource type="PrismMesh" id="PrismMesh_ship"]
 size = Vector3(0.8, 0.3, 1.6)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ship"]
+albedo_color = Color(0.85, 0.68, 0.3, 1)
+metallic = 0.6
+roughness = 0.35
+
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
 WallMaterial = SubResource("ShaderMaterial_wall")
@@ -29,6 +34,10 @@ environment = SubResource("Environment_main")
 
 [node name="Ship" type="MeshInstance3D" parent="."]
 mesh = SubResource("PrismMesh_ship")
+material_override = SubResource("StandardMaterial3D_ship")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 fov = 80.0
+
+[node name="HeadLight" type="DirectionalLight3D" parent="Camera3D"]
+light_energy = 1.4

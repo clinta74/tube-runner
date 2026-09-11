@@ -5,94 +5,127 @@ namespace TubeRunner.Core.Tests;
 
 public class ProfileShapeTests
 {
-    private static readonly CrossSection Box = new(10f, 4f, Squareness: 1f);
-    private static readonly CrossSection Planes = Box with { Opening = 1f };
+    private const float R = 4f;
+    private static readonly float Q = MathF.Tau * R / 4f;
+    private static readonly CrossSection Circle = CrossSection.Circle(R);
+    private static readonly CrossSection Open = Circle with { Opening = 1f };
 
-    [Theory]
-    [InlineData(0f, 4f, 0f)]
-    [InlineData(0.25f, 0f, 4f)]
-    [InlineData(0.5f, -4f, 0f)]
-    [InlineData(0.75f, 0f, -4f)]
-    public void Circle_PointsLieOnCircle(float u, float x, float y)
+    [Fact]
+    public void Circle_SurfaceCentersAndEdges()
     {
-        var p = new ProfileShape(CrossSection.Circle(4f)).PointAt(u);
+        var shape = new ProfileShape(Circle);
 
-        Assert.Equal(x, p.X, precision: 2);
-        Assert.Equal(y, p.Y, precision: 2);
+        AssertNear(new Vector2(0f, -R), shape.PointAt(Surface.Floor, 0f));
+        AssertNear(new Vector2(0f, R), shape.PointAt(Surface.Ceiling, 0f));
+        // The two surfaces meet at the side midpoints.
+        AssertNear(new Vector2(R, 0f), shape.PointAt(Surface.Floor, Q));
+        AssertNear(new Vector2(R, 0f), shape.PointAt(Surface.Ceiling, Q));
+        AssertNear(new Vector2(-R, 0f), shape.PointAt(Surface.Floor, -Q));
+        AssertNear(new Vector2(-R, 0f), shape.PointAt(Surface.Ceiling, -Q));
     }
 
     [Fact]
     public void Circle_PerimeterMatches()
     {
-        Assert.Equal(MathF.Tau * 4f, new ProfileShape(CrossSection.Circle(4f)).Perimeter, precision: 2);
+        Assert.Equal(MathF.Tau * R, new ProfileShape(Circle).Perimeter, precision: 2);
     }
 
     [Fact]
     public void Oval_IsSampledByArcLength()
     {
         var shape = new ProfileShape(new CrossSection(9f, 4.5f));
-        const int steps = 64;
-        float expected = shape.Perimeter / steps;
+        const int steps = 32;
+        float step = 2f * shape.Quarter / steps;
 
         for (int i = 0; i < steps; i++)
         {
-            float d = Vector2.Distance(shape.PointAt(i / (float)steps), shape.PointAt((i + 1) / (float)steps));
-            Assert.InRange(d, expected * 0.98f, expected * 1.001f);
+            float x = -shape.Quarter + i * step;
+            float d = Vector2.Distance(shape.PointAt(Surface.Floor, x), shape.PointAt(Surface.Floor, x + step));
+            Assert.InRange(d, step * 0.98f, step * 1.001f);
         }
     }
 
-    [Theory]
-    [InlineData(0.65f)]
-    [InlineData(0.75f)]
-    [InlineData(0.85f)]
-    public void Box_FloorIsFlat(float u)
+    [Fact]
+    public void ClosedTube_WrapsBetweenSurfaces()
     {
-        Assert.Equal(-4f, new ProfileShape(Box).PointAt(u).Y, precision: 1);
-    }
+        var shape = new ProfileShape(Circle);
+        float q = shape.Quarter;
 
-    [Theory]
-    [InlineData(0.75f, 0f, 1f)]
-    [InlineData(0f, -1f, 0f)]
-    public void Circle_InwardNormalPointsToCenter(float u, float x, float y)
-    {
-        var n = new ProfileShape(CrossSection.Circle(4f)).InwardNormalAt(u);
-
-        Assert.Equal(x, n.X, precision: 2);
-        Assert.Equal(y, n.Y, precision: 2);
+        AssertWrap((Surface.Ceiling, q - 1f), shape.Wrap(Surface.Floor, q + 1f));
+        AssertWrap((Surface.Ceiling, -q + 1f), shape.Wrap(Surface.Floor, -q - 1f));
+        AssertWrap((Surface.Floor, q - 0.5f), shape.Wrap(Surface.Ceiling, q + 0.5f));
+        AssertWrap((Surface.Floor, 0.5f), shape.Wrap(Surface.Floor, 4f * q + 0.5f));
     }
 
     [Fact]
-    public void ClosedTube_HasNoGap()
+    public void OpenSection_DoesNotWrap()
     {
-        var shape = new ProfileShape(Box);
+        var shape = new ProfileShape(Open);
 
-        Assert.Equal(0f, shape.GapEdge);
-        Assert.False(shape.IsOpen(0f));
-        Assert.Equal(0.01f, shape.ClampToSurface(0.01f));
+        Assert.Equal((Surface.Floor, Q + 5f), shape.Wrap(Surface.Floor, Q + 5f));
     }
 
     [Fact]
-    public void Planes_SidesAreOpen_FloorAndCeilingAreNot()
+    public void Circle_NormalsPointIntoTube()
     {
-        var shape = new ProfileShape(Planes);
+        var shape = new ProfileShape(Circle);
 
-        Assert.True(shape.IsOpen(0f));
-        Assert.True(shape.IsOpen(0.5f));
-        Assert.False(shape.IsOpen(0.25f));
-        Assert.False(shape.IsOpen(0.75f));
+        AssertNear(new Vector2(0f, 1f), shape.NormalAt(Surface.Floor, 0f));
+        AssertNear(new Vector2(0f, -1f), shape.NormalAt(Surface.Ceiling, 0f));
+        AssertNear(new Vector2(-1f, 0f), shape.NormalAt(Surface.Floor, Q - 0.2f), tolerance: 0.06f);
     }
 
     [Fact]
-    public void Planes_ClampKeepsShipOnSameSurface()
+    public void OpenSection_IsFlatAndExtendsToTheHorizon()
     {
-        var shape = new ProfileShape(Planes);
-        float e = shape.GapEdge;
+        var shape = new ProfileShape(Open);
 
-        Assert.InRange(e, 0.01f, 0.2f);
-        Assert.Equal(e, shape.ClampToSurface(0.001f));          // upper right → ceiling edge
-        Assert.Equal(1f - e, shape.ClampToSurface(0.999f));     // lower right → floor edge
-        Assert.Equal(0.5f - e, shape.ClampToSurface(0.499f));   // upper left → ceiling edge
-        Assert.Equal(0.5f + e, shape.ClampToSurface(0.501f));   // lower left → floor edge
-        Assert.Equal(0.75f, shape.ClampToSurface(0.75f));
+        foreach (float x in new[] { -Q, -1f, 0f, Q, Q + 50f })
+        {
+            AssertNear(new Vector2(x, -R), shape.PointAt(Surface.Floor, x));
+            AssertNear(new Vector2(x, R), shape.PointAt(Surface.Ceiling, x));
+        }
+        AssertNear(new Vector2(0f, 1f), shape.NormalAt(Surface.Floor, Q + 50f));
+        AssertNear(new Vector2(0f, -1f), shape.NormalAt(Surface.Ceiling, 3f));
+        Assert.Equal(Q + ProfileShape.MaxWingLength, shape.SurfaceExtent, precision: 2);
+    }
+
+    [Fact]
+    public void HalfUnrolled_EdgesMoveTowardTheFlatPosition()
+    {
+        // Opening 0.25 = halfway through unrolling, with no spread yet.
+        var shape = new ProfileShape(Circle with { Opening = 0.25f });
+
+        AssertNear(new Vector2(0f, -R), shape.PointAt(Surface.Floor, 0f));
+        AssertNear(new Vector2((R + Q) / 2f, -R / 2f), shape.PointAt(Surface.Floor, Q), tolerance: 0.01f);
+        Assert.Equal(0f, shape.WingLength);
+    }
+
+    [Fact]
+    public void Nearest_FindsSurfacePosition()
+    {
+        var shape = new ProfileShape(Circle);
+
+        var floor = shape.Nearest(new Vector2(0f, -10f));
+        Assert.Equal(Surface.Floor, floor.Surface);
+        Assert.Equal(0f, floor.X, precision: 1);
+
+        var ceiling = shape.Nearest(new Vector2(0f, 3f));
+        Assert.Equal(Surface.Ceiling, ceiling.Surface);
+        Assert.Equal(0f, ceiling.X, precision: 1);
+
+        // 45° right of the floor center is an eighth of the way around.
+        var diagonal = shape.Nearest(new Vector2(3f, -3f));
+        Assert.Equal(Surface.Floor, diagonal.Surface);
+        Assert.Equal(MathF.PI * R / 4f, diagonal.X, precision: 1);
+    }
+
+    private static void AssertNear(Vector2 expected, Vector2 actual, float tolerance = 0.02f) =>
+        Assert.True(Vector2.Distance(expected, actual) < tolerance, $"expected {expected}, got {actual}");
+
+    private static void AssertWrap((Surface Surface, float X) expected, (Surface Surface, float X) actual)
+    {
+        Assert.Equal(expected.Surface, actual.Surface);
+        Assert.Equal(expected.X, actual.X, precision: 3);
     }
 }

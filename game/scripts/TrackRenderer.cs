@@ -6,17 +6,23 @@ using TubeRunner.Core;
 namespace TubeRunner.Game;
 
 /// <summary>
-/// Streams tube mesh chunks along the track. Each chunk is one wall-pattern segment long and is
+/// Streams track mesh chunks. Each chunk is one wall-pattern segment long and holds a floor strip
+/// and a ceiling strip, which meet to form a closed tube or separate into open planes. Chunks are
 /// re-placed relative to a floating origin every frame, so coordinates near the camera stay small.
 /// </summary>
 public partial class TrackRenderer : Node3D
 {
     private const int RingsPerChunk = 40;
-    private const int RadialSegments = 64;
+    private const int SurfaceSegments = 32;
+    // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
+    private static readonly float[] WingSteps = { 0.02f, 0.1f, 0.35f, 1f };
+    private static readonly int StripVertices = SurfaceSegments + 1 + 2 * WingSteps.Length;
+    private static readonly Surface[] Surfaces = { Surface.Floor, Surface.Ceiling };
 
     private readonly Dictionary<long, Chunk> _chunks = new();
     private readonly List<long> _stale = new();
     private readonly ProfileShapeCache _shapes = new();
+    private readonly float[] _xs = new float[StripVertices];
     private Track _track = null!;
     private Material _material = null!;
     private float _chunkLength;
@@ -72,28 +78,55 @@ public partial class TrackRenderer : Node3D
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
 
-        for (int r = 0; r <= RingsPerChunk; r++)
+        int start = 0;
+        foreach (var surface in Surfaces)
         {
-            float local = _chunkLength * r / RingsPerChunk;
-            var frame = _track.FrameAt(s0 + local);
-            var shape = _shapes.Get(_track.SectionAt(s0 + local));
-            for (int a = 0; a <= RadialSegments; a++)
+            for (int r = 0; r <= RingsPerChunk; r++)
             {
-                float u = a / (float)RadialSegments;
-                var p = shape.PointAt(u);
-                st.SetUV(new Vector2(u, local));
-                // The shader discards where this is negative (open side walls).
-                st.SetUV2(new Vector2(shape.OpenMargin(p), 0f));
-                st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
+                float local = _chunkLength * r / RingsPerChunk;
+                var frame = _track.FrameAt(s0 + local);
+                var shape = _shapes.Get(_track.SectionAt(s0 + local));
+                FillStrip(shape);
+                foreach (float x in _xs)
+                {
+                    st.SetUV(new Vector2(0.75f + shape.Loop(surface, x) / shape.Perimeter, local));
+                    st.AddVertex(frame.PointOnSection(shape.PointAt(surface, x)).RelativeTo(origin).ToGodot());
+                }
             }
+            AddGridIndices(st, start, RingsPerChunk, StripVertices);
+            start += (RingsPerChunk + 1) * StripVertices;
         }
 
-        int stride = RadialSegments + 1;
-        for (int r = 0; r < RingsPerChunk; r++)
+        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = _material };
+        AddChild(node);
+        node.SetInstanceShaderParameter("segment_index", (int)k);
+        return new Chunk(node, origin);
+    }
+
+    // Surface X positions across one strip: left wing, the surface itself, right wing.
+    private void FillStrip(ProfileShape shape)
+    {
+        float q = shape.Quarter, w = shape.WingLength;
+        int n = WingSteps.Length;
+        for (int i = 0; i < n; i++)
         {
-            for (int a = 0; a < RadialSegments; a++)
+            float wing = q + w * WingSteps[n - 1 - i];
+            _xs[i] = -wing;
+            _xs[StripVertices - 1 - i] = wing;
+        }
+        for (int i = 0; i <= SurfaceSegments; i++)
+        {
+            _xs[n + i] = -q + 2f * q * i / SurfaceSegments;
+        }
+    }
+
+    private static void AddGridIndices(SurfaceTool st, int start, int rings, int stride)
+    {
+        for (int r = 0; r < rings; r++)
+        {
+            for (int a = 0; a < stride - 1; a++)
             {
-                int i = r * stride + a;
+                int i = start + r * stride + a;
                 st.AddIndex(i);
                 st.AddIndex(i + stride);
                 st.AddIndex(i + 1);
@@ -102,11 +135,6 @@ public partial class TrackRenderer : Node3D
                 st.AddIndex(i + stride + 1);
             }
         }
-
-        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = _material };
-        AddChild(node);
-        node.SetInstanceShaderParameter("segment_index", (int)k);
-        return new Chunk(node, origin);
     }
 
     private readonly record struct Chunk(MeshInstance3D Node, Vector3d Origin);

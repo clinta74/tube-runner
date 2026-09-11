@@ -29,4 +29,4 @@ dotnet test src/TubeRunner.Core.Tests
 ```
 
 ## Run
-Open `game/project.godot` in Godot 4.7 .NET and press **F5**. Steer with **A/D** or the **arrow keys**.
+Open `game/project.godot` in Godot 4.7 .NET and press **F5**. Steer with **A/D** or the **arrow keys** (or a gamepad stick). On flat sections, **Space** (gamepad **A**) jumps between floor and ceiling.

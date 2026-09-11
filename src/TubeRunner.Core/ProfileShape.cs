@@ -3,13 +3,22 @@ using System.Numerics;
 namespace TubeRunner.Core;
 
 /// <summary>
-/// A <see cref="CrossSection"/> resampled by arc length, so moving through U covers the same wall
-/// distance whatever the shape. U = 0 is the right side, 0.25 the top, 0.5 the left, 0.75 the bottom.
+/// Surface geometry of a <see cref="CrossSection"/>. A section has two surfaces: the floor (lower
+/// half) and the ceiling (upper half). A point on a surface is given by X, the distance along it
+/// from its center, positive toward the track's right. In a closed tube the surfaces meet at the
+/// side midpoints (X = ±<see cref="Quarter"/>), so moving past one continues onto the other. In an
+/// open section they unroll flat, separate, and extend sideways by <see cref="WingLength"/>.
 /// </summary>
 public sealed class ProfileShape
 {
-    private const int Samples = 1024;
+    /// <summary>Wing length when fully spread. Well past the distance fade, so it reads as endless.</summary>
+    public const float MaxWingLength = 1000f;
 
+    private const int Samples = 1024;
+    // Offset used to estimate surface tangents.
+    private const float TangentStep = 0.05f;
+
+    // The closed curve, counter-clockwise from the right side midpoint.
     private readonly Vector2[] _points = new Vector2[Samples + 1];
     // Normalized arc length at each point; _u[0] = 0, _u[Samples] = 1.
     private readonly float[] _u = new float[Samples + 1];
@@ -38,76 +47,108 @@ public sealed class ProfileShape
         Perimeter = length;
         for (int i = 0; i <= Samples; i++) _u[i] /= length;
         _u[Samples] = 1f;
-        GapEdge = FindGapEdge();
+
+        Unroll = section.Unroll;
+        Spread = section.Spread;
+        WingLength = MaxWingLength * Spread * Spread * Spread;
     }
 
     public CrossSection Section { get; }
 
-    /// <summary>Wall length around the whole section.</summary>
+    /// <summary>Length around the closed (un-opened) section.</summary>
     public float Perimeter { get; }
 
-    /// <summary>
-    /// Half-width, in U, of each side gap. Gaps are centered on U = 0 and U = 0.5; 0 when the tube is closed.
-    /// </summary>
-    public float GapEdge { get; }
+    /// <summary>Distance from a surface's center to its side edge.</summary>
+    public float Quarter => Perimeter / 4f;
 
-    public Vector2 PointAt(float u)
-    {
-        Locate(u, out int i, out float t);
-        return Vector2.Lerp(_points[i], _points[i + 1], t);
-    }
+    public bool IsClosed => Section.IsClosed;
 
-    /// <summary>Unit normal pointing from the wall into the tube.</summary>
-    public Vector2 InwardNormalAt(float u)
-    {
-        Locate(u, out int i, out _);
-        var tangent = _points[i + 1] - _points[i];
-        // Samples run counter-clockwise, so the interior is to the left of the tangent.
-        return Vector2.Normalize(new Vector2(-tangent.Y, tangent.X));
-    }
+    /// <inheritdoc cref="CrossSection.Unroll"/>
+    public float Unroll { get; }
+
+    /// <inheritdoc cref="CrossSection.Spread"/>
+    public float Spread { get; }
+
+    /// <summary>How far an open surface extends past its side edge.</summary>
+    public float WingLength { get; }
+
+    /// <summary>Largest |X| on a surface of an open section.</summary>
+    public float SurfaceExtent => Quarter + WingLength;
 
     /// <summary>
-    /// Positive where the wall exists, negative inside a side gap. Linear in height, so it
-    /// interpolates cleanly across mesh triangles.
+    /// Distance around the closed curve, counter-clockwise from the floor center. Continuous across
+    /// the side edges; used for texturing and for distances in closed tubes.
     /// </summary>
-    public float OpenMargin(Vector2 point) =>
-        Section.Opening <= 0f ? 1f : MathF.Abs(point.Y) / Section.HalfHeight - Section.GapThreshold;
+    public float Loop(Surface surface, float x) => surface == Surface.Floor ? x : 2f * Quarter - x;
 
-    public bool IsOpen(float u) => OpenMargin(PointAt(u)) < 0f;
-
-    /// <summary>Moves U out of a side gap to the nearest wall edge on the same (upper or lower) half.</summary>
-    public float ClampToSurface(float u)
+    /// <summary>
+    /// In a closed tube, carries an X past a side edge onto the other surface. Open sections are
+    /// returned unchanged.
+    /// </summary>
+    public (Surface Surface, float X) Wrap(Surface surface, float x)
     {
-        u = MathUtil.Wrap01(u);
-        float e = GapEdge;
-        if (e <= 0f) return u;
+        if (!IsClosed) return (surface, x);
 
-        if (u < e) return e;                               // upper right
-        if (u > 1f - e) return 1f - e;                     // lower right
-        if (u > 0.5f - e && u <= 0.5f) return 0.5f - e;    // upper left
-        if (u > 0.5f && u < 0.5f + e) return 0.5f + e;     // lower left
-        return u;
+        float q = Quarter;
+        float loop = Loop(surface, x);
+        loop -= Perimeter * MathF.Floor((loop + q) / Perimeter);   // into [-q, 3q)
+        return loop <= q ? (Surface.Floor, loop) : (Surface.Ceiling, 2f * q - loop);
     }
 
-    private float FindGapEdge()
+    public Vector2 PointAt(Surface surface, float x)
     {
-        if (Section.Opening <= 0f) return 0f;
-        // The shape is symmetric, so the first wall point above the right-hand gap gives every edge.
-        for (int i = 0; i <= Samples / 4; i++)
+        (surface, x) = Wrap(surface, x);
+        float q = Quarter;
+        float edge = Math.Clamp(x, -q, q);
+        bool floor = surface == Surface.Floor;
+
+        var curved = CurvePoint(floor ? 0.75f + edge / Perimeter : 0.25f - edge / Perimeter);
+        var flat = new Vector2(edge, floor ? -Section.HalfHeight : Section.HalfHeight);
+        var p = Vector2.Lerp(curved, flat, Unroll);
+        // Past the edge of an open section the wing continues flat and sideways.
+        return p + new Vector2(x - edge, 0f);
+    }
+
+    /// <summary>Unit normal pointing off the surface, into the space the ship flies through.</summary>
+    public Vector2 NormalAt(Surface surface, float x)
+    {
+        var t = PointAt(surface, x + TangentStep) - PointAt(surface, x - TangentStep);
+        // +X runs rightward on both surfaces; "into the tube" is up from the floor, down from the ceiling.
+        var n = surface == Surface.Floor ? new Vector2(-t.Y, t.X) : new Vector2(t.Y, -t.X);
+        return Vector2.Normalize(n);
+    }
+
+    /// <summary>Surface position closest to <paramref name="p"/>, a point in section space.</summary>
+    public (Surface Surface, float X) Nearest(Vector2 p)
+    {
+        if (!IsClosed)
         {
-            if (OpenMargin(_points[i]) >= 0f) return _u[i];
+            return (p.Y < 0f ? Surface.Floor : Surface.Ceiling, Math.Clamp(p.X, -SurfaceExtent, SurfaceExtent));
         }
-        return 0.25f;
+
+        int best = 0;
+        float bestDistance = float.MaxValue;
+        for (int i = 0; i < Samples; i++)
+        {
+            float d = Vector2.DistanceSquared(p, _points[i]);
+            if (d < bestDistance)
+            {
+                bestDistance = d;
+                best = i;
+            }
+        }
+        return Wrap(Surface.Floor, (_u[best] - 0.75f) * Perimeter);
     }
 
-    private void Locate(float u, out int i, out float t)
+    private Vector2 CurvePoint(float u)
     {
         u = MathUtil.Wrap01(u);
         int idx = Array.BinarySearch(_u, u);
         if (idx < 0) idx = ~idx;
-        i = Math.Clamp(idx - 1, 0, Samples - 1);
+        int i = Math.Clamp(idx - 1, 0, Samples - 1);
         float span = _u[i + 1] - _u[i];
-        t = span > 0f ? Math.Clamp((u - _u[i]) / span, 0f, 1f) : 0f;
+        float t = span > 0f ? Math.Clamp((u - _u[i]) / span, 0f, 1f) : 0f;
+        return Vector2.Lerp(_points[i], _points[i + 1], t);
     }
 }
 

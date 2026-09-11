@@ -2,8 +2,7 @@ namespace TubeRunner.Core;
 
 /// <summary>
 /// Endless seeded track: straights and gentle curves in a round tube, with occasional oval
-/// stretches and flat-plane sections (circle → oval → box → open planes → and back).
-/// Every planned sequence starts and ends on the round tube.
+/// stretches and straight flat-plane sections. Every planned sequence starts and ends on the round tube.
 /// </summary>
 public sealed class TrackGenerator : ITrackSource
 {
@@ -16,13 +15,11 @@ public sealed class TrackGenerator : ITrackSource
         _rng = new Random(seed);
         Circle = CrossSection.Circle(tubeRadius);
         Oval = new CrossSection(tubeRadius * 1.5f, tubeRadius * 0.75f);
-        Box = new CrossSection(tubeRadius * 1.7f, tubeRadius * 0.7f, Squareness: 1f);
-        Planes = Box with { Opening = 1f };
+        Planes = Circle with { Opening = 1f };
     }
 
     public CrossSection Circle { get; }
     public CrossSection Oval { get; }
-    public CrossSection Box { get; }
     public CrossSection Planes { get; }
 
     public TrackPiece Next()
@@ -57,13 +54,10 @@ public sealed class TrackGenerator : ITrackSource
         }
         else
         {
-            _pending.Enqueue(new TrackPiece(60f, Oval));
-            _pending.Enqueue(new TrackPiece(50f, Box));
-            _pending.Enqueue(new TrackPiece(40f, Planes));
-            _pending.Enqueue(Curve(Planes, Range(150f, 250f), maxYaw: 0.006f, maxPitch: 0.002f));
-            _pending.Enqueue(new TrackPiece(40f, Box));
-            _pending.Enqueue(new TrackPiece(50f, Oval));
-            _pending.Enqueue(new TrackPiece(60f, Circle));
+            // Flat sections are straight: unroll, run, roll back up.
+            _pending.Enqueue(new TrackPiece(80f, Planes));
+            _pending.Enqueue(new TrackPiece(Range(200f, 350f), Planes));
+            _pending.Enqueue(new TrackPiece(120f, Circle));
         }
     }
 

@@ -6,69 +6,127 @@ namespace TubeRunner.Core.Tests;
 public class ShipSimTests
 {
     private static readonly CrossSection Circle = CrossSection.Circle(4f);
-    private static readonly ShipSettings Settings = new(ForwardSpeed: 50f, SteerSpeed: 10f);
+    private static readonly CrossSection Open = Circle with { Opening = 1f };
+    private static readonly ShipSettings Settings = new(ForwardSpeed: 50f, SteerSpeed: 10f, MaxPlaneOffset: 30f, JumpDuration: 0.5f);
 
     [Fact]
     public void Step_AdvancesAlongTrack()
     {
-        var sim = new ShipSim(Settings, Straight(Circle));
+        var sim = Sim(Circle);
 
         sim.Step(0.5f, steer: 0f);
 
         Assert.Equal(25.0, sim.Position.S, precision: 5);
-        Assert.Equal(0f, sim.Position.U);
+        Assert.Equal(new TrackPosition(25.0, Surface.Floor, 0f), sim.Position);
     }
 
-    [Theory]
-    // 0.4 s at 10 units/s = 4 units = 4 / (2π·4) ≈ 0.15915 of the way around.
-    [InlineData(0.9f, 1f, 0.05915f)]    // wraps past 1
-    [InlineData(0.1f, -1f, 0.94085f)]   // wraps below 0
-    public void Step_WrapsAroundTube(float startU, float steer, float expectedU)
+    [Fact]
+    public void SteerRight_OnFloor_IncreasesX()
     {
-        var sim = new ShipSim(Settings, Straight(Circle), new TrackPosition(0, 0, startU, 0));
+        var sim = Sim(Circle);
 
-        sim.Step(0.4f, steer);
+        sim.Step(0.1f, steer: 1f);
 
-        Assert.Equal(expectedU, sim.Position.U, precision: 3);
+        Assert.Equal(1f, sim.Position.X, precision: 4);
+    }
+
+    [Fact]
+    public void SteerRight_OnCeiling_DecreasesX()
+    {
+        // Upside down on the ceiling, the ship's right is the track's left.
+        var sim = Sim(Circle, Surface.Ceiling);
+
+        sim.Step(0.1f, steer: 1f);
+
+        Assert.Equal(-1f, sim.Position.X, precision: 4);
+    }
+
+    [Fact]
+    public void Steering_WrapsFromFloorOntoCeiling()
+    {
+        var sim = Sim(Circle);
+        float q = sim.Shape.Quarter;
+        sim = Sim(Circle, Surface.Floor, q - 0.5f);
+
+        sim.Step(0.1f, steer: 1f);
+
+        Assert.Equal(Surface.Ceiling, sim.Position.Surface);
+        Assert.Equal(q - 0.5f, sim.Position.X, precision: 3);
     }
 
     [Fact]
     public void Step_ClampsSteerInput()
     {
-        var sim = new ShipSim(Settings, Straight(Circle));
+        var sim = Sim(Circle);
 
         sim.Step(0.1f, steer: 10f);
 
-        Assert.Equal(1f / (MathF.Tau * 4f), sim.Position.U, precision: 3);
+        Assert.Equal(1f, sim.Position.X, precision: 4);
     }
 
     [Fact]
     public void Steering_CoversSameWallDistanceOnAnyShape()
     {
-        var sim = new ShipSim(Settings, Straight(new CrossSection(9f, 4.5f)), new TrackPosition(0, 0, 0.75f, 0));
-        var before = sim.Shape.PointAt(sim.Position.U);
+        var sim = Sim(new CrossSection(9f, 4.5f), Surface.Floor, 5f);
+        var before = sim.Shape.PointAt(Surface.Floor, 5f);
 
         sim.Step(0.1f, steer: 1f);
 
-        Assert.Equal(1f, Vector2.Distance(before, sim.Shape.PointAt(sim.Position.U)), precision: 2);
+        Assert.Equal(1f, Vector2.Distance(before, sim.Shape.PointAt(sim.Position.Surface, sim.Position.X)), precision: 2);
     }
 
     [Fact]
-    public void Planes_ShipStopsAtFloorEdge()
+    public void OpenPlanes_StrafeToLimitWithoutWrapping()
     {
-        var planes = new CrossSection(10f, 4f, Squareness: 1f, Opening: 1f);
-        var sim = new ShipSim(Settings, Straight(planes), new TrackPosition(0, 0, 0.75f, 0));
+        var sim = Sim(Open);
 
-        // 5 s at 10 units/s is far wider than the floor.
-        for (int i = 0; i < 50; i++) sim.Step(0.1f, steer: -1f);
+        for (int i = 0; i < 100; i++) sim.Step(0.1f, steer: 1f);
 
-        Assert.Equal(0.5f + sim.Shape.GapEdge, sim.Position.U, precision: 4);
+        Assert.Equal(Surface.Floor, sim.Position.Surface);
+        Assert.Equal(30f, sim.Position.X, precision: 4);
     }
 
-    private static Track Straight(CrossSection section)
+    [Fact]
+    public void Jump_CrossesToCeilingOnOpenPlanes()
+    {
+        var sim = Sim(Open);
+
+        sim.Step(0.25f, steer: 0f, jump: true);
+        Assert.True(sim.IsJumping);
+        sim.Step(0.3f, steer: 0f);
+
+        Assert.False(sim.IsJumping);
+        Assert.Equal(Surface.Ceiling, sim.Position.Surface);
+        var (_, up) = sim.Pose(0.5f);
+        Assert.Equal(-1f, up.Y, precision: 3);
+    }
+
+    [Fact]
+    public void Jump_MidwayIsBetweenSurfacesAndRolledSideways()
+    {
+        var sim = Sim(Open);
+
+        sim.Step(0.25f, steer: 0f, jump: true);   // halfway through a 0.5 s jump
+
+        var (point, up) = sim.Pose(0.5f);
+        Assert.Equal(0f, point.Y, precision: 3);
+        Assert.Equal(-1f, up.X, precision: 3);
+    }
+
+    [Fact]
+    public void Jump_IgnoredInClosedTube()
+    {
+        var sim = Sim(Circle);
+
+        sim.Step(0.1f, steer: 0f, jump: true);
+
+        Assert.False(sim.IsJumping);
+    }
+
+    private static ShipSim Sim(CrossSection section, Surface surface = Surface.Floor, float x = 0f)
     {
         var track = new Track(section);
         track.Append(new TrackPiece(1000f, section));
-        return track;
+        return new ShipSim(Settings, track, new TrackPosition(0, surface, x));
     }
 }

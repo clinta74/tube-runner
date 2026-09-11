@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace TubeRunner.Core;
 
 internal static class MathUtil
@@ -14,5 +16,12 @@ internal static class MathUtil
     {
         t = Math.Clamp(t, 0f, 1f);
         return t * t * (3f - 2f * t);
+    }
+
+    /// <summary>Rotates counter-clockwise by <paramref name="angle"/> radians.</summary>
+    public static Vector2 Rotate(Vector2 v, float angle)
+    {
+        float c = MathF.Cos(angle), s = MathF.Sin(angle);
+        return new Vector2(v.X * c - v.Y * s, v.X * s + v.Y * c);
     }
 }

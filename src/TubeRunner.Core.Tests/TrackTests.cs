@@ -62,6 +62,15 @@ public class TrackTests
     }
 
     [Fact]
+    public void OpenPieces_MustBeStraight()
+    {
+        var track = new Track(Circle);
+
+        Assert.Throws<ArgumentException>(() =>
+            track.Append(new TrackPiece(100f, Circle with { Opening = 1f }, YawRate: 0.01f)));
+    }
+
+    [Fact]
     public void EnsureLength_ExtendsFromSource()
     {
         var track = new Track(Circle, new TrackGenerator(seed: 1));
