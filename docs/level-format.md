@@ -45,11 +45,14 @@ Blending into a section with `opening: 1` unrolls the tube: its lower half flatt
 its upper half into a ceiling, then both spread sideways to the horizon. On flat sections the player
 strafes left and right (the view stays level) and can jump between floor and ceiling.
 
-Blending back into a closed section goes through a **funnel**. For the first 15% of that piece, the far
-edges of the floor and ceiling roll up into walls about 150 units out, inside the distance fade, so the
-void past the planes is never seen. For the rest, the funnel narrows to the tube: quickly while its
-walls are far away, easing off as they close in. Meanwhile the player stays on the floor or ceiling and
-is eased toward the center. Give the rejoin piece room: 300 units or more feels smooth.
+Both ends of a flat section go through a **funnel**, so the void beyond the planes is never visible.
+Opening out, the tube stays closed while it widens to 420 units — well past the distance fade — and only
+then do the floor and ceiling part company, out of sight. Rejoining reverses that: the planes seal into
+a funnel 420 units out, which then narrows to the tube, quickly while its walls are far away and easing
+off as they close in. Through the rejoin the player stays on the floor or ceiling and is eased toward
+the center. Give each of those pieces room: 300 units or more feels smooth.
+
+Keep a theme's `fadeEnd` below 420 so the funnel's walls stay out of sight while they open and seal.
 
 **Pieces that start or end on an open section must be straight** (no `turn` or `climb`).
 

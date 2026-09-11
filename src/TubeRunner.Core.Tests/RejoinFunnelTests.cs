@@ -37,6 +37,24 @@ public class RejoinFunnelTests
     }
 
     [Fact]
+    public void Opening_WidensOutOfSightBeforeThePlanesPart()
+    {
+        var track = new Track(Tube, startSpeed: 50f);
+        track.Append(new TrackPiece(100f, Tube));
+        track.Append(new TrackPiece(300f, Flat));   // 100 - 400: opens into flat planes
+        track.Append(new TrackPiece(100f, Flat));
+
+        // It stays a closed tube while it widens, well past the distance fade.
+        var widening = track.SectionAt(310);
+        Assert.True(widening.IsClosed);
+        Assert.True(widening.HalfWidth > 100f, $"half width was {widening.HalfWidth}");
+
+        // Only at the very end, out of sight, do the planes come apart.
+        Assert.False(track.SectionAt(395).IsClosed);
+        Assert.Equal(Flat, track.SectionAt(400));
+    }
+
+    [Fact]
     public void Ship_StaysOnItsSurfaceAndIsEasedIntoTheTube()
     {
         var track = FlatThenFunnel();

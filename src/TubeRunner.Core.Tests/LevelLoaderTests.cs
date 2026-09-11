@@ -149,10 +149,11 @@ public class LevelLoaderTests
     [Theory]
     [InlineData("""{ "at": 50, "kind": "boulder" }""", "unknown kind 'boulder'")]
     [InlineData("""{ "at": 900 }""", "off the track")]
-    [InlineData("""{ "at": 150, "angle": 90 }""", "only works in closed tubes")]
+    [InlineData("""{ "at": 250, "angle": 90 }""", "only works in closed tubes")]
     public void Parse_ReportsBadObstacles(string obstacle, string message)
     {
-        var track = """{ "length": 100 }, { "length": 100, "section": "flat" }""";
+        // The middle piece opens out into flat planes; the last one runs flat.
+        var track = """{ "length": 100 }, { "length": 100, "section": "flat" }, { "length": 100 }""";
 
         var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse(Level(track, obstacle)));
 

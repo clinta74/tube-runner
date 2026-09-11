@@ -1,126 +1,69 @@
 {
-  "name": "Earthworks",
+  "name": "Throttle",
   "next": "level_04.json",
-  "speed": 80,
+  "speed": 85,
   "segmentLength": 60,
 
+  // Speed control: open road to push into, gauntlets to back off for.
   "theme": {
-    "darks": ["#3b2919", "#2e4a2b", "#4a4f24"],
-    "lights": ["#b08c3d", "#7a592e", "#8c8a42"],
-    "seamDark": "#1f140a",
-    "seamLight": "#d9ad4d",
-    "far": "#0d0a05",
-    "ship": "#d9ad4d",
-    "block": "#e8dfc8",
-    "target": "#ff5a1f",
+    "darks": ["#241515", "#2b1c10", "#161d24"],
+    "lights": ["#d0643c", "#e0a24a", "#5f93b5"],
+    "seamDark": "#120a08",
+    "seamLight": "#ffd9a0",
+    "far": "#08050a",
+    "ship": "#ffd9a0",
+    "block": "#f0ece0",
+    "target": "#ff5a2a",
+    "breakable": "#7fc7e8",
     "fadeStart": 30,
     "fadeEnd": 320,
     "glow": 0
   },
 
   "sections": {
-    "tube": { "radius": 6 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
-    "box":  { "halfWidth": 10, "halfHeight": 4.2, "squareness": 1 },
-    "flat": { "radius": 6, "opening": 1 },
-    "chamber": { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 }
+    "tube": { "radius": 6.5 },
+    "oval": { "halfWidth": 9, "halfHeight": 5 }
   },
 
-  // Obstacle "at" values are measured from the start of their piece.
-  // The distances in the comments are for `play.ps1 -Start`.
   "start": "tube",
   "track": [
-    { "length": 150 },                                              //    0 - 150
+    { "length": 200 },                                              //    0 - 200
 
-    // Warm-up: shoot a few targets, dodge a first block.
-    { "length": 160, "turn": 40, "obstacles": [                     //  150 - 310
-      { "at": 70, "kind": "target" },
-      { "at": 110, "kind": "target", "x": -3 },
-      { "at": 150, "kind": "target", "x": 3 }
-    ] },
-    { "length": 140, "turn": -60, "climb": 10, "obstacles": [       //  310 - 450
-      { "at": 70 }
+    // Open road: nothing in the way, so wind the throttle up (W / up).
+    { "length": 400, "speed": 115, "obstacles": [                   //  200 - 600
+      { "at": 80, "kind": "target" },
+      { "at": 200, "kind": "target", "angle": 120 },
+      { "at": 320, "kind": "target", "angle": -120 }
     ] },
 
-    // Slalom around the oval.
-    { "length": 80, "section": "oval", "turn": 15, "speed": 90, "obstacles": [   //  450 - 530
-      { "at": 30, "angle": -40, "count": 3, "spacing": 120 }
-    ] },
-    { "length": 200, "turn": -30, "climb": -10, "obstacles": [      //  530 - 730
-      { "at": 10, "angle": 40, "count": 3, "spacing": 120 },
-      { "at": 170, "kind": "target", "angle": 90 }
-    ] },
-    { "length": 80, "section": "tube", "obstacles": [               //  730 - 810
-      { "at": 30, "kind": "target", "angle": -90 }
-    ] },
-    { "length": 120, "turn": 30, "obstacles": [                     //  810 - 930
-      { "at": 10, "kind": "target", "angle": 180 }
+    // Gauntlet: a spiral to thread, and it comes at you fast unless you ease off (S / down).
+    { "length": 250, "turn": 40, "speed": 85, "pickups": [          //  600 - 850
+      { "at": 220, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "angle": -50, "count": 5, "spacing": 40, "angleStep": 50 }
     ] },
 
-    // First flat section: unroll, run, then a long funnel back into the tube. Flat pieces are straight.
-    { "length": 100, "section": "flat", "speed": 100 },             //  930 - 1030
-    { "length": 400, "obstacles": [                                 // 1030 - 1430
-      // A gap, targets out wide, then walls that force jumps.
-      { "at": 50, "x": -6, "width": 8 },
-      { "at": 50, "x": 8, "width": 6 },
-      { "at": 130, "kind": "target", "x": -12 },
-      { "at": 130, "kind": "target", "x": 12 },
-      { "at": 220, "width": 80, "height": 2.5 },                          // jump to the ceiling
-      { "at": 290, "surface": "ceiling", "width": 10 },
-      { "at": 290, "kind": "target", "surface": "ceiling", "x": -10 },
-      { "at": 370, "surface": "ceiling", "width": 80, "height": 2.5 }     // jump back down
-    ] },
-    { "length": 360, "section": "tube", "speed": 90 },              // 1430 - 1790
-
-    // Spiral of blocks, then the box.
-    { "length": 150, "turn": -45, "climb": 15, "obstacles": [       // 1790 - 1940
-      { "at": 50, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 }
-    ] },
-    { "length": 100, "section": "box", "speed": 100 },              // 1940 - 2040
-    { "length": 250, "turn": 40, "obstacles": [                     // 2040 - 2290
-      { "at": 50, "x": -5, "width": 10 },
-      { "at": 120, "x": 5, "width": 10 },
-      { "at": 190, "kind": "target" },
-      { "at": 230, "kind": "target", "angle": 90 }
-    ] },
-    { "length": 100, "section": "tube" },                           // 2290 - 2390
-
-    // A ring of targets with the floor left open, then a twist of blocks.
-    { "length": 200, "turn": -20, "climb": -15, "obstacles": [      // 2390 - 2590
-      { "at": 50, "kind": "target", "angle": 90, "count": 3, "angleStep": 90 },
-      { "at": 110, "angle": 180, "count": 3, "spacing": 25, "angleStep": 45 }
+    { "length": 150, "section": "oval", "speed": 95 },              //  850 - 1000
+    { "length": 300, "turn": -35, "obstacles": [                    // 1000 - 1300
+      { "at": 120, "hits": 1, "angle": 0, "count": 8, "angleStep": 45, "width": 5 },
+      { "at": 240, "kind": "target", "angle": 0, "count": 3, "angleStep": 120 }
     ] },
 
-    // Second flat section: a sweeping wall, targets, and one more jump.
-    { "length": 100, "section": "flat", "speed": 115 },             // 2590 - 2690
-    { "length": 350, "obstacles": [                                 // 2690 - 3040
-      { "at": 50, "x": -10, "width": 12, "count": 5, "spacing": 50, "xStep": 5 },
-      { "at": 80, "kind": "target", "x": 15, "count": 4, "spacing": 50, "xStep": -8 },
-      { "at": 310, "width": 80, "height": 2.5 },
-      { "at": 335, "kind": "target", "surface": "ceiling" }
+    // Rapid fire before a run of tough blocks: shoot them out or swing around them.
+    { "length": 150, "section": "tube", "speed": 105, "pickups": [  // 1300 - 1450
+      { "at": 60, "kind": "rapid-fire" }
     ] },
-    { "length": 360, "section": "tube" },                           // 3040 - 3400
+    { "length": 400, "speed": 120, "obstacles": [                   // 1450 - 1850
+      { "at": 40, "hits": 3, "count": 4, "spacing": 90 }
+    ] },
 
-    // Widen into a chamber, fork left/right, merge, and narrow back down.
-    { "length": 100, "section": "chamber", "speed": 125, "obstacles": [   // 3400 - 3500
-      { "at": 40, "kind": "target" }
+    // Last gauntlet: a sealed ring of breakable blocks, with the ring gun just before it.
+    { "length": 250, "turn": -30, "speed": 90, "pickups": [         // 1850 - 2100
+      { "at": 30, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 120, "hits": 2, "angle": 0, "count": 8, "angleStep": 45, "width": 4.6 }
     ] },
-    { "length": 400, "turn": 20, "split": {                         // 3500 - 3900
-        "section": "tube",
-        "branches": [
-          { "offsets": [[0, -7.5, 0], [120, -22, 0], [280, -22, 0], [400, -7.5, 0]] },
-          { "offsets": [[0, 7.5, 0], [120, 22, 5], [280, 22, 5], [400, 7.5, 0]] }
-        ]
-      },
-      "obstacles": [
-        // Targets down the left branch, blocks down the right.
-        { "at": 100, "branch": 0, "kind": "target", "angle": 0, "count": 4, "spacing": 60, "angleStep": 90 },
-        { "at": 130, "branch": 1, "angle": 0, "count": 4, "spacing": 50, "angleStep": 90 }
-      ]
-    },
-    { "length": 100, "section": "tube" },                           // 3900 - 4000
-    { "length": 200, "obstacles": [                                 // 4000 - 4200
-      { "at": 80, "kind": "target", "angle": 180 }
-    ] }
+
+    { "length": 200 }                                               // 2100 - 2300
   ]
 }

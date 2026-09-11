@@ -33,12 +33,13 @@ public sealed class Track
     public const int MaxBranches = 4;
 
     /// <summary>
-    /// Half-width of the funnel flat planes close through on their way back into a tube. Far enough
-    /// out that its walls rise inside the distance fade, so the void past the planes is never seen.
+    /// Half-width of the funnel flat planes open out through and close back through. Far enough out
+    /// that the planes part and seal beyond the distance fade, so the void past them is never seen.
+    /// Keep a theme's fadeEnd below this.
     /// </summary>
-    public const float FunnelHalfWidth = 150f;
+    public const float FunnelHalfWidth = 420f;
 
-    // Fraction of a rejoining piece spent sealing the planes into the wide funnel.
+    // Fraction of a funnel piece spent parting or sealing the planes, at the funnel's full width.
     private const float SealFraction = 0.15f;
 
     private readonly List<TrackFrame> _frames = new();
@@ -184,6 +185,8 @@ public sealed class Track
         var p = _pieces[i];
         float t = (float)((s - p.StartS) / p.Piece.Length);
         if (IsRejoining(p)) return Funnel(p.StartSection, p.Piece.EndSection, t);
+        // Opening into flat planes is the same funnel, run backwards.
+        if (IsOpening(p)) return Funnel(p.Piece.EndSection, p.StartSection, 1f - t);
         return CrossSection.Lerp(p.StartSection, p.Piece.EndSection, MathUtil.SmoothStep(t));
     }
 
@@ -196,20 +199,25 @@ public sealed class Track
 
     private static bool IsRejoining(PlacedPiece p) => !p.StartSection.IsClosed && p.Piece.EndSection.IsClosed;
 
-    // Planes rejoining a tube: first the far edges of the floor and ceiling roll up into walls well
-    // out in the fade, sealing off the void; then the funnel narrows to the tube, quickly while its
-    // walls are far away and easing off as they close in.
+    private static bool IsOpening(PlacedPiece p) => p.StartSection.IsClosed && !p.Piece.EndSection.IsClosed;
+
+    // Planes rejoining a tube: first the far edges of the floor and ceiling roll up into walls out
+    // beyond the fade, sealing off the void; then the funnel narrows to the tube, quickly while its
+    // walls are far away and easing off as they close in. Opening runs the same shape backwards.
     private static CrossSection Funnel(CrossSection open, CrossSection tube, float t)
     {
         if (t < SealFraction)
         {
-            // While the planes are still open their width doesn't show, so widen them to the funnel.
-            float u = MathUtil.SmoothStep(t / SealFraction);
+            // Widen to the funnel's full size first, which doesn't show while the planes are open,
+            // and only then seal them — out at that width, well beyond the fade.
+            float u = t / SealFraction;
+            float widen = MathUtil.SmoothStep(Math.Min(1f, u * 2f));
+            float seal = MathUtil.SmoothStep(Math.Max(0f, u * 2f - 1f));
             return new CrossSection(
-                open.HalfWidth + (FunnelHalfWidth - open.HalfWidth) * u,
+                open.HalfWidth + (FunnelHalfWidth - open.HalfWidth) * widen,
                 open.HalfHeight,
-                open.Squareness + (1f - open.Squareness) * u,
-                open.Opening * (1f - u));
+                open.Squareness + (1f - open.Squareness) * widen,
+                open.Opening * (1f - seal));
         }
 
         float v = (t - SealFraction) / (1f - SealFraction);

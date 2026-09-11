@@ -1,0 +1,72 @@
+{
+  "name": "Over and Under",
+  "next": "level_07.json",
+  "speed": 105,
+  "segmentLength": 60,
+
+  // Flat sections under pressure: walls that force jump after jump.
+  "theme": {
+    "darks": ["#16191d", "#1a2417", "#0f1a22"],
+    "lights": ["#8c99a6", "#a8c46a", "#6d93a8"],
+    "seamDark": "#0a0c0e",
+    "seamLight": "#d8ffb0",
+    "far": "#05070a",
+    "ship": "#d8ffb0",
+    "block": "#f5f5f5",
+    "target": "#ff4d4d",
+    "breakable": "#7fd0ff",
+    "fadeStart": 30,
+    "fadeEnd": 320,
+    "glow": 0
+  },
+
+  "sections": {
+    "tube": { "radius": 6 },
+    "flat": { "radius": 6, "opening": 1 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 200, "pickups": [                                   //    0 - 200
+      { "at": 120, "kind": "rapid-fire" }
+    ] },
+
+    { "length": 300, "section": "flat", "speed": 115 },             //  200 - 500
+
+    // Four walls, alternating floor and ceiling: jump, land, jump again.
+    { "length": 450, "obstacles": [                                 //  500 - 950
+      { "at": 80, "width": 80, "height": 2.5 },
+      { "at": 190, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 300, "width": 80, "height": 2.5 },
+      { "at": 410, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 140, "kind": "target", "surface": "ceiling", "x": -8 },
+      { "at": 250, "kind": "target", "x": 8 }
+    ], "pickups": [
+      { "at": 240, "kind": "shield", "surface": "ceiling" }
+    ] },
+
+    { "length": 300, "section": "tube", "speed": 120 },             //  950 - 1250
+
+    // A breather in the tube, with the ring gun for the rings ahead.
+    { "length": 250, "turn": -40, "pickups": [                      // 1250 - 1500
+      { "at": 30, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 140, "kind": "target", "angle": 0, "count": 8, "angleStep": 45 }
+    ] },
+
+    { "length": 300, "section": "flat", "speed": 130 },             // 1500 - 1800
+
+    // Breakable blocks strung across the floor: shoot a gap or weave through it, then one last wall.
+    { "length": 400, "obstacles": [                                 // 1800 - 2200
+      { "at": 100, "hits": 2, "x": -24, "width": 12, "count": 5, "xStep": 12 },
+      { "at": 220, "kind": "target", "x": 0, "count": 3, "spacing": 40, "xStep": -10 },
+      { "at": 320, "width": 80, "height": 2.5 }
+    ] },
+
+    { "length": 350, "section": "tube", "speed": 115 },             // 2200 - 2550
+
+    { "length": 200, "obstacles": [                                 // 2550 - 2750
+      { "at": 80, "kind": "target", "angle": 180 }
+    ] }
+  ]
+}

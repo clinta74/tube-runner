@@ -23,14 +23,17 @@ public partial class TrackRenderer : Node3D
     private static readonly Surface[] Surfaces = { Surface.Floor, Surface.Ceiling };
 
     private readonly Dictionary<long, Placed> _chunks = new();
-    private readonly Dictionary<(TrackSplit Split, bool AtStart), Placed> _caps = new();
+    private readonly Dictionary<int, Placed> _caps = new();
+    private readonly List<CapSpec> _capSpecs = new();
     private readonly List<long> _staleChunks = new();
-    private readonly List<(TrackSplit, bool)> _staleCaps = new();
+    private readonly List<int> _staleCaps = new();
     private readonly ProfileShapeCache _shapes = new();
     private readonly float[] _xs = new float[StripVertices];
     private Track _track = null!;
     private Material _material = null!;
     private ShaderMaterial _capMaterial = null!;
+    private Vector3 _capColor;
+    private Vector3 _endWallColor;
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
@@ -42,8 +45,22 @@ public partial class TrackRenderer : Node3D
         _material = material;
         _chunkLength = chunkLength;
 
+        // Walls where each split forks and merges, plus one closing off the end of the track so a
+        // finished level never looks out into the void.
+        foreach (var split in track.Splits)
+        {
+            _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
+            _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
+        }
+        if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
+
+        // Fork and merge walls sit in shadow around their openings; the wall at the end of the level
+        // is the thing you fly at, so it takes a color you can actually see.
+        _capColor = theme.SeamDark.ToVector3();
+        _endWallColor = theme.Block.ToVector3();
+
         _capMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/track_cap.gdshader") };
-        _capMaterial.SetShaderParameter("cap_color", theme.SeamDark.ToVector3());
+        _capMaterial.SetShaderParameter("cap_color", _capColor);
         _capMaterial.SetShaderParameter("rim_color", theme.SeamLight.ToVector3());
         _capMaterial.SetShaderParameter("far_color", theme.Far.ToVector3());
         _capMaterial.SetShaderParameter("fade_start", theme.FadeStart);
@@ -147,32 +164,25 @@ public partial class TrackRenderer : Node3D
     private void UpdateCaps(double from, double to)
     {
         _staleCaps.Clear();
-        foreach (var key in _caps.Keys)
+        foreach (int i in _caps.Keys)
         {
-            if (!InRange(CapS(key), from, to)) _staleCaps.Add(key);
+            if (!InRange(_capSpecs[i].S, from, to)) _staleCaps.Add(i);
         }
-        foreach (var key in _staleCaps)
+        foreach (int i in _staleCaps)
         {
-            _caps[key].Node.QueueFree();
-            _caps.Remove(key);
+            _caps[i].Node.QueueFree();
+            _caps.Remove(i);
         }
-        foreach (var split in _track.Splits)
+        for (int i = 0; i < _capSpecs.Count; i++)
         {
-            AddCapIfInView(split, atStart: true, from, to);
-            AddCapIfInView(split, atStart: false, from, to);
+            if (!_caps.ContainsKey(i) && InRange(_capSpecs[i].S, from, to)) _caps[i] = BuildCap(_capSpecs[i]);
         }
     }
 
-    private void AddCapIfInView(TrackSplit split, bool atStart, double from, double to)
+    // A disc filling the section; the cap shader cuts any branch openings out of it.
+    private Placed BuildCap(CapSpec spec)
     {
-        var key = (split, atStart);
-        if (!_caps.ContainsKey(key) && InRange(CapS(key), from, to)) _caps[key] = BuildCap(split, atStart);
-    }
-
-    // A disc filling the chamber's cross-section; the cap shader cuts the branch openings out of it.
-    private Placed BuildCap(TrackSplit split, bool atStart)
-    {
-        double s = atStart ? split.StartS : split.EndS;
+        double s = spec.S;
         var frame = _track.FrameAt(s);
         var chamber = new ProfileShape(_track.SectionAt(s));
         var origin = frame.Position;
@@ -195,16 +205,17 @@ public partial class TrackRenderer : Node3D
         }
 
         var holes = new Vector4[Track.MaxBranches];
-        float along = atStart ? 0f : split.Length;
-        for (int b = 0; b < split.BranchCount; b++)
+        var split = spec.Split;
+        for (int b = 0; b < (split?.BranchCount ?? 0); b++)
         {
-            var c = split.OffsetAt(b, along);
+            var c = split!.OffsetAt(b, spec.Along);
             holes[b] = new Vector4(c.X, c.Y, split.Section.HalfWidth, split.Section.HalfHeight);
         }
         var material = (ShaderMaterial)_capMaterial.Duplicate();
+        material.SetShaderParameter("cap_color", split is null ? _endWallColor : _capColor);
         material.SetShaderParameter("holes", holes);
-        material.SetShaderParameter("hole_count", split.BranchCount);
-        material.SetShaderParameter("hole_exponent", split.Section.Exponent);
+        material.SetShaderParameter("hole_count", split?.BranchCount ?? 0);
+        material.SetShaderParameter("hole_exponent", split?.Section.Exponent ?? 2f);
 
         var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
         AddChild(node);
@@ -245,9 +256,10 @@ public partial class TrackRenderer : Node3D
         }
     }
 
-    private static double CapS((TrackSplit Split, bool AtStart) key) => key.AtStart ? key.Split.StartS : key.Split.EndS;
-
     private static bool InRange(double s, double from, double to) => s >= from && s <= to;
+
+    // A wall across the track: a split's fork or merge, or the end of the level.
+    private readonly record struct CapSpec(double S, TrackSplit? Split, float Along);
 
     private readonly record struct Placed(MeshInstance3D Node, Vector3d Origin);
 }

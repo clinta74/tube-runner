@@ -1,0 +1,65 @@
+{
+  "name": "Flatlands",
+  "next": "level_06.json",
+  "speed": 90,
+  "segmentLength": 60,
+
+  // The tube opens into flat floor and ceiling: strafe, then learn to jump between them.
+  "theme": {
+    "darks": ["#2a2419", "#1d2a2e", "#332a1c"],
+    "lights": ["#cdb87f", "#8fb9c9", "#b59a6a"],
+    "seamDark": "#141008",
+    "seamLight": "#ffeec2",
+    "far": "#0a0806",
+    "ship": "#ffeec2",
+    "block": "#ffffff",
+    "target": "#ff7a3d",
+    "breakable": "#86c5e8",
+    "fadeStart": 30,
+    "fadeEnd": 320,
+    "glow": 0
+  },
+
+  "sections": {
+    "tube": { "radius": 6.5 },
+    "flat": { "radius": 6.5, "opening": 1 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 250, "obstacles": [                                 //    0 - 250
+      { "at": 140, "kind": "target", "angle": 90 }
+    ] },
+
+    // Open out into flat planes. Opening and rejoining pieces are straight.
+    { "length": 300, "section": "flat", "speed": 100 },             //  250 - 550
+
+    // Room to strafe: a gap to line up, targets out wide, then the first wall to jump.
+    { "length": 400, "obstacles": [                                 //  550 - 950
+      { "at": 60, "x": -10, "width": 10 },
+      { "at": 60, "x": 10, "width": 10 },
+      { "at": 160, "kind": "target", "x": -14 },
+      { "at": 160, "kind": "target", "x": 14 },
+      { "at": 340, "width": 80, "height": 2.5 }                     // jump (Space) to the ceiling
+    ], "pickups": [
+      { "at": 260, "kind": "shield" }
+    ] },
+
+    // Upside down for a while, then a ceiling wall to send you back to the floor.
+    { "length": 350, "obstacles": [                                 //  950 - 1300
+      { "at": 60, "kind": "target", "surface": "ceiling", "count": 3, "spacing": 60, "xStep": 8 },
+      { "at": 120, "surface": "ceiling", "x": -12, "width": 10 },
+      { "at": 260, "surface": "ceiling", "width": 80, "height": 2.5 }
+    ] },
+
+    { "length": 350, "section": "tube", "speed": 95 },              // 1300 - 1650
+
+    { "length": 250, "turn": 35, "pickups": [                       // 1650 - 1900
+      { "at": 40, "kind": "full-shields" }
+    ], "obstacles": [
+      { "at": 110, "angle": 0, "count": 4, "spacing": 35, "angleStep": 60 }
+    ] },
+
+    { "length": 200 }                                               // 1900 - 2100
+  ]
+}
