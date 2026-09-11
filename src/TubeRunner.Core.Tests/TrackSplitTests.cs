@@ -91,6 +91,20 @@ public class TrackSplitTests
         Assert.Equal(shieldsLeft, game.Shields);
     }
 
+    [Fact]
+    public void Branches_CanRunAtDifferentSpeeds()
+    {
+        var track = new Track(Chamber, startSpeed: 50f);
+        track.Append(new TrackPiece(100f, Chamber));
+        track.AppendSplit(new TrackPiece(400f, Chamber), Tube,
+            [Keys((0, -7.5f), (400, -7.5f)), Keys((0, 7.5f), (400, 7.5f))],
+            [1f, 1.2f]);
+
+        Assert.Equal(50f, track.SpeedAt(300, 0), precision: 3);
+        Assert.Equal(60f, track.SpeedAt(300, 1), precision: 3);
+        Assert.Equal(50f, track.SpeedAt(300, -1), precision: 3);   // the centerline itself
+    }
+
     [Theory]
     [InlineData(12f, "doesn't fit")]
     [InlineData(3f, "overlap")]
@@ -120,6 +134,8 @@ public class TrackSplitTests
 
         var split = Assert.Single(level.Track.Splits);
         Assert.Equal(100.0, split.StartS);
+        Assert.Equal(1f, split.SpeedFactor(0));
+        Assert.Equal(1.25f, split.SpeedFactor(1));
         var obstacle = Assert.Single(level.Obstacles);
         Assert.Equal(1, obstacle.Branch);
         Assert.Equal(Surface.Ceiling, obstacle.Surface);
@@ -168,7 +184,7 @@ public class TrackSplitTests
                 "section": "tube",
                 "branches": [
                   { "offsets": [[0, -7.5, 0], [400, -7.5, 0]] },
-                  { "offsets": [[0, 7.5, 0], [400, 7.5, 0]] }
+                  { "offsets": [[0, 7.5, 0], [400, 7.5, 0]], "speed": 1.25 }
                 ]
             } },
             { "length": 100 }

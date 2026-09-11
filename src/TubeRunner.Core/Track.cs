@@ -93,7 +93,9 @@ public sealed class Track
     /// keeps the current section, which is the chamber the branches open out of and back into.
     /// </summary>
     /// <param name="branches">Per branch, its offsets from the centerline, from 0 to the piece length.</param>
-    public TrackSplit AppendSplit(TrackPiece piece, CrossSection branchSection, IReadOnlyList<IReadOnlyList<OffsetKey>> branches)
+    /// <param name="branchSpeeds">Per branch, its speed as a multiple of the track's; defaults to 1 each.</param>
+    public TrackSplit AppendSplit(TrackPiece piece, CrossSection branchSection,
+        IReadOnlyList<IReadOnlyList<OffsetKey>> branches, IReadOnlyList<float>? branchSpeeds = null)
     {
         var chamber = _endSection;
         if (piece.EndSection != chamber)
@@ -119,10 +121,17 @@ public sealed class Track
                 if (keys[i].Along <= keys[i - 1].Along) throw new ArgumentException("Branch offsets must increase along the split.");
             }
         }
+        var speeds = branchSpeeds ?? Enumerable.Repeat(1f, branches.Count).ToArray();
+        if (speeds.Count != branches.Count) throw new ArgumentException("A split needs one speed per branch.");
+        foreach (float speed in speeds)
+        {
+            if (speed <= 0f) throw new ArgumentException("Branch speeds must be positive.");
+        }
+
         CheckOpenings(chamber, branchSection, branches.Select(k => k[0].Offset).ToList(), "fork");
         CheckOpenings(chamber, branchSection, branches.Select(k => k[^1].Offset).ToList(), "merge");
 
-        var split = new TrackSplit(Length, piece.Length, branchSection, branches);
+        var split = new TrackSplit(Length, piece.Length, branchSection, branches, speeds);
         Append(piece);
         _splits.Add(split);
         return split;
@@ -154,6 +163,10 @@ public sealed class Track
     /// <summary>Frame at <paramref name="s"/> on a branch inside a split, or on the centerline.</summary>
     public TrackFrame FrameAt(double s, int branch) =>
         branch >= 0 && SplitAt(s) is { } split ? split.BranchFrame(this, s, branch) : FrameAt(s);
+
+    /// <summary>Forward speed at <paramref name="s"/> on a branch; branches can run faster than the track.</summary>
+    public float SpeedAt(double s, int branch) =>
+        SpeedAt(s) * (branch >= 0 && SplitAt(s) is { } split ? split.SpeedFactor(branch) : 1f);
 
     /// <summary>Cross-section at <paramref name="s"/> on a branch inside a split, or on the main track.</summary>
     public CrossSection SectionAt(double s, int branch) =>

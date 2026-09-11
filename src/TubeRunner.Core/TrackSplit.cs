@@ -15,13 +15,16 @@ public readonly record struct OffsetKey(float Along, Vector2 Offset);
 public sealed class TrackSplit
 {
     private readonly IReadOnlyList<IReadOnlyList<OffsetKey>> _branches;
+    private readonly IReadOnlyList<float> _speeds;
 
-    internal TrackSplit(double startS, float length, CrossSection section, IReadOnlyList<IReadOnlyList<OffsetKey>> branches)
+    internal TrackSplit(double startS, float length, CrossSection section,
+        IReadOnlyList<IReadOnlyList<OffsetKey>> branches, IReadOnlyList<float> speeds)
     {
         StartS = startS;
         Length = length;
         Section = section;
         _branches = branches;
+        _speeds = speeds;
     }
 
     public double StartS { get; }
@@ -32,6 +35,12 @@ public sealed class TrackSplit
     public CrossSection Section { get; }
 
     public int BranchCount => _branches.Count;
+
+    /// <summary>
+    /// How fast a branch runs compared to the track's speed: 1 is the same, 1.2 is a fifth faster.
+    /// A quicker branch is how a split offers a risky shortcut against a calmer route.
+    /// </summary>
+    public float SpeedFactor(int branch) => _speeds[branch];
 
     public bool Contains(double s) => s >= StartS && s < EndS;
 

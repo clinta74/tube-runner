@@ -59,7 +59,8 @@ public static class LevelLoader
                     {
                         throw new LevelFormatException($"Track piece {i}: a split keeps the current section; change it before or after.");
                     }
-                    track.AppendSplit(piece, Lookup(sections, p.Split.Section, $"track piece {i} split"), ToBranches(p.Split, i));
+                    track.AppendSplit(piece, Lookup(sections, p.Split.Section, $"track piece {i} split"),
+                        ToBranches(p.Split, i), p.Split.Branches.Select(b => b.Speed).ToList());
                 }
             }
             catch (ArgumentException e)
@@ -330,6 +331,7 @@ public static class LevelLoader
     private sealed class BranchData
     {
         public List<float[]> Offsets { get; set; } = new();
+        public float Speed { get; set; } = 1f;
     }
 
     // Where something sits on the track, with optional repeats.

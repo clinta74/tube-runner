@@ -55,7 +55,7 @@ public sealed class ShipSim
     /// Current forward speed in units per second: the track's speed here, times <see cref="Throttle"/>
     /// and <see cref="SpeedScale"/>.
     /// </summary>
-    public float ForwardSpeed => _track.SpeedAt(Position.S) * Throttle * SpeedScale;
+    public float ForwardSpeed => _track.SpeedAt(Position.S, Position.Branch) * Throttle * SpeedScale;
 
     /// <param name="dt">Seconds to advance.</param>
     /// <param name="steer">Steering input in [-1, 1]; positive steers to the ship's right.</param>

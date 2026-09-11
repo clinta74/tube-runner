@@ -109,6 +109,9 @@ steering toward an opening.
   `turn`, `climb`, and change `speed`.
 - Each branch lists `[along, x, y]` offsets from the track's center: `along` runs from 0 to the piece
   length, `x` is right, `y` is up. The branch blends smoothly between them.
+- A branch can also set `"speed"`, a multiple of the track's speed (default 1). Both branches cover the
+  same distance, so this is what makes one route genuinely quicker — pair a faster branch with more
+  obstacles and leave the slower one clearer, and the choice is worth making.
 - At the fork and the merge, every branch's opening must fit inside the chamber without overlapping
   another; the level won't load otherwise, and the error says which.
 - 2 to 4 branches. The chamber and branches must be closed tubes.

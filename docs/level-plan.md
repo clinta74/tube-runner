@@ -46,7 +46,9 @@ how obstacles are arranged.
 2. **Reaction distance** — gap between obstacles measured in *seconds* at the current speed, not units.
    40 units is half a second at 80, a third of a second at 120.
 3. **Visibility** — curves and climbs hide what's coming; a straight shows it early. A hard pattern
-   right after a bend is much harder than the same pattern on a straight.
+   right after a bend is much harder than the same pattern on a straight. A run of tight alternating
+   bends (a **twist**) keeps the reveal short the whole way through, and is one of the cheapest ways to
+   make late levels bite without adding a single obstacle.
 4. **Throttle pressure** — long clear stretches invite speed, so the gauntlet right after one is
    effectively faster unless the player reads it and eases off.
 
@@ -71,7 +73,9 @@ how obstacles are arranged.
 12. **Cost of a mistake** — a hit already costs a shield, a slow-down and about 0.4 s. Against a best
     time that compounds, so a level that's a fair clear can still be a hard *time*.
 13. **Length** — more chances to lose the last shield; endurance rather than spikes.
-14. **Branch risk/reward** (from level 8) — a fast branch with teeth versus a slow safe one.
+14. **Branch risk/reward** — a split's branches can set their own `speed`, so one route runs faster.
+    Load the quick one with obstacles and leave the slow one clear, and the fork becomes a real bet:
+    time against shields. Put splits well before the finish so the choice still has to be paid for.
 
 ## How each level advances
 
@@ -83,11 +87,12 @@ how obstacles are arranged.
 | 4 | Ovals | 95 → 125 | Half-blocked by shape | High: sides, then floor/ceiling | Wide and tall ovals | – | Required | Shield, rapid, ring | 2100 |
 | 5 | Flatlands | 90 → 100 | Wide gaps | Low: strafing | Round → flat | 2, unhurried | Light | Shield, full shields | 2100 |
 | 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 2750 |
-| 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | *none yet* | 4200 |
-| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | *none yet* | 4320 |
+| 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4200 |
+| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4320 |
 
-Levels 7 and 9 were built before power-ups existed, so they have none. They need a pass to add shields
-and the odd rapid-fire or ring gun, or they'll play harder than the levels after them.
+Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
+they answer. Their rarer prizes — the extra shield slot, and shields inside a split — sit off the fast
+line or down the meaner branch, so they cost something to take.
 
 ## Where each mechanic is introduced
 
