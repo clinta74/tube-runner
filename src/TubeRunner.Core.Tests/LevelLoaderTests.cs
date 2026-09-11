@@ -160,28 +160,6 @@ public class LevelLoaderTests
         Assert.Contains(message, e.Message);
     }
 
-    [Fact]
-    public void ShippedLevels_TimeLimitsCanBeBeaten()
-    {
-        foreach (var file in Directory.GetFiles(LevelsDirectory(), "*.json"))
-        {
-            var level = LevelLoader.Parse(File.ReadAllText(file));
-            if (level.TimeLimit is not float limit) continue;
-
-            // Flat out with no hits, the finish (40 units before the end) must come in under the limit.
-            var ship = new ShipSim(new ShipSettings(SteerSpeed: 22f), level.Track, new TrackPosition(16, Surface.Floor, 0f));
-            const float dt = 1f / 30f;
-            float time = 0f;
-            while (ship.Position.S < level.Track.Length - 40 && time < 2 * limit)
-            {
-                ship.Step(dt, steer: 0f, throttle: 1f);
-                time += dt;
-            }
-
-            Assert.True(time < limit, $"{Path.GetFileName(file)}: {time:0.0}s flat out vs a {limit}s limit");
-        }
-    }
-
     private static string Level(string pieces, string obstacles = "") => $$"""
         {
           "sections": { "tube": { "radius": 6 }, "flat": { "radius": 6, "opening": 1 } },

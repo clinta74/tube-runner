@@ -75,3 +75,7 @@ it can't find its .NET assemblies. Set `$env:GODOT` to point the script at a spe
 | Jump between floor and ceiling (flat sections) | Space | A |
 | Fire (hold) | Ctrl, J, Enter, or left mouse | X or right trigger |
 | Restart level | R | Start |
+
+Each level is timed: finish it, then try to beat your best time. Best times are saved per level in
+`%APPDATA%\Godot\app_userdata\Tube Runner\best_times.json`; delete that file to reset them. Runs started
+with `-Start` are practice and aren't recorded.

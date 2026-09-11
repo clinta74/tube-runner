@@ -1,7 +1,6 @@
 {
   "name": "Neon Run",
   "speed": 100,
-  "timeLimit": 31,
   "segmentLength": 60,
 
   "theme": {

@@ -12,7 +12,6 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | `name` | `"Untitled"` | Shown when the level starts. |
 | `next` | none | File name of the following level. |
 | `speed` | `80` | Starting forward speed, units per second. Track pieces can change it. |
-| `timeLimit` | none | Seconds to reach the finish; running out ends the run. Omit for an untimed level. A test checks every limit can be beaten flat out. |
 | `segmentLength` | `60` | Distance between wall seams. The checker pattern can change at each seam. |
 | `theme` | Earth theme | Colors; see below. |
 | `sections` | required | Named cross-sections used by the track. |

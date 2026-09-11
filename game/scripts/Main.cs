@@ -11,6 +11,8 @@ namespace TubeRunner.Game;
 /// </summary>
 public partial class Main : Node3D
 {
+    private const string BestTimesPath = "user://best_times.json";
+
     // Set before reloading the scene to play a different level (retry or next).
     private static string? s_levelOverride;
 
@@ -30,6 +32,9 @@ public partial class Main : Node3D
 
     private Level _level = null!;
     private GameSession _session = null!;
+    private BestTimes _bestTimes = null!;
+    // Runs started partway through (for testing) don't count toward best times.
+    private bool _practice;
     private TrackRenderer _track = null!;
     private ObstacleRenderer _obstacles = null!;
     private Hud _hud = null!;
@@ -67,7 +72,11 @@ public partial class Main : Node3D
         foreach (var arg in OS.GetCmdlineUserArgs())
         {
             if (arg.StartsWith("--level=")) LevelPath = arg["--level=".Length..];
-            if (arg.StartsWith("--start=")) startS = double.Parse(arg["--start=".Length..], CultureInfo.InvariantCulture);
+            if (arg.StartsWith("--start="))
+            {
+                startS = double.Parse(arg["--start=".Length..], CultureInfo.InvariantCulture);
+                _practice = true;
+            }
         }
         if (s_levelOverride is not null) LevelPath = s_levelOverride;
 
@@ -83,7 +92,7 @@ public partial class Main : Node3D
             return;
         }
 
-        var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset), TimeLimit: _level.TimeLimit ?? 0f);
+        var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
         // Start on the floor; by default far enough in that the camera has track behind it.
         var start = new TrackPosition(startS, Surface.Floor, 0f);
         _session = new GameSession(_level.Track, _level.Obstacles, settings, start);
@@ -92,7 +101,8 @@ public partial class Main : Node3D
         WallMaterial.SetShaderParameter("segment_length", _level.SegmentLength);
         _track.Init(_level.Track, WallMaterial, _level.SegmentLength, _level.Theme);
         _obstacles.Init(_session, _level.Theme);
-        _hud.Init(_level.Name, settings.Shields, _level.Theme.SeamLight.ToColor());
+        _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
+        _hud.Init(_level.Name, settings.Shields, _level.Theme.SeamLight.ToColor(), _bestTimes.Get(LevelId));
         _fx.SetStreakColor(_level.Theme.SeamLight.ToColor());
     }
 
@@ -180,14 +190,50 @@ public partial class Main : Node3D
                     _shake = 1f;
                     break;
                 case SessionEvent.GameOver:
-                    _hud.ShowMessage((_session.TimedOut ? "OUT OF TIME" : "SHIELDS DOWN") + "\nSpace or R to retry");
+                    _hud.ShowMessage("SHIELDS DOWN\nSpace or R to retry");
                     break;
                 case SessionEvent.Finished:
-                    string result = $"LEVEL COMPLETE\nTime {_session.Elapsed:0.00}s   Score {_session.Score}";
-                    _hud.ShowMessage(result + (_level.Next is null ? "\nSpace to play again" : "\nSpace for the next level"));
+                    _hud.ShowMessage(FinishMessage() + (_level.Next is null ? "\nSpace to play again" : "\nSpace for the next level"));
                     break;
             }
         }
+    }
+
+    private string LevelId => LevelPath.GetFile();
+
+    // Records the level time (unless this is a practice run) and describes it against the best.
+    private string FinishMessage()
+    {
+        float time = _session.Elapsed;
+        float? best = _bestTimes.Get(LevelId);
+        string result = $"LEVEL COMPLETE\nTime {time:0.00}s   ";
+
+        if (_practice)
+        {
+            result += "(practice run, not recorded)";
+        }
+        else if (_bestTimes.Record(LevelId, time))
+        {
+            SaveBestTimes();
+            _hud.SetBest(time);
+            result += best is float previous ? $"NEW BEST!  (-{previous - time:0.00}s)" : "FIRST CLEAR";
+        }
+        else
+        {
+            result += $"Best {best:0.00}s  (+{time - best:0.00}s)";
+        }
+        return result + $"\nScore {_session.Score}";
+    }
+
+    private void SaveBestTimes()
+    {
+        using var file = FileAccess.Open(BestTimesPath, FileAccess.ModeFlags.Write);
+        if (file is null)
+        {
+            GD.PushError($"Couldn't save best times: {FileAccess.GetOpenError()}");
+            return;
+        }
+        file.StoreString(_bestTimes.ToJson());
     }
 
     // Camera shake: strong after a hit, plus a faint rumble at high speed.

@@ -21,6 +21,7 @@ public partial class Hud : CanvasLayer
     private Color _accent = Colors.White;
     private float _titleLeft;
     private float _flashLeft;
+    private float? _best;
 
     public override void _Ready()
     {
@@ -29,7 +30,7 @@ public partial class Hud : CanvasLayer
         _flash.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
         _score = AddLabel(34, Control.LayoutPreset.TopRight, HorizontalAlignment.Right);
-        _time = AddLabel(34, Control.LayoutPreset.TopLeft, HorizontalAlignment.Left);
+        _time = AddLabel(30, Control.LayoutPreset.TopLeft, HorizontalAlignment.Left);
         _speed = AddLabel(24, Control.LayoutPreset.BottomRight, HorizontalAlignment.Right);
         _title = AddLabel(56, Control.LayoutPreset.CenterTop, HorizontalAlignment.Center);
         _message = AddLabel(44, Control.LayoutPreset.Center, HorizontalAlignment.Center);
@@ -41,9 +42,11 @@ public partial class Hud : CanvasLayer
         _shieldBar.GrowVertical = Control.GrowDirection.Begin;
     }
 
-    public void Init(string levelName, int shields, Color accent)
+    /// <param name="best">The player's best time on this level, if they've finished it before.</param>
+    public void Init(string levelName, int shields, Color accent, float? best)
     {
         _accent = accent;
+        _best = best;
         _title.Text = levelName.ToUpperInvariant();
         _titleLeft = TitleSeconds;
 
@@ -60,10 +63,7 @@ public partial class Hud : CanvasLayer
     public void Update(GameSession session, float dt)
     {
         _score.Text = $"SCORE  {session.Score}";
-        // Timed levels count down, turning red near the end; untimed ones count up.
-        float? left = session.TimeLeft;
-        _time.Text = $"TIME  {left ?? session.Elapsed:0.0}";
-        _time.Modulate = left < 10f ? new Color(1f, 0.35f, 0.25f) : Colors.White;
+        _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}";
         _speed.Text = $"{session.Ship.ForwardSpeed:0} u/s";
         for (int i = 0; i < _pips.Count; i++)
         {
@@ -75,6 +75,8 @@ public partial class Hud : CanvasLayer
         _flashLeft = Mathf.Max(0f, _flashLeft - dt * 2.5f);
         _flash.Color = _flash.Color with { A = 0.45f * _flashLeft };
     }
+
+    public void SetBest(float best) => _best = best;
 
     public void Flash() => _flashLeft = 1f;
 

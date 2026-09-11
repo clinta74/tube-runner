@@ -2,7 +2,6 @@
   "name": "Earthworks",
   "next": "level_02.json",
   "speed": 80,
-  "timeLimit": 40,
   "segmentLength": 60,
 
   "theme": {
