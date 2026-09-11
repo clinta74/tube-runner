@@ -1,0 +1,50 @@
+{
+  "name": "Neon Run",
+  "speed": 100,
+  "segmentLength": 60,
+
+  "theme": {
+    "darks": ["#0c0620", "#041421", "#140418"],
+    "lights": ["#c02aa8", "#29b8cc", "#ccb029"],
+    "seamDark": "#000000",
+    "seamLight": "#ffffff",
+    "far": "#000000",
+    "ship": "#ffffff",
+    "fadeStart": 40,
+    "fadeEnd": 360,
+    "glow": 0.6
+  },
+
+  "sections": {
+    "tube":     { "radius": 5.5 },
+    "oval":     { "halfWidth": 9, "halfHeight": 4 },
+    "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
+    "flat":     { "radius": 5.5, "opening": 1 },
+    "box-flat": { "halfWidth": 9, "halfHeight": 4, "squareness": 1, "opening": 1 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 200 },
+    { "length": 150, "turn": -50 },
+    { "length": 150, "turn": 50, "climb": -12 },
+
+    { "length": 100, "section": "flat" },
+    { "length": 500 },
+    { "length": 120, "section": "tube" },
+
+    { "length": 100, "section": "oval", "turn": 20 },
+    { "length": 250, "turn": -60 },
+    { "length": 100, "section": "tube", "turn": 20 },
+    { "length": 200, "turn": 30, "climb": 20 },
+
+    { "length": 100, "section": "box" },
+    { "length": 200, "turn": -40 },
+    { "length": 100, "section": "box-flat" },
+    { "length": 400 },
+    { "length": 120, "section": "tube" },
+
+    { "length": 250, "turn": 60 },
+    { "length": 200 }
+  ]
+}

@@ -71,28 +71,13 @@ public class TrackTests
     }
 
     [Fact]
-    public void EnsureLength_ExtendsFromSource()
+    public void FrameAt_ClampsToTheTrack()
     {
-        var track = new Track(Circle, new TrackGenerator(seed: 1));
+        var track = new Track(Circle);
+        track.Append(new TrackPiece(100f, Circle));
 
-        track.EnsureLength(2000);
-
-        Assert.True(track.Length >= 2000);
-        Assert.NotEqual(track.FrameAt(1000).Position, track.FrameAt(1999).Position);
-    }
-
-    [Fact]
-    public void TrimBefore_KeepsLaterDataIntact()
-    {
-        var track = new Track(Circle, new TrackGenerator(seed: 2));
-        track.EnsureLength(1500);
-        var frame = track.FrameAt(900.25);
-        var section = track.SectionAt(900.25);
-
-        track.TrimBefore(800);
-
-        Assert.Equal(frame, track.FrameAt(900.25));
-        Assert.Equal(section, track.SectionAt(900.25));
+        Assert.Equal(track.FrameAt(0), track.FrameAt(-10));
+        Assert.Equal(track.FrameAt(100), track.FrameAt(250));
     }
 
     private static void AssertNear(Vector3 expected, Vector3 actual, float tolerance = 1e-3f) =>

@@ -1,0 +1,53 @@
+{
+  "name": "Earthworks",
+  "next": "level_02.json",
+  "speed": 80,
+  "segmentLength": 60,
+
+  "theme": {
+    "darks": ["#3b2919", "#2e4a2b", "#4a4f24"],
+    "lights": ["#b08c3d", "#7a592e", "#8c8a42"],
+    "seamDark": "#1f140a",
+    "seamLight": "#d9ad4d",
+    "far": "#0d0a05",
+    "ship": "#d9ad4d",
+    "fadeStart": 30,
+    "fadeEnd": 320,
+    "glow": 0
+  },
+
+  "sections": {
+    "tube": { "radius": 6 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":  { "halfWidth": 10, "halfHeight": 4.2, "squareness": 1 },
+    "flat": { "radius": 6, "opening": 1 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 150 },
+    { "length": 160, "turn": 40 },
+    { "length": 140, "turn": -60, "climb": 10 },
+    { "length": 80,  "section": "oval", "turn": 15 },
+    { "length": 200, "turn": -30, "climb": -10 },
+    { "length": 80,  "section": "tube" },
+    { "length": 120, "turn": 30 },
+
+    // First flat section: unroll, run, roll back up. Flat pieces are straight.
+    { "length": 100, "section": "flat" },
+    { "length": 400 },
+    { "length": 120, "section": "tube" },
+
+    { "length": 150, "turn": -45, "climb": 15 },
+    { "length": 100, "section": "box" },
+    { "length": 250, "turn": 40 },
+    { "length": 100, "section": "tube" },
+    { "length": 200, "turn": -20, "climb": -15 },
+
+    { "length": 100, "section": "flat" },
+    { "length": 350 },
+    { "length": 120, "section": "tube" },
+
+    { "length": 200 }
+  ]
+}

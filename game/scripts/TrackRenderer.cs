@@ -43,9 +43,9 @@ public partial class TrackRenderer : Node3D
     /// </summary>
     public void UpdateView(double s, Vector3d origin)
     {
+        long lastInTrack = (long)Math.Ceiling(_track.Length / _chunkLength) - 1;
         long first = (long)Math.Floor((s - ViewBehind) / _chunkLength);
-        long last = (long)Math.Floor((s + ViewAhead) / _chunkLength);
-        _track.EnsureLength((last + 1) * (double)_chunkLength + Track.SampleSpacing);
+        long last = Math.Min((long)Math.Floor((s + ViewAhead) / _chunkLength), lastInTrack);
 
         _stale.Clear();
         foreach (long k in _chunks.Keys)
@@ -57,7 +57,6 @@ public partial class TrackRenderer : Node3D
             _chunks[k].Node.QueueFree();
             _chunks.Remove(k);
         }
-        if (_stale.Count > 0) _track.TrimBefore(first * (double)_chunkLength);
 
         for (long k = Math.Max(first, 0); k <= last; k++)
         {
@@ -74,6 +73,8 @@ public partial class TrackRenderer : Node3D
     {
         double s0 = k * (double)_chunkLength;
         var origin = _track.FrameAt(s0).Position;
+        // The last chunk stops at the end of the track.
+        float length = (float)Math.Min(_chunkLength, _track.Length - s0);
 
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
@@ -83,7 +84,7 @@ public partial class TrackRenderer : Node3D
         {
             for (int r = 0; r <= RingsPerChunk; r++)
             {
-                float local = _chunkLength * r / RingsPerChunk;
+                float local = length * r / RingsPerChunk;
                 var frame = _track.FrameAt(s0 + local);
                 var shape = _shapes.Get(_track.SectionAt(s0 + local));
                 FillStrip(shape);
