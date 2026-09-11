@@ -11,7 +11,6 @@ background_mode = 1
 background_color = Color(0, 0, 0, 1)
 glow_enabled = true
 glow_intensity = 1.2
-glow_bloom = 0.2
 glow_hdr_threshold = 1.0
 
 [sub_resource type="PrismMesh" id="PrismMesh_ship"]

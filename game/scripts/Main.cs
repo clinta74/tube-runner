@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using TubeRunner.Core;
 
@@ -9,9 +10,6 @@ namespace TubeRunner.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    // Multiple of the shader's ring spacing (8) and hue period (1 / 0.02 = 50),
-    // so wrapping the scroll value is seamless.
-    private const double ScrollWrap = 200.0;
     private const float RingStep = 2f;
     private const int RadialSegments = 48;
 
@@ -20,6 +18,8 @@ public partial class Main : Node3D
     [Export] public float TubeLength { get; set; } = 400f;
     [Export] public float ForwardSpeed { get; set; } = 80f;
     [Export] public float SteerRate { get; set; } = 0.6f;
+    /// <summary>Distance between wall seams; the pattern can change at each seam.</summary>
+    [Export] public float SegmentLength { get; set; } = 60f;
 
     private ShipSim _sim = null!;
     private Node3D _ship = null!;
@@ -31,6 +31,7 @@ public partial class Main : Node3D
         _camera = GetNode<Camera3D>("Camera3D");
         // U = 0.75 is the bottom of the tube.
         _sim = new ShipSim(new ShipSettings(ForwardSpeed, SteerRate), new TrackPosition(0, 0, 0.75f, 0));
+        WallMaterial.SetShaderParameter("segment_length", SegmentLength);
         AddChild(BuildTube(new CircleProfile(TubeRadius)));
     }
 
@@ -43,7 +44,10 @@ public partial class Main : Node3D
         _sim.Step((float)delta, steer);
         var pos = _sim.Position;
 
-        WallMaterial.SetShaderParameter("scroll", (float)(pos.S % ScrollWrap));
+        // Split distance into segment index + offset so the shader stays precise on long runs.
+        double segment = Math.Floor(pos.S / SegmentLength);
+        WallMaterial.SetShaderParameter("segment_base", (int)segment);
+        WallMaterial.SetShaderParameter("scroll", (float)(pos.S - segment * SegmentLength));
 
         // "Up" for the ship points from the wall toward the tube center.
         var wall = CircleProfile.PointAt(pos.U, 1f);
