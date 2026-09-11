@@ -1,0 +1,26 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.user
+*.suo
+
+# .NET build output
+bin/
+obj/
+*.nupkg
+TestResults/
+
+# Game builds / exports
+builds/
+exports/
+
+# Engine-specific ignores get added once an engine is chosen
