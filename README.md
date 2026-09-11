@@ -25,10 +25,10 @@ Levels are planned, not random: each is a JSON file listing track pieces (length
 changes) and a color theme. See [docs/level-format.md](docs/level-format.md). The level played is set
 by `LevelPath` on the `Main` node.
 
-To test a section while designing, launch a level partway through it:
+To test a section while designing, launch a level partway through it (from the repo root):
 
 ```bash
-godot --path game -- --level=res://levels/level_02.json --start=3000
+./play.ps1 -Level level_02.json -Start 3000
 ```
 
 When exporting the game, add `*.json` to the export preset's non-resource file filter so levels are included.
@@ -44,7 +44,15 @@ dotnet test src/TubeRunner.Core.Tests
 ```
 
 ## Run
-Open `game/project.godot` in Godot 4.7 .NET and press **F5**.
+Open `game/project.godot` in Godot 4.7 .NET and press **F5**, or from the repo root:
+
+```bash
+./play.ps1
+```
+
+`play.ps1` builds the C# code, then runs the game (`-Editor` opens the editor instead). Use it rather
+than calling winget's `godot` alias directly: that alias is a symlink, and Godot .NET launched through
+it can't find its .NET assemblies. Set `$env:GODOT` to point the script at a specific Godot executable.
 
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
