@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/Main.cs" id="1_main"]
+[ext_resource type="Shader" path="res://shaders/tube_wall.gdshader" id="2_wall"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wall"]
+shader = ExtResource("2_wall")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0, 0, 0, 1)
+glow_enabled = true
+glow_intensity = 1.2
+glow_bloom = 0.2
+glow_hdr_threshold = 1.0
+
+[sub_resource type="PrismMesh" id="PrismMesh_ship"]
+size = Vector3(0.8, 0.3, 1.6)
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+WallMaterial = SubResource("ShaderMaterial_wall")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Ship" type="MeshInstance3D" parent="."]
+mesh = SubResource("PrismMesh_ship")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+fov = 80.0

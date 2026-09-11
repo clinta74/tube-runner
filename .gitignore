@@ -23,4 +23,6 @@ TestResults/
 builds/
 exports/
 
-# Engine-specific ignores get added once an engine is chosen
+# Godot
+.godot/
+/android/
