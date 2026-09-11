@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.Json;
 
 namespace TubeRunner.Core;
@@ -46,7 +47,18 @@ public static class LevelLoader
                 EndSpeed: p.Speed is float speed ? Positive(speed, $"Track piece {i}: speed") : null);
             try
             {
-                track.Append(piece);
+                if (p.Split is null)
+                {
+                    track.Append(piece);
+                }
+                else
+                {
+                    if (p.Section is not null)
+                    {
+                        throw new LevelFormatException($"Track piece {i}: a split keeps the current section; change it before or after.");
+                    }
+                    track.AppendSplit(piece, Lookup(sections, p.Split.Section, $"track piece {i} split"), ToBranches(p.Split, i));
+                }
             }
             catch (ArgumentException e)
             {
@@ -65,6 +77,22 @@ public static class LevelLoader
             Track = track,
             Obstacles = ToObstacles(data.Obstacles, track),
         };
+    }
+
+    private static List<IReadOnlyList<OffsetKey>> ToBranches(SplitData split, int piece)
+    {
+        var branches = new List<IReadOnlyList<OffsetKey>>();
+        foreach (var branch in split.Branches)
+        {
+            var keys = new List<OffsetKey>();
+            foreach (var o in branch.Offsets)
+            {
+                if (o.Length != 3) throw new LevelFormatException($"Track piece {piece}: branch offsets are [along, x, y].");
+                keys.Add(new OffsetKey(o[0], new Vector2(o[1], o[2])));
+            }
+            branches.Add(keys);
+        }
+        return branches;
     }
 
     private static List<Obstacle> ToObstacles(List<ObstacleData> list, Track track)
@@ -99,10 +127,21 @@ public static class LevelLoader
                     throw new LevelFormatException($"{where}: 'at' {s:0} is off the track (0 to {track.Length:0}).");
                 }
 
+                var split = track.SplitAt(s);
+                int branch = o.Branch ?? -1;
+                if (split is not null && (branch < 0 || branch >= split.BranchCount))
+                {
+                    throw new LevelFormatException($"{where}: at {s:0} the track is split; set 'branch' (0 to {split.BranchCount - 1}).");
+                }
+                if (split is null && branch >= 0)
+                {
+                    throw new LevelFormatException($"{where}: 'branch' only applies inside a split.");
+                }
+
                 var (onSurface, x) = (surface, o.X + n * o.XStep);
                 if (o.Angle is float angle)
                 {
-                    var shape = new ProfileShape(track.SectionAt(s));
+                    var shape = new ProfileShape(track.SectionAt(s, branch));
                     if (!shape.IsClosed)
                     {
                         throw new LevelFormatException($"{where}: 'angle' only works in closed tubes; use 'x' and 'surface' on flat sections.");
@@ -115,6 +154,7 @@ public static class LevelLoader
                 {
                     Kind = kind,
                     S = s,
+                    Branch = branch,
                     Surface = onSurface,
                     X = x,
                     Width = o.Width,
@@ -208,6 +248,7 @@ public static class LevelLoader
         public double At { get; set; }
         public string Kind { get; set; } = "block";
         public string Surface { get; set; } = "floor";
+        public int? Branch { get; set; }
         public float X { get; set; }
         public float? Angle { get; set; }
         public float Width { get; set; } = 3f;
@@ -235,6 +276,18 @@ public static class LevelLoader
         public float Turn { get; set; }
         public float Climb { get; set; }
         public float? Speed { get; set; }
+        public SplitData? Split { get; set; }
+    }
+
+    private sealed class SplitData
+    {
+        public string Section { get; set; } = "";
+        public List<BranchData> Branches { get; set; } = new();
+    }
+
+    private sealed class BranchData
+    {
+        public List<float[]> Offsets { get; set; } = new();
     }
 
     private sealed class ThemeData

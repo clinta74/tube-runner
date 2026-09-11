@@ -1,3 +1,4 @@
+using System.Globalization;
 using Godot;
 using TubeRunner.Core;
 
@@ -40,6 +41,15 @@ public partial class Main : Node3D
     private float _shake;
     private float _endedFor;
 
+    // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
+    private int _lastBranch = -1;
+    private TrackSplit? _lastSplit;
+    private System.Numerics.Vector2 _lastPoint;
+    private System.Numerics.Vector2 _lastUp;
+    private Vector3 _snapOffset;
+    private Vector3 _snapUp;
+    private float _snap;
+
     public override void _Ready()
     {
         InputSetup.Register();
@@ -51,10 +61,13 @@ public partial class Main : Node3D
         _fx = GetNode<SpeedFx>("SpeedFx");
         _audio = GetNode<EngineAudio>("EngineAudio");
 
-        // `godot -- --level=res://levels/level_02.json` overrides the level, for testing.
+        // For testing: `godot -- --level=res://levels/level_02.json --start=3000` plays a given
+        // level, starting partway through it.
+        double startS = CameraBehind + 10.0;
         foreach (var arg in OS.GetCmdlineUserArgs())
         {
             if (arg.StartsWith("--level=")) LevelPath = arg["--level=".Length..];
+            if (arg.StartsWith("--start=")) startS = double.Parse(arg["--start=".Length..], CultureInfo.InvariantCulture);
         }
         if (s_levelOverride is not null) LevelPath = s_levelOverride;
 
@@ -71,13 +84,13 @@ public partial class Main : Node3D
         }
 
         var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
-        // Start on the floor, far enough in that the camera has track behind it.
-        var start = new TrackPosition(CameraBehind + 10.0, Surface.Floor, 0f);
+        // Start on the floor; by default far enough in that the camera has track behind it.
+        var start = new TrackPosition(startS, Surface.Floor, 0f);
         _session = new GameSession(_level.Track, _level.Obstacles, settings, start);
 
         ThemeView.Apply(_level.Theme, WallMaterial, (StandardMaterial3D)_ship.MaterialOverride);
         WallMaterial.SetShaderParameter("segment_length", _level.SegmentLength);
-        _track.Init(_level.Track, WallMaterial, _level.SegmentLength);
+        _track.Init(_level.Track, WallMaterial, _level.SegmentLength, _level.Theme);
         _obstacles.Init(_session, _level.Theme);
         _hud.Init(_level.Name, settings.Shields, _level.Theme.SeamLight.ToColor());
         _fx.SetStreakColor(_level.Theme.SeamLight.ToColor());
@@ -107,31 +120,51 @@ public partial class Main : Node3D
         _fx.Update(speed, dt);
         _audio.SetSpeed(speed);
 
-        var frame = _level.Track.FrameAt(pos.S);
+        var track = _level.Track;
+        var split = pos.Branch >= 0 ? track.SplitAt(pos.S) : null;
+        var frame = FrameOnPath(pos.S);
         var origin = frame.Position;
         _track.UpdateView(pos.S, origin);
         _obstacles.UpdateView(origin, dt);
         _hud.Update(_session, dt);
 
         var (point, up2) = ship.Pose(RideHeight);
+        var shipWorld = frame.PointOnSection(point);
         var up = frame.DirectionOnSection(up2).ToGodot();
         var forward = frame.Forward.ToGodot();
 
+        if (pos.Branch != _lastBranch)
+        {
+            // A fork or merge moved the ship onto another tube; ease across from where it was.
+            var before = _lastSplit is null ? track.FrameAt(pos.S) : _lastSplit.BranchFrame(track, pos.S, _lastBranch);
+            _snapOffset = (before.PointOnSection(_lastPoint) - shipWorld).ToVector3().ToGodot();
+            _snapUp = before.DirectionOnSection(_lastUp).ToGodot();
+            _snap = 1f;
+        }
+        (_lastBranch, _lastSplit, _lastPoint, _lastUp) = (pos.Branch, split, point, up2);
+        _snap = Mathf.Max(0f, _snap - 4f * dt);
+        float ease = _snap * _snap;
+        var snapOffset = _snapOffset * ease;
+        up = up.Lerp(_snapUp, ease).Normalized();
+
         // Bank into sideways movement, and blink while recovering from a hit.
         _bank = Mathf.Lerp(_bank, _session.State == SessionState.Playing ? steer : 0f, 1f - Mathf.Exp(-8f * dt));
-        var shipPos = frame.PointOnSection(point).RelativeTo(origin).ToGodot();
+        var shipPos = shipWorld.RelativeTo(origin).ToGodot() + snapOffset;
         _ship.LookAtFromPosition(shipPos, shipPos + forward, up.Rotated(forward, -0.4f * _bank));
         _ship.Visible = _session.RecoveryLeft <= 0f || Mathf.PosMod(_session.RecoveryLeft * 12f, 2f) < 1f;
 
-        // The camera follows the ship's section-space pose, so it stays level on open planes
-        // and rolls with the ship around tubes and through jumps.
-        var camPos = _level.Track.FrameAt(pos.S - CameraBehind)
-            .PointOnSection(point + up2 * (CameraHeight - RideHeight)).RelativeTo(origin).ToGodot();
-        var target = _level.Track.FrameAt(pos.S + LookAhead)
-            .PointOnSection(point + up2 * 0.4f).RelativeTo(origin).ToGodot();
+        // The camera follows the ship's section-space pose along its path, so it stays level on
+        // open planes and rolls with the ship around tubes and through jumps.
+        var camPos = FrameOnPath(pos.S - CameraBehind)
+            .PointOnSection(point + up2 * (CameraHeight - RideHeight)).RelativeTo(origin).ToGodot() + snapOffset;
+        var target = FrameOnPath(pos.S + LookAhead)
+            .PointOnSection(point + up2 * 0.4f).RelativeTo(origin).ToGodot() + snapOffset;
         _camera.LookAtFromPosition(camPos, target, up);
         _camera.Fov = Mathf.Lerp(BaseFov, MaxFov, _fx.Intensity);
         Shake(dt);
+
+        // Frames along the ship's own path: its branch inside a split, otherwise the centerline.
+        TrackFrame FrameOnPath(double s) => split is null ? track.FrameAt(s) : split.BranchFrame(track, s, pos.Branch);
     }
 
     private void HandleEvents()

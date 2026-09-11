@@ -15,6 +15,9 @@ public readonly record struct Vector3d(double X, double Y, double Z)
     public static Vector3d Lerp(Vector3d a, Vector3d b, double t) =>
         new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t);
 
+    /// <summary>This vector in single precision; for offsets and directions, not far-away positions.</summary>
+    public Vector3 ToVector3() => new((float)X, (float)Y, (float)Z);
+
     /// <summary>This position as an offset from <paramref name="origin"/>, in single precision.</summary>
     public Vector3 RelativeTo(Vector3d origin) =>
         new((float)(X - origin.X), (float)(Y - origin.Y), (float)(Z - origin.Z));

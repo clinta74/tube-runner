@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace TubeRunner.Core;
 
 /// <summary>
@@ -19,6 +21,16 @@ public readonly record struct CrossSection(float HalfWidth, float HalfHeight, fl
     public float Exponent => 2f * MathF.Pow(16f, Squareness);
 
     public bool IsClosed => Opening <= 0f;
+
+    /// <summary>
+    /// Whether a section-space point lies inside the closed shape. A positive tolerance counts points
+    /// just outside the edge as inside; a negative one requires them to be clearly inside.
+    /// </summary>
+    public bool Contains(Vector2 p, float tolerance = 1e-3f)
+    {
+        float n = Exponent;
+        return MathF.Pow(MathF.Abs(p.X) / HalfWidth, n) + MathF.Pow(MathF.Abs(p.Y) / HalfHeight, n) <= 1f + tolerance;
+    }
 
     /// <summary>How flat the two halves have unrolled: 0 = curved tube, 1 = flat.</summary>
     public float Unroll => MathUtil.SmoothStep(Opening * 2f);

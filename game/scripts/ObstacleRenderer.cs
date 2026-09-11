@@ -79,7 +79,7 @@ public partial class ObstacleRenderer : Node3D
 
     private View CreateView(Obstacle o)
     {
-        var (center, forward, up) = Pose(o.S, o.Surface, o.X, o.Height / 2f);
+        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.X, o.Height / 2f);
         bool target = o.Kind == ObstacleKind.Target;
         float size = Mathf.Min(o.Width, o.Height);
         Mesh mesh = target
@@ -115,7 +115,8 @@ public partial class ObstacleRenderer : Node3D
             if (!node.Visible) continue;
 
             var shot = shots[i];
-            var (center, forward, up) = Pose(shot.S, shot.Surface, shot.X, RideHeight + shot.Height);
+            var p = shot.Position;
+            var (center, forward, up) = Pose(p.S, p.Branch, p.Surface, p.X, RideHeight + shot.Height);
             var pos = center.RelativeTo(origin).ToGodot();
             node.LookAtFromPosition(pos, pos + forward, up);
             // The capsule's long axis is Y; lay it along the track.
@@ -162,10 +163,10 @@ public partial class ObstacleRenderer : Node3D
     }
 
     // World center, forward, and up for something `height` off a track surface.
-    private (Vector3d Center, Vector3 Forward, Vector3 Up) Pose(double s, Surface surface, float x, float height)
+    private (Vector3d Center, Vector3 Forward, Vector3 Up) Pose(double s, int branch, Surface surface, float x, float height)
     {
-        var frame = _session.Track.FrameAt(s);
-        var shape = _shapes.Get(_session.Track.SectionAt(s));
+        var frame = _session.Track.FrameAt(s, branch);
+        var shape = _shapes.Get(_session.Track.SectionAt(s, branch));
         var normal = shape.NormalAt(surface, x);
         var point = shape.PointAt(surface, x) + normal * height;
         return (frame.PointOnSection(point), frame.Forward.ToGodot(), frame.DirectionOnSection(normal).ToGodot());

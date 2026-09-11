@@ -75,6 +75,34 @@ Keep curves gentle: a turn tighter than about 1° per unit length will fold the 
 
 Tip: annotate pieces with their start and end distance (`// 930 - 1030`) so obstacles are easy to place.
 
+## Splits (forks)
+
+A piece with a `split` forks the tube into branches that run side by side (or above and below each
+other) and merge again at the end of the piece. At the fork a wall closes off the chamber, with an
+opening for each branch; the player takes whichever branch they're in front of, so they choose by
+steering toward an opening.
+
+```json
+{ "length": 100, "section": "chamber" },          // widen into a chamber first
+{ "length": 400, "turn": 20, "split": {
+    "section": "tube",                             // cross-section of each branch
+    "branches": [
+      { "offsets": [[0, -7.5, 0], [120, -22, 0], [280, -22, 0], [400, -7.5, 0]] },
+      { "offsets": [[0,  7.5, 0], [120,  22, 5], [280,  22, 5], [400,  7.5, 0]] }
+    ]
+} },
+{ "length": 100, "section": "tube" }              // narrow back down after
+```
+
+- The split piece keeps the current section (the **chamber**), so don't give it a `section`. It can
+  `turn`, `climb`, and change `speed`.
+- Each branch lists `[along, x, y]` offsets from the track's center: `along` runs from 0 to the piece
+  length, `x` is right, `y` is up. The branch blends smoothly between them.
+- At the fork and the merge, every branch's opening must fit inside the chamber without overlapping
+  another; the level won't load otherwise, and the error says which.
+- 2 to 4 branches. The chamber and branches must be closed tubes.
+- Obstacles inside a split need a `branch`.
+
 ## Obstacles
 
 A **block** is solid: hitting one breaks it, costs a shield, and slows the ship briefly. It also stops shots.
@@ -86,6 +114,7 @@ The ship has three shields; losing them all ends the run.
 | `at` | required | Distance along the track of the obstacle's center. |
 | `kind` | `"block"` | `"block"` or `"target"`. |
 | `surface` | `"floor"` | `"floor"` or `"ceiling"`. |
+| `branch` | none | Inside a split, which branch (0, 1, ...). Required there, not allowed elsewhere. |
 | `x` | `0` | Distance across the surface from its center; positive is right. |
 | `angle` | none | **Tubes only**, instead of `surface`/`x`: degrees around the tube from the floor center. 90 = right wall, 180 = ceiling, -90 = left wall. |
 | `width`, `length`, `height` | `3`, `2`, `2` | Size across the surface, along the track, and off the surface. |

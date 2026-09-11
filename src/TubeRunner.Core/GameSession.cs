@@ -46,9 +46,7 @@ public sealed record SessionSettings(
 /// <summary>A shot flying down the track ahead of the ship.</summary>
 public sealed class Shot
 {
-    public double S { get; internal set; }
-    public Surface Surface { get; init; }
-    public float X { get; init; }
+    public TrackPosition Position { get; internal set; }
 
     /// <summary>Height off its surface.</summary>
     public float Height { get; init; }
@@ -134,14 +132,14 @@ public sealed class GameSession
         var pos = Ship.Position;
         foreach (var o in Nearby(from, to))
         {
-            if (o.Destroyed) continue;
+            if (o.Destroyed || o.Branch != pos.Branch) continue;
             double reach = o.Length / 2f + _settings.ShipHalfLength;
             if (to < o.S - reach || from > o.S + reach) continue;
 
             // Mid-jump the ship is between the surfaces at the same X; otherwise it's on one.
             float lateral = Ship.IsJumping
                 ? MathF.Abs(pos.X - o.X)
-                : TrackSpace.SurfaceDistance(ShapeAt(o.S), pos.Surface, pos.X, o.Surface, o.X);
+                : TrackSpace.SurfaceDistance(ShapeAt(o), pos.Surface, pos.X, o.Surface, o.X);
             if (lateral >= o.Width / 2f + _settings.ShipHalfWidth || Ship.HeightAbove(o.Surface) >= o.Height) continue;
             if (RecoveryLeft > 0f) continue;
 
@@ -166,9 +164,7 @@ public sealed class GameSession
         var surface = Ship.IsJumping && Ship.JumpProgress >= 0.5f ? ShipSim.Opposite(pos.Surface) : pos.Surface;
         _shots.Add(new Shot
         {
-            S = pos.S + _settings.ShipHalfLength,
-            Surface = surface,
-            X = pos.X,
+            Position = Track.MoveTo(pos with { Surface = surface }, pos.S + _settings.ShipHalfLength),
             Height = Ship.HeightAbove(surface),
             End = pos.S + _settings.ShotRange,
         });
@@ -182,10 +178,10 @@ public sealed class GameSession
         for (int i = _shots.Count - 1; i >= 0; i--)
         {
             var shot = _shots[i];
-            double from = shot.S;
-            shot.S += step;
+            double from = shot.Position.S;
+            shot.Position = Track.MoveTo(shot.Position, from + step);
 
-            var hit = FirstShotHit(shot, from, shot.S);
+            var hit = FirstShotHit(shot, from, shot.Position.S);
             if (hit is not null)
             {
                 if (hit.Kind == ObstacleKind.Target)
@@ -200,7 +196,7 @@ public sealed class GameSession
                 }
                 _shots.RemoveAt(i);
             }
-            else if (shot.S >= shot.End || shot.S >= Track.Length)
+            else if (shot.Position.S >= shot.End || shot.Position.S >= Track.Length)
             {
                 _shots.RemoveAt(i);
             }
@@ -209,19 +205,20 @@ public sealed class GameSession
 
     private Obstacle? FirstShotHit(Shot shot, double from, double to)
     {
+        var pos = shot.Position;
         Obstacle? first = null;
         foreach (var o in Nearby(from, to))
         {
-            if (o.Destroyed || to < o.S - o.Length / 2f || from > o.S + o.Length / 2f) continue;
-            if (shot.Height >= o.Height) continue;
-            float lateral = TrackSpace.SurfaceDistance(ShapeAt(o.S), shot.Surface, shot.X, o.Surface, o.X);
+            if (o.Destroyed || o.Branch != pos.Branch) continue;
+            if (to < o.S - o.Length / 2f || from > o.S + o.Length / 2f || shot.Height >= o.Height) continue;
+            float lateral = TrackSpace.SurfaceDistance(ShapeAt(o), pos.Surface, pos.X, o.Surface, o.X);
             if (lateral >= o.Width / 2f + ShotRadius) continue;
             if (first is null || o.S < first.S) first = o;
         }
         return first;
     }
 
-    private ProfileShape ShapeAt(double s) => _shapes.Get(Track.SectionAt(s));
+    private ProfileShape ShapeAt(Obstacle o) => _shapes.Get(Track.SectionAt(o.S, o.Branch));
 
     private IEnumerable<Obstacle> Nearby(double from, double to)
     {

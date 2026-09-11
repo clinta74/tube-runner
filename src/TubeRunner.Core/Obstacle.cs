@@ -17,6 +17,9 @@ public sealed class Obstacle
     /// <summary>Distance along the track of the obstacle's center.</summary>
     public required double S { get; init; }
 
+    /// <summary>Branch index inside a split, or -1 on the main track.</summary>
+    public int Branch { get; init; } = -1;
+
     public Surface Surface { get; init; }
 
     /// <summary>Center across the surface (see <see cref="TrackPosition.X"/>).</summary>

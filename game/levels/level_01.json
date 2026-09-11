@@ -22,7 +22,8 @@
     "tube": { "radius": 6 },
     "oval": { "halfWidth": 9, "halfHeight": 4.5 },
     "box":  { "halfWidth": 10, "halfHeight": 4.2, "squareness": 1 },
-    "flat": { "radius": 6, "opening": 1 }
+    "flat": { "radius": 6, "opening": 1 },
+    "chamber": { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 }
   },
 
   "start": "tube",
@@ -50,7 +51,17 @@
     { "length": 350 },                                  // 2450 - 2800
     { "length": 120, "section": "tube" },               // 2800 - 2920
 
-    { "length": 200, "speed": 125 }                     // 2920 - 3120
+    // Widen into a chamber, fork left/right, merge, and narrow back down.
+    { "length": 100, "section": "chamber", "speed": 125 },         // 2920 - 3020
+    { "length": 400, "turn": 20, "split": {                         // 3020 - 3420
+        "section": "tube",
+        "branches": [
+          { "offsets": [[0, -7.5, 0], [120, -22, 0], [280, -22, 0], [400, -7.5, 0]] },
+          { "offsets": [[0, 7.5, 0], [120, 22, 5], [280, 22, 5], [400, 7.5, 0]] }
+        ]
+    } },
+    { "length": 100, "section": "tube" },                           // 3420 - 3520
+    { "length": 200 }                                               // 3520 - 3720
   ],
 
   "obstacles": [
@@ -94,9 +105,12 @@
     { "at": 2760, "width": 80, "height": 2.5 },
     { "at": 2785, "kind": "target", "surface": "ceiling" },
 
-    // Finish.
+    // Into the chamber, then the fork: targets down the left branch, blocks down the right.
     { "at": 2960, "kind": "target" },
-    { "at": 3000, "kind": "target", "angle": 120 },
-    { "at": 3000, "kind": "target", "angle": -120 }
+    { "at": 3120, "branch": 0, "kind": "target", "angle": 0, "count": 4, "spacing": 60, "angleStep": 90 },
+    { "at": 3150, "branch": 1, "angle": 0, "count": 4, "spacing": 50, "angleStep": 90 },
+
+    // Finish.
+    { "at": 3600, "kind": "target", "angle": 180 }
   ]
 }

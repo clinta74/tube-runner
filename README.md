@@ -25,6 +25,12 @@ Levels are planned, not random: each is a JSON file listing track pieces (length
 changes) and a color theme. See [docs/level-format.md](docs/level-format.md). The level played is set
 by `LevelPath` on the `Main` node.
 
+To test a section while designing, launch a level partway through it:
+
+```bash
+godot --path game -- --level=res://levels/level_02.json --start=3000
+```
+
 When exporting the game, add `*.json` to the export preset's non-resource file filter so levels are included.
 
 ## Requirements

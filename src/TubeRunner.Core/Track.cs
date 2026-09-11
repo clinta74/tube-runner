@@ -30,9 +30,11 @@ public readonly record struct TrackPiece(
 public sealed class Track
 {
     public const float SampleSpacing = 1f;
+    public const int MaxBranches = 4;
 
     private readonly List<TrackFrame> _frames = new();
     private readonly List<PlacedPiece> _pieces = new();
+    private readonly List<TrackSplit> _splits = new();
     private readonly CrossSection _startSection;
     private readonly float _startSpeed;
     private CrossSection _endSection;
@@ -49,6 +51,9 @@ public sealed class Track
 
     /// <summary>Total length appended so far.</summary>
     public double Length { get; private set; }
+
+    /// <summary>Splits in track order.</summary>
+    public IReadOnlyList<TrackSplit> Splits => _splits;
 
     private double LastFrameS => (_frames.Count - 1) * (double)SampleSpacing;
 
@@ -72,6 +77,77 @@ public sealed class Track
             _frames.Add(Advance(_frames[^1], rates.YawRate, rates.PitchRate, SampleSpacing));
         }
     }
+
+    /// <summary>
+    /// Appends a piece where the track forks into branch tubes that merge again at its end. The piece
+    /// keeps the current section, which is the chamber the branches open out of and back into.
+    /// </summary>
+    /// <param name="branches">Per branch, its offsets from the centerline, from 0 to the piece length.</param>
+    public TrackSplit AppendSplit(TrackPiece piece, CrossSection branchSection, IReadOnlyList<IReadOnlyList<OffsetKey>> branches)
+    {
+        var chamber = _endSection;
+        if (piece.EndSection != chamber)
+        {
+            throw new ArgumentException("A split keeps the current section; change it before or after the split.");
+        }
+        if (!chamber.IsClosed || !branchSection.IsClosed)
+        {
+            throw new ArgumentException("Splits need closed tubes, not flat planes.");
+        }
+        if (branches.Count < 2 || branches.Count > MaxBranches)
+        {
+            throw new ArgumentException($"A split needs 2 to {MaxBranches} branches.");
+        }
+        foreach (var keys in branches)
+        {
+            if (keys.Count < 2 || keys[0].Along != 0f || MathF.Abs(keys[^1].Along - piece.Length) > 1e-3f)
+            {
+                throw new ArgumentException("Each branch's offsets must start at 0 and end at the split's length.");
+            }
+            for (int i = 1; i < keys.Count; i++)
+            {
+                if (keys[i].Along <= keys[i - 1].Along) throw new ArgumentException("Branch offsets must increase along the split.");
+            }
+        }
+        CheckOpenings(chamber, branchSection, branches.Select(k => k[0].Offset).ToList(), "fork");
+        CheckOpenings(chamber, branchSection, branches.Select(k => k[^1].Offset).ToList(), "merge");
+
+        var split = new TrackSplit(Length, piece.Length, branchSection, branches);
+        Append(piece);
+        _splits.Add(split);
+        return split;
+    }
+
+    /// <summary>The split containing <paramref name="s"/>, if any.</summary>
+    public TrackSplit? SplitAt(double s)
+    {
+        foreach (var split in _splits)
+        {
+            if (split.Contains(s)) return split;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Moves a surface position along the track to <paramref name="s"/>. At a fork it enters the
+    /// branch whose opening it is in front of; at a merge it comes back out onto the main track.
+    /// </summary>
+    public TrackPosition MoveTo(TrackPosition p, double s)
+    {
+        var from = p.Branch >= 0 ? SplitAt(p.S) : null;
+        var to = SplitAt(s);
+        if (from is not null && from != to) p = Merge(p, from);
+        if (p.Branch < 0 && to is not null) p = Fork(p, to);
+        return p with { S = s };
+    }
+
+    /// <summary>Frame at <paramref name="s"/> on a branch inside a split, or on the centerline.</summary>
+    public TrackFrame FrameAt(double s, int branch) =>
+        branch >= 0 && SplitAt(s) is { } split ? split.BranchFrame(this, s, branch) : FrameAt(s);
+
+    /// <summary>Cross-section at <paramref name="s"/> on a branch inside a split, or on the main track.</summary>
+    public CrossSection SectionAt(double s, int branch) =>
+        branch >= 0 && SplitAt(s) is { } split ? split.Section : SectionAt(s);
 
     /// <summary>Centerline frame at distance <paramref name="s"/>, clamped to the track.</summary>
     public TrackFrame FrameAt(double s)
@@ -112,6 +188,50 @@ public sealed class Track
         float end = p.Piece.EndSpeed ?? p.StartSpeed;
         float t = MathUtil.SmoothStep((float)((s - p.StartS) / p.Piece.Length));
         return p.StartSpeed + (end - p.StartSpeed) * t;
+    }
+
+    private TrackPosition Fork(TrackPosition p, TrackSplit split)
+    {
+        var point = new ProfileShape(SectionAt(split.StartS)).PointAt(p.Surface, p.X);
+        int best = 0;
+        for (int b = 1; b < split.BranchCount; b++)
+        {
+            if (Vector2.Distance(point, split.OffsetAt(b, 0f)) < Vector2.Distance(point, split.OffsetAt(best, 0f))) best = b;
+        }
+        var (surface, x) = new ProfileShape(split.Section).Nearest(point - split.OffsetAt(best, 0f));
+        return new TrackPosition(p.S, surface, x, best);
+    }
+
+    private TrackPosition Merge(TrackPosition p, TrackSplit split)
+    {
+        var point = new ProfileShape(split.Section).PointAt(p.Surface, p.X) + split.OffsetAt(p.Branch, split.Length);
+        var (surface, x) = new ProfileShape(SectionAt(split.EndS)).Nearest(point);
+        return new TrackPosition(p.S, surface, x);
+    }
+
+    // Branch openings must fit inside the chamber without overlapping each other.
+    private static void CheckOpenings(CrossSection chamber, CrossSection branch, List<Vector2> centers, string where)
+    {
+        const int samples = 64;
+        var outline = new ProfileShape(branch);
+        for (int i = 0; i < centers.Count; i++)
+        {
+            for (int k = 0; k < samples; k++)
+            {
+                var p = outline.PointAt(Surface.Floor, outline.Perimeter * k / samples) + centers[i];
+                if (!chamber.Contains(p))
+                {
+                    throw new ArgumentException($"Branch {i}'s opening at the {where} doesn't fit inside the section it splits from.");
+                }
+                for (int j = 0; j < centers.Count; j++)
+                {
+                    if (j != i && branch.Contains(p - centers[j], tolerance: -1e-3f))
+                    {
+                        throw new ArgumentException($"Branch openings at the {where} overlap.");
+                    }
+                }
+            }
+        }
     }
 
     private static TrackFrame Advance(TrackFrame f, float yawRate, float pitchRate, float ds)

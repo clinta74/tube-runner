@@ -13,4 +13,5 @@ public enum Surface
 /// <param name="S">Distance along the track. Double to stay precise over long runs.</param>
 /// <param name="Surface">Floor (lower half of the section) or ceiling (upper half).</param>
 /// <param name="X">Distance along the surface from its center; positive toward the track's right.</param>
-public readonly record struct TrackPosition(double S, Surface Surface, float X);
+/// <param name="Branch">Branch index inside a split, or -1 on the main track.</param>
+public readonly record struct TrackPosition(double S, Surface Surface, float X, int Branch = -1);

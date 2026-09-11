@@ -21,7 +21,7 @@ public sealed class ShipSim
     {
         _settings = settings;
         _track = track;
-        Shape = _shapes.Get(track.SectionAt(start.S));
+        Shape = _shapes.Get(track.SectionAt(start.S, start.Branch));
         Position = start;
     }
 
@@ -55,8 +55,10 @@ public sealed class ShipSim
         }
 
         double s = Position.S + ForwardSpeed * dt;
-        Shape = _shapes.Get(_track.SectionAt(s));
-        var surface = Position.Surface;
+        // Carries the ship into a branch at a fork and back out at a merge.
+        var moved = _track.MoveTo(Position, s);
+        Shape = _shapes.Get(_track.SectionAt(s, moved.Branch));
+        var surface = moved.Surface;
 
         if (IsJumping)
         {
@@ -72,7 +74,7 @@ public sealed class ShipSim
         // The ship's right is +X on the floor and -X on the ceiling, where it rides upside down.
         // Past the middle of a jump it has rolled over, so it steers as if on the destination.
         var facing = IsJumping && JumpProgress >= 0.5f ? Opposite(surface) : surface;
-        float x = Position.X + steer * _settings.SteerSpeed * dt * (facing == Surface.Floor ? 1f : -1f);
+        float x = moved.X + steer * _settings.SteerSpeed * dt * (facing == Surface.Floor ? 1f : -1f);
 
         if (Shape.IsClosed && !IsJumping)
         {
@@ -84,7 +86,7 @@ public sealed class ShipSim
             x = Math.Clamp(x, -limit, limit);
         }
 
-        Position = new TrackPosition(s, surface, x);
+        Position = new TrackPosition(s, surface, x, moved.Branch);
     }
 
     /// <summary>Ship position and up direction in section space, <paramref name="rideHeight"/> above its surface.</summary>
