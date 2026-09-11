@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_main"]
 [ext_resource type="Shader" path="res://shaders/tube_wall.gdshader" id="2_wall"]
+[ext_resource type="Script" path="res://scripts/TrackRenderer.cs" id="3_track"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wall"]
 shader = ExtResource("2_wall")
@@ -19,6 +20,9 @@ size = Vector3(0.8, 0.3, 1.6)
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
 WallMaterial = SubResource("ShaderMaterial_wall")
+
+[node name="TrackRenderer" type="Node3D" parent="."]
+script = ExtResource("3_track")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")

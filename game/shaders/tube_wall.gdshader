@@ -1,13 +1,13 @@
 // Smooth checkerboard wall in earthy brown / green / gold. The tube is divided into segments
 // separated by a seam line; each segment picks its own palette, checker size, and twist.
-// UV.x = around the tube (0..1), UV.y = distance along it (world units).
+// Each mesh chunk is one segment (see TrackRenderer.cs).
+// UV.x = around the tube (0..1), UV.y = distance into the segment (world units),
+// UV2.x = open-wall margin (negative where the side wall is cut away).
 shader_type spatial;
 render_mode unshaded, cull_disabled;
 
-// Index of the segment the ship is in, and distance into it (set by Main.cs).
-// Split this way so precision holds over arbitrarily long runs.
-uniform int segment_base = 0;
-uniform float scroll = 0.0;
+// Segment index of this chunk; per-instance so every chunk shares one material.
+instance uniform int segment_index = 0;
 uniform float segment_length = 60.0;
 // Extra checker edge blur, in cell widths.
 uniform float softness = 0.06;
@@ -53,9 +53,11 @@ float checker(vec2 p, float soft) {
 }
 
 void fragment() {
-	float along = UV.y + scroll;
-	float seg = float(segment_base) + floor(along / segment_length);
-	float local = fract(along / segment_length) * segment_length;
+	if (UV2.x < 0.0) {
+		discard;
+	}
+	float seg = float(segment_index);
+	float local = UV.y;
 
 	float x = UV.x * AROUND[pick(seg, 1.0, 4)] + local * TWIST[pick(seg, 2.0, 4)];
 	float y = local / ALONG[pick(seg, 3.0, 4)];

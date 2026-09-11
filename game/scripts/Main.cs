@@ -1,27 +1,33 @@
-using System;
 using Godot;
 using TubeRunner.Core;
 
 namespace TubeRunner.Game;
 
 /// <summary>
-/// Prototype scene: a straight tube that stays put while the wall pattern scrolls past
-/// (floating-origin style). The ship rides the wall at track position U.
+/// Prototype scene: an endless generated track streamed by <see cref="TrackRenderer"/>.
+/// Everything is placed relative to the ship's track position (floating origin).
 /// </summary>
 public partial class Main : Node3D
 {
-    private const float RingStep = 2f;
-    private const int RadialSegments = 48;
-
     [Export] public ShaderMaterial WallMaterial { get; set; } = null!;
+    /// <summary>Track seed. 2 reaches an oval stretch early and a flat-plane section at ~880 units.</summary>
+    [Export] public int Seed { get; set; } = 2;
     [Export] public float TubeRadius { get; set; } = 6f;
-    [Export] public float TubeLength { get; set; } = 400f;
     [Export] public float ForwardSpeed { get; set; } = 80f;
-    [Export] public float SteerRate { get; set; } = 0.6f;
+    /// <summary>Units per second across the wall at full steer.</summary>
+    [Export] public float SteerSpeed { get; set; } = 22f;
     /// <summary>Distance between wall seams; the pattern can change at each seam.</summary>
     [Export] public float SegmentLength { get; set; } = 60f;
+    [Export] public float RideHeight { get; set; } = 0.6f;
+    [Export] public float CameraHeight { get; set; } = 2.2f;
+    [Export] public float CameraBehind { get; set; } = 6f;
+    [Export] public float LookAhead { get; set; } = 14f;
 
+    private readonly ProfileShapeCache _cameraShapes = new();
+    private readonly ProfileShapeCache _targetShapes = new();
+    private Track _track = null!;
     private ShipSim _sim = null!;
+    private TrackRenderer _renderer = null!;
     private Node3D _ship = null!;
     private Camera3D _camera = null!;
 
@@ -29,10 +35,16 @@ public partial class Main : Node3D
     {
         _ship = GetNode<Node3D>("Ship");
         _camera = GetNode<Camera3D>("Camera3D");
-        // U = 0.75 is the bottom of the tube.
-        _sim = new ShipSim(new ShipSettings(ForwardSpeed, SteerRate), new TrackPosition(0, 0, 0.75f, 0));
+        _renderer = GetNode<TrackRenderer>("TrackRenderer");
+
+        var generator = new TrackGenerator(Seed, TubeRadius);
+        _track = new Track(generator.Circle, generator);
+        // Start on the floor (U = 0.75), far enough in that the camera has track behind it.
+        var start = new TrackPosition(0, CameraBehind + 10.0, 0.75f, 0f);
+        _sim = new ShipSim(new ShipSettings(ForwardSpeed, SteerSpeed), _track, start);
+
         WallMaterial.SetShaderParameter("segment_length", SegmentLength);
-        AddChild(BuildTube(new CircleProfile(TubeRadius)));
+        _renderer.Init(_track, WallMaterial, SegmentLength);
     }
 
     public override void _Process(double delta)
@@ -43,60 +55,27 @@ public partial class Main : Node3D
 
         _sim.Step((float)delta, steer);
         var pos = _sim.Position;
+        var origin = _track.FrameAt(pos.S).Position;
+        _renderer.UpdateView(pos.S, origin);
 
-        // Split distance into segment index + offset so the shader stays precise on long runs.
-        double segment = Math.Floor(pos.S / SegmentLength);
-        WallMaterial.SetShaderParameter("segment_base", (int)segment);
-        WallMaterial.SetShaderParameter("scroll", (float)(pos.S - segment * SegmentLength));
+        var frame = _track.FrameAt(pos.S);
+        var shape = _sim.Shape;
+        // "Up" for the ship points from the wall into the tube.
+        var up = frame.DirectionOnSection(shape.InwardNormalAt(pos.U)).ToGodot();
+        var shipPos = SurfacePoint(frame, shape, pos.U, RideHeight, origin);
+        _ship.LookAtFromPosition(shipPos, shipPos + frame.Forward.ToGodot(), up);
 
-        // "Up" for the ship points from the wall toward the tube center.
-        var wall = CircleProfile.PointAt(pos.U, 1f);
-        var up = new Vector3(-wall.X, -wall.Y, 0f);
-
-        var shipPos = ToWorld(CircleProfile.PointAt(pos.U, TubeRadius - 0.6f), 0f);
-        _ship.LookAtFromPosition(shipPos, shipPos + Vector3.Forward, up);
-
-        var camPos = ToWorld(CircleProfile.PointAt(pos.U, TubeRadius - 2.2f), 5f);
-        _camera.LookAtFromPosition(camPos, shipPos + Vector3.Forward * 10f, up);
+        var camPos = SurfacePoint(pos.S - CameraBehind, pos.U, CameraHeight, origin, _cameraShapes);
+        var target = SurfacePoint(pos.S + LookAhead, pos.U, 1f, origin, _targetShapes);
+        _camera.LookAtFromPosition(camPos, target, up);
     }
 
-    private static Vector3 ToWorld(System.Numerics.Vector2 p, float z) => new(p.X, p.Y, z);
+    private Vector3 SurfacePoint(double s, float u, float height, Vector3d origin, ProfileShapeCache shapes) =>
+        SurfacePoint(_track.FrameAt(s), shapes.Get(_track.SectionAt(s)), u, height, origin);
 
-    private MeshInstance3D BuildTube(CircleProfile profile)
+    private static Vector3 SurfacePoint(TrackFrame frame, ProfileShape shape, float u, float height, Vector3d origin)
     {
-        // Start a little behind the camera so the tube wraps around it.
-        const float behind = 20f;
-        int rings = (int)(TubeLength / RingStep) + 1;
-
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-
-        for (int r = 0; r < rings; r++)
-        {
-            float along = r * RingStep;
-            for (int a = 0; a <= RadialSegments; a++)
-            {
-                float u = a / (float)RadialSegments;
-                st.SetUV(new Vector2(u, along));
-                st.AddVertex(ToWorld(profile.PointAt(u), behind - along));
-            }
-        }
-
-        int stride = RadialSegments + 1;
-        for (int r = 0; r < rings - 1; r++)
-        {
-            for (int a = 0; a < RadialSegments; a++)
-            {
-                int i = r * stride + a;
-                st.AddIndex(i);
-                st.AddIndex(i + stride);
-                st.AddIndex(i + 1);
-                st.AddIndex(i + 1);
-                st.AddIndex(i + stride);
-                st.AddIndex(i + stride + 1);
-            }
-        }
-
-        return new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = WallMaterial };
+        var p = shape.PointAt(u) + shape.InwardNormalAt(u) * height;
+        return frame.PointOnSection(p).RelativeTo(origin).ToGodot();
     }
 }

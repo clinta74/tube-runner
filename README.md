@@ -11,7 +11,7 @@ game/                        Godot project (open game/project.godot in the edito
   TubeRunner.sln             Solution: game + Core + tests
   scenes/  scripts/  shaders/
 src/
-  TubeRunner.Core/           Engine-independent sim: track space, profiles, ship (no Godot refs)
+  TubeRunner.Core/           Engine-independent sim: track generation, cross-sections, ship (no Godot refs)
   TubeRunner.Core.Tests/     xUnit tests for Core
 docs/
 ```
