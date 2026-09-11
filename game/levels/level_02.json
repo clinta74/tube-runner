@@ -1,105 +1,83 @@
 {
-  "name": "Neon Run",
-  "speed": 100,
+  "name": "Power Up",
+  "next": "level_03.json",
+  "speed": 80,
   "segmentLength": 60,
 
+  // Still round: introduces breakable blocks and every power-up.
   "theme": {
-    "darks": ["#0c0620", "#041421", "#140418"],
-    "lights": ["#c02aa8", "#29b8cc", "#ccb029"],
-    "seamDark": "#000000",
-    "seamLight": "#ffffff",
-    "far": "#000000",
-    "ship": "#ffffff",
-    "block": "#dfe6ff",
-    "target": "#ff2050",
-    "fadeStart": 40,
-    "fadeEnd": 360,
-    "glow": 0.6
+    "darks": ["#2a1a14", "#1f2622", "#30201c"],
+    "lights": ["#c77b4a", "#6f9c86", "#b89a5e"],
+    "seamDark": "#140c08",
+    "seamLight": "#ffd08a",
+    "far": "#0a0604",
+    "ship": "#ffd08a",
+    "block": "#ece4d8",
+    "target": "#ff4a3d",
+    "breakable": "#86c5e8",
+    "fadeStart": 30,
+    "fadeEnd": 320,
+    "glow": 0
   },
 
   "sections": {
-    "tube":     { "radius": 5.5 },
-    "oval":     { "halfWidth": 9, "halfHeight": 4 },
-    "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
-    "flat":     { "radius": 5.5, "opening": 1 },
-    "box-flat": { "halfWidth": 9, "halfHeight": 4, "squareness": 1, "opening": 1 },
-    "tall-chamber": { "halfWidth": 6.5, "halfHeight": 13, "squareness": 0.6 }
+    "tube": { "radius": 6.5 },
+    "oval": { "halfWidth": 9, "halfHeight": 5 }
   },
 
-  // Obstacle "at" values are measured from the start of their piece.
-  // The distances in the comments are for `play.ps1 -Start`.
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 - 200
-    { "length": 150, "turn": -50, "obstacles": [                    //  200 - 350
-      { "at": 60, "angle": 0, "count": 4, "spacing": 50, "angleStep": 60 },
-      { "at": 100, "kind": "target", "angle": 180, "count": 3, "spacing": 50 }
-    ] },
-    { "length": 150, "turn": 50, "climb": -12 },                    //  350 - 500
+    { "length": 150 },                                              //    0 - 150
 
-    // Flat: a gap, a jump to the ceiling, a zigzag up there, and a jump back.
-    { "length": 100, "section": "flat", "speed": 125 },             //  500 - 600
-    { "length": 500, "obstacles": [                                 //  600 - 1100
-      { "at": 50, "x": -8, "width": 14 },
-      { "at": 50, "x": 12, "width": 10 },
-      { "at": 120, "width": 80, "height": 2.5 },
-      { "at": 200, "surface": "ceiling", "x": 5, "width": 12, "count": 3, "spacing": 60, "xStep": -10 },
-      { "at": 220, "kind": "target", "surface": "ceiling", "x": -12, "count": 3, "spacing": 60, "xStep": 12 },
-      { "at": 420, "surface": "ceiling", "width": 80, "height": 2.5 },
-      { "at": 460, "kind": "target" }
-    ] },
-    { "length": 360, "section": "tube" },                           // 1100 - 1460
-
-    { "length": 100, "section": "oval", "turn": 20, "speed": 110 }, // 1460 - 1560
-    { "length": 250, "turn": -60, "obstacles": [                    // 1560 - 1810
-      { "at": 30, "angle": 60, "count": 4, "spacing": 55, "angleStep": -40 },
-      { "at": 80, "kind": "target", "angle": 180, "count": 3, "spacing": 55 }
-    ] },
-    { "length": 100, "section": "tube", "turn": 20 },               // 1810 - 1910
-    { "length": 200, "turn": 30, "climb": 20, "obstacles": [        // 1910 - 2110
-      { "at": 30, "angle": 0, "count": 6, "spacing": 30, "angleStep": 60 }
+    // Blue blocks break under fire; "hits" is how many shots they take.
+    { "length": 200, "turn": 30, "obstacles": [                     //  150 - 350
+      { "at": 60, "hits": 1 },
+      { "at": 130, "hits": 2, "angle": 45 },
+      { "at": 130, "hits": 2, "angle": -45 }
     ] },
 
-    { "length": 100, "section": "box", "speed": 125 },              // 2110 - 2210
-    { "length": 200, "turn": -40, "obstacles": [                    // 2210 - 2410
-      { "at": 30, "width": 6 },
-      { "at": 90, "x": -6, "width": 6 },
-      { "at": 90, "x": 6, "width": 6 },
-      { "at": 150, "kind": "target", "angle": 90 },
-      { "at": 150, "kind": "target", "angle": -90 }
-    ] },
-    { "length": 100, "section": "box-flat", "speed": 145 },         // 2410 - 2510
-    { "length": 400, "obstacles": [                                 // 2510 - 2910
-      { "at": 50, "x": -15, "width": 14, "count": 6, "spacing": 45, "xStep": 6 },
-      { "at": 330, "width": 80, "height": 2.5 },
-      { "at": 370, "kind": "target", "surface": "ceiling" }
-    ] },
-    { "length": 360, "section": "tube" },                           // 2910 - 3270
-
-    { "length": 250, "turn": 60, "obstacles": [                     // 3270 - 3520
-      { "at": 60, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 }
+    // A full ring of breakable blocks: shoot a hole and fly through it.
+    { "length": 200, "turn": -35, "climb": 10, "pickups": [         //  350 - 550
+      { "at": 30, "kind": "shield" }
+    ], "obstacles": [
+      { "at": 120, "hits": 1, "angle": 0, "count": 8, "angleStep": 45, "width": 4.2 }
     ] },
 
-    // Stretch tall, fork over/under, merge, and narrow back down.
-    { "length": 100, "section": "tall-chamber", "speed": 160, "obstacles": [  // 3520 - 3620
-      { "at": 60, "angle": 180 }
+    // Rapid fire, then blocks that need a lot of shots.
+    { "length": 100, "section": "oval", "pickups": [                //  550 - 650
+      { "at": 40, "kind": "rapid-fire" }
     ] },
-    { "length": 400, "split": {                                     // 3620 - 4020
-        "section": "tube",
-        "branches": [
-          { "offsets": [[0, 0, -7], [120, 0, -20], [280, 0, -20], [400, 0, -7]] },
-          { "offsets": [[0, 0, 7], [120, -6, 20], [280, 6, 20], [400, 0, 7]] }
-        ]
-      },
-      "obstacles": [
-        // A spiral of blocks below, targets above.
-        { "at": 110, "branch": 0, "angle": 0, "count": 5, "spacing": 45, "angleStep": 72 },
-        { "at": 130, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 50 }
-      ]
-    },
-    { "length": 100, "section": "tube" },                           // 4020 - 4120
-    { "length": 200, "obstacles": [                                 // 4120 - 4320
-      { "at": 110, "kind": "target" }
-    ] }
+    { "length": 250, "turn": 30, "obstacles": [                     //  650 - 900
+      { "at": 30, "hits": 4, "count": 3, "spacing": 40 },
+      { "at": 150, "hits": 3, "angle": 0, "count": 8, "angleStep": 45, "width": 5 }
+    ] },
+
+    { "length": 100, "section": "tube", "pickups": [                //  900 - 1000
+      { "at": 50, "kind": "full-shields" }
+    ] },
+
+    // The ring gun sweeps the whole tube: press E (or gamepad Y) at a ring of targets.
+    { "length": 250, "turn": -40, "pickups": [                      // 1000 - 1250
+      { "at": 20, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 110, "kind": "target", "angle": 0, "count": 8, "angleStep": 45 },
+      { "at": 200, "kind": "target", "angle": 22.5, "count": 8, "angleStep": 45 }
+    ] },
+
+    // An extra shield slot, parked on the ceiling.
+    { "length": 200, "turn": 25, "climb": -10, "pickups": [         // 1250 - 1450
+      { "at": 80, "kind": "shield-slot", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "angle": -30, "count": 3, "angleStep": 30 }
+    ] },
+
+    // Mixed ring: white blocks are solid, blue ones can be shot out.
+    { "length": 200, "obstacles": [                                 // 1450 - 1650
+      { "at": 60, "angle": 0, "count": 4, "angleStep": 90, "width": 4.2 },
+      { "at": 60, "hits": 2, "angle": 45, "count": 4, "angleStep": 90, "width": 4.2 },
+      { "at": 150, "kind": "target", "count": 3, "spacing": 15 }
+    ] },
+
+    { "length": 250 }                                               // 1650 - 1900
   ]
 }

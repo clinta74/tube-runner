@@ -2,7 +2,7 @@ namespace TubeRunner.Core;
 
 public enum ObstacleKind
 {
-    /// <summary>Solid; dodge it. Absorbs shots, and breaks when the ship hits it.</summary>
+    /// <summary>Solid; dodge it. Stops shots unless it's breakable, and breaks when the ship hits it.</summary>
     Block,
 
     /// <summary>Destroyed by shots for points; also hurts on contact.</summary>
@@ -33,6 +33,14 @@ public sealed class Obstacle
 
     /// <summary>How far it stands off the surface.</summary>
     public float Height { get; init; } = 2f;
+
+    /// <summary>
+    /// For blocks: shots needed to break it, or 0 if shots can't. Targets always break in one.
+    /// </summary>
+    public int Hits { get; init; }
+
+    /// <summary>Shots it has taken so far.</summary>
+    public int HitsTaken { get; internal set; }
 
     public bool Destroyed { get; internal set; }
 }

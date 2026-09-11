@@ -95,7 +95,7 @@ public partial class Main : Node3D
         var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
         // Start on the floor; by default far enough in that the camera has track behind it.
         var start = new TrackPosition(startS, Surface.Floor, 0f);
-        _session = new GameSession(_level.Track, _level.Obstacles, settings, start);
+        _session = new GameSession(_level.Track, _level.Obstacles, settings, start, _level.Pickups);
 
         ThemeView.Apply(_level.Theme, WallMaterial, (StandardMaterial3D)_ship.MaterialOverride);
         WallMaterial.SetShaderParameter("segment_length", _level.SegmentLength);
@@ -120,7 +120,8 @@ public partial class Main : Node3D
             steer,
             Input.IsActionJustPressed(InputSetup.Jump),
             Input.IsActionPressed(InputSetup.Fire),
-            Input.GetAxis(InputSetup.ThrottleDown, InputSetup.ThrottleUp)));
+            Input.GetAxis(InputSetup.ThrottleDown, InputSetup.ThrottleUp),
+            Input.IsActionJustPressed(InputSetup.Special)));
         HandleEvents();
         if (_session.State != SessionState.Playing && WaitForContinue(dt)) return;
 
@@ -188,6 +189,21 @@ public partial class Main : Node3D
                 case SessionEvent.Hit:
                     _hud.Flash();
                     _shake = 1f;
+                    break;
+                case SessionEvent.ShieldRestored:
+                    _hud.Callout("SHIELD +1");
+                    break;
+                case SessionEvent.ShieldsRefilled:
+                    _hud.Callout("SHIELDS FULL");
+                    break;
+                case SessionEvent.ShieldSlotAdded:
+                    _hud.Callout("EXTRA SHIELD SLOT");
+                    break;
+                case SessionEvent.RapidFireStarted:
+                    _hud.Callout("RAPID FIRE");
+                    break;
+                case SessionEvent.RingGunCharged:
+                    _hud.Callout($"RING GUN x{_session.RingCharges}");
                     break;
                 case SessionEvent.GameOver:
                     _hud.ShowMessage("SHIELDS DOWN\nSpace or R to retry");

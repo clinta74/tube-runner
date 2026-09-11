@@ -18,6 +18,9 @@ public sealed class Level
 
     public required Track Track { get; init; }
 
-    /// <summary>Obstacles in track order. They hold per-run state, so load the level again to replay it.</summary>
+    /// <summary>Obstacles. They hold per-run state, so load the level again to replay it.</summary>
     public required IReadOnlyList<Obstacle> Obstacles { get; init; }
+
+    /// <summary>Power-ups. Like obstacles, they hold per-run state.</summary>
+    public required IReadOnlyList<Pickup> Pickups { get; init; }
 }

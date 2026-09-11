@@ -64,6 +64,7 @@ Each piece continues from the end of the previous one.
 | `turn` | `0` | Total heading change over the piece, in degrees; positive turns right. |
 | `climb` | `0` | Total pitch change over the piece, in degrees; positive climbs. |
 | `obstacles` | none | Obstacles on this piece, placed from its start (see Obstacles). |
+| `pickups` | none | Power-ups on this piece, placed the same way (see Power-ups). |
 | `speed` | previous | Speed to reach by the end of the piece (units per second), blended smoothly. The player's throttle multiplies it (0.5× to 1.75×). Screen effects, field of view, and engine sound follow the result. |
 
 ```json
@@ -112,7 +113,8 @@ steering toward an opening.
 
 ## Obstacles
 
-A **block** is solid: hitting one breaks it, costs a shield, and slows the ship briefly. It also stops shots.
+A **block** is solid: hitting one breaks it, costs a shield, and slows the ship briefly. It stops shots
+unless it's breakable — give it `"hits": N` and N shots break it (the ring gun breaks it in one).
 A **target** is destroyed by shots for 100 points, and hurts like a block if you fly into it.
 The ship has three shields; losing them all ends the run.
 
@@ -137,6 +139,7 @@ measured from the start of the track.
 | `x` | `0` | Distance across the surface from its center; positive is right. |
 | `angle` | none | **Tubes only**, instead of `surface`/`x`: degrees around the tube from the floor center. 90 = right wall, 180 = ceiling, -90 = left wall. |
 | `width`, `length`, `height` | `3`, `2`, `2` | Size across the surface, along the track, and off the surface. |
+| `hits` | `0` | Blocks only: shots needed to break it. 0 means shots can't. |
 | `count` | `1` | Place several, each one shifted by the steps below. |
 | `spacing` | `0` | Distance along the track between repeats. |
 | `xStep` | `0` | Change in `x` per repeat. |
@@ -156,6 +159,29 @@ On flat sections the ship can strafe 40 units either side of center, so a block 
 the whole floor. The ship jumps between floor and ceiling in about 0.55 s, covering
 `0.55 × speed` units, so leave that much room before a full-width wall.
 
+## Power-ups
+
+Power-ups sit in a `pickups` list, on a piece or at the top level, and are placed exactly like
+obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Flying over one collects it.
+
+| `kind` | Effect |
+|---|---|
+| `shield` | Restores one shield. |
+| `full-shields` | Restores every shield. |
+| `shield-slot` | Adds a shield slot, already filled, up to 6. |
+| `rapid-fire` | Fires about three times as fast for 8 seconds. |
+| `ring-gun` | 3 ring-gun shots. Each sweeps the whole tube, breaking every target and breakable block it passes; solid blocks survive. |
+
+```json
+{ "length": 250, "pickups": [
+  { "at": 20, "kind": "ring-gun" },
+  { "at": 80, "kind": "shield-slot", "angle": 180 }   // up on the ceiling
+] }
+```
+
+Put a power-up in a calm stretch the first time a level uses it, then follow it with the obstacle it
+answers: a ring of targets after the ring gun, tough blocks after rapid fire.
+
 ## Theme
 
 | Field | Meaning |
@@ -164,7 +190,7 @@ the whole floor. The ship jumps between floor and ceiling in about 0.55 s, cover
 | `seamDark`, `seamLight` | The groove and center line at each seam. |
 | `far` | Color the walls fade to with distance; also the horizon of flat sections. |
 | `ship` | Ship body color. |
-| `block`, `target` | Obstacle colors. |
+| `block`, `target`, `breakable` | Obstacle colors: solid blocks, targets, and blocks that shots can break. |
 | `fadeStart`, `fadeEnd` | Distance range of the fade. |
 | `glow` | Extra brightness on light cells and seams. Above 0 they bloom, for a neon look. |
 

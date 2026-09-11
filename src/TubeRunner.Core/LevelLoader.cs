@@ -69,11 +69,13 @@ public static class LevelLoader
             current = end;
         }
 
-        // Obstacles inside a piece are placed from its start; top-level ones from the track's start.
+        // Things inside a piece are placed from its start; top-level ones from the track's start.
         var obstacles = ToObstacles(data.Obstacles, track, 0, "Obstacle");
+        var pickups = ToPickups(data.Pickups, track, 0, "Pickup");
         for (int i = 0; i < data.Track.Count; i++)
         {
             obstacles.AddRange(ToObstacles(data.Track[i].Obstacles, track, pieceStarts[i], $"Track piece {i}, obstacle"));
+            pickups.AddRange(ToPickups(data.Track[i].Pickups, track, pieceStarts[i], $"Track piece {i}, pickup"));
         }
 
         return new Level
@@ -85,6 +87,7 @@ public static class LevelLoader
             Theme = ToTheme(data.Theme),
             Track = track,
             Obstacles = obstacles,
+            Pickups = pickups,
         };
     }
 
@@ -118,62 +121,104 @@ public static class LevelLoader
                 "target" => ObstacleKind.Target,
                 _ => throw new LevelFormatException($"{where}: unknown kind '{o.Kind}' (use block or target)."),
             };
-            var surface = o.Surface.ToLowerInvariant() switch
+            if (o.Width <= 0f || o.Length <= 0f || o.Height <= 0f)
             {
-                "floor" => Surface.Floor,
-                "ceiling" => Surface.Ceiling,
-                _ => throw new LevelFormatException($"{where}: unknown surface '{o.Surface}' (use floor or ceiling)."),
-            };
-            if (o.Count < 1 || o.Width <= 0f || o.Length <= 0f || o.Height <= 0f)
+                throw new LevelFormatException($"{where}: sizes must be positive.");
+            }
+            if (o.Hits < 0 || (kind == ObstacleKind.Target && o.Hits > 0))
             {
-                throw new LevelFormatException($"{where}: count and sizes must be positive.");
+                throw new LevelFormatException($"{where}: 'hits' is for blocks, and can't be negative.");
             }
 
-            for (int n = 0; n < o.Count; n++)
+            foreach (var (s, branch, surface, x) in Place(o, track, offset, where))
             {
-                double s = offset + o.At + n * o.Spacing;
-                if (s < 0 || s > track.Length)
-                {
-                    throw new LevelFormatException($"{where}: 'at' {s:0} is off the track (0 to {track.Length:0}).");
-                }
-
-                var split = track.SplitAt(s);
-                int branch = o.Branch ?? -1;
-                if (split is not null && (branch < 0 || branch >= split.BranchCount))
-                {
-                    throw new LevelFormatException($"{where}: at {s:0} the track is split; set 'branch' (0 to {split.BranchCount - 1}).");
-                }
-                if (split is null && branch >= 0)
-                {
-                    throw new LevelFormatException($"{where}: 'branch' only applies inside a split.");
-                }
-
-                var (onSurface, x) = (surface, o.X + n * o.XStep);
-                if (o.Angle is float angle)
-                {
-                    var shape = new ProfileShape(track.SectionAt(s, branch));
-                    if (!shape.IsClosed)
-                    {
-                        throw new LevelFormatException($"{where}: 'angle' only works in closed tubes; use 'x' and 'surface' on flat sections.");
-                    }
-                    // Degrees around the tube from the floor center, positive to the right.
-                    (onSurface, x) = shape.Wrap(Surface.Floor, (angle + n * o.AngleStep) / 360f * shape.Perimeter);
-                }
-
                 obstacles.Add(new Obstacle
                 {
                     Kind = kind,
                     S = s,
                     Branch = branch,
-                    Surface = onSurface,
+                    Surface = surface,
                     X = x,
                     Width = o.Width,
                     Length = o.Length,
                     Height = o.Height,
+                    Hits = o.Hits,
                 });
             }
         }
         return obstacles;
+    }
+
+    private static List<Pickup> ToPickups(List<PickupData> list, Track track, double offset, string label)
+    {
+        var pickups = new List<Pickup>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            var p = list[i];
+            string where = $"{label} {i}";
+            var kind = p.Kind.ToLowerInvariant() switch
+            {
+                "shield" => PickupKind.Shield,
+                "full-shields" => PickupKind.FullShields,
+                "shield-slot" => PickupKind.ShieldSlot,
+                "rapid-fire" => PickupKind.RapidFire,
+                "ring-gun" => PickupKind.RingGun,
+                _ => throw new LevelFormatException(
+                    $"{where}: unknown kind '{p.Kind}' (use shield, full-shields, shield-slot, rapid-fire, or ring-gun)."),
+            };
+
+            foreach (var (s, branch, surface, x) in Place(p, track, offset, where))
+            {
+                pickups.Add(new Pickup { Kind = kind, S = s, Branch = branch, Surface = surface, X = x });
+            }
+        }
+        return pickups;
+    }
+
+    // Where a placement and each of its repeats land on the track.
+    private static IEnumerable<(double S, int Branch, Surface Surface, float X)> Place(
+        PlacementData p, Track track, double offset, string where)
+    {
+        var surface = p.Surface.ToLowerInvariant() switch
+        {
+            "floor" => Surface.Floor,
+            "ceiling" => Surface.Ceiling,
+            _ => throw new LevelFormatException($"{where}: unknown surface '{p.Surface}' (use floor or ceiling)."),
+        };
+        if (p.Count < 1) throw new LevelFormatException($"{where}: count must be at least 1.");
+
+        for (int n = 0; n < p.Count; n++)
+        {
+            double s = offset + p.At + n * p.Spacing;
+            if (s < 0 || s > track.Length)
+            {
+                throw new LevelFormatException($"{where}: 'at' {s:0} is off the track (0 to {track.Length:0}).");
+            }
+
+            var split = track.SplitAt(s);
+            int branch = p.Branch ?? -1;
+            if (split is not null && (branch < 0 || branch >= split.BranchCount))
+            {
+                throw new LevelFormatException($"{where}: at {s:0} the track is split; set 'branch' (0 to {split.BranchCount - 1}).");
+            }
+            if (split is null && branch >= 0)
+            {
+                throw new LevelFormatException($"{where}: 'branch' only applies inside a split.");
+            }
+
+            var (onSurface, x) = (surface, p.X + n * p.XStep);
+            if (p.Angle is float angle)
+            {
+                var shape = new ProfileShape(track.SectionAt(s, branch));
+                if (!shape.IsClosed)
+                {
+                    throw new LevelFormatException($"{where}: 'angle' only works in closed tubes; use 'x' and 'surface' on flat sections.");
+                }
+                // Degrees around the tube from the floor center, positive to the right.
+                (onSurface, x) = shape.Wrap(Surface.Floor, (angle + n * p.AngleStep) / 360f * shape.Perimeter);
+            }
+            yield return (s, branch, onSurface, x);
+        }
     }
 
     private static CrossSection ToSection(string name, SectionData s)
@@ -206,6 +251,7 @@ public static class LevelLoader
                 Ship: Color(t.Ship, d.Ship),
                 Block: Color(t.Block, d.Block),
                 Target: Color(t.Target, d.Target),
+                Breakable: Color(t.Breakable, d.Breakable),
                 FadeStart: t.FadeStart ?? d.FadeStart,
                 FadeEnd: t.FadeEnd ?? d.FadeEnd,
                 Glow: t.Glow ?? d.Glow);
@@ -251,23 +297,7 @@ public static class LevelLoader
         public string Start { get; set; } = "";
         public List<PieceData> Track { get; set; } = new();
         public List<ObstacleData> Obstacles { get; set; } = new();
-    }
-
-    private sealed class ObstacleData
-    {
-        public double At { get; set; }
-        public string Kind { get; set; } = "block";
-        public string Surface { get; set; } = "floor";
-        public int? Branch { get; set; }
-        public float X { get; set; }
-        public float? Angle { get; set; }
-        public float Width { get; set; } = 3f;
-        public float Length { get; set; } = 2f;
-        public float Height { get; set; } = 2f;
-        public int Count { get; set; } = 1;
-        public double Spacing { get; set; }
-        public float XStep { get; set; }
-        public float AngleStep { get; set; }
+        public List<PickupData> Pickups { get; set; } = new();
     }
 
     private sealed class SectionData
@@ -288,6 +318,7 @@ public static class LevelLoader
         public float? Speed { get; set; }
         public SplitData? Split { get; set; }
         public List<ObstacleData> Obstacles { get; set; } = new();
+        public List<PickupData> Pickups { get; set; } = new();
     }
 
     private sealed class SplitData
@@ -301,6 +332,34 @@ public static class LevelLoader
         public List<float[]> Offsets { get; set; } = new();
     }
 
+    // Where something sits on the track, with optional repeats.
+    private class PlacementData
+    {
+        public double At { get; set; }
+        public string Surface { get; set; } = "floor";
+        public int? Branch { get; set; }
+        public float X { get; set; }
+        public float? Angle { get; set; }
+        public int Count { get; set; } = 1;
+        public double Spacing { get; set; }
+        public float XStep { get; set; }
+        public float AngleStep { get; set; }
+    }
+
+    private sealed class ObstacleData : PlacementData
+    {
+        public string Kind { get; set; } = "block";
+        public float Width { get; set; } = 3f;
+        public float Length { get; set; } = 2f;
+        public float Height { get; set; } = 2f;
+        public int Hits { get; set; }
+    }
+
+    private sealed class PickupData : PlacementData
+    {
+        public string Kind { get; set; } = "";
+    }
+
     private sealed class ThemeData
     {
         public string[]? Darks { get; set; }
@@ -311,6 +370,7 @@ public static class LevelLoader
         public string? Ship { get; set; }
         public string? Block { get; set; }
         public string? Target { get; set; }
+        public string? Breakable { get; set; }
         public float? FadeStart { get; set; }
         public float? FadeEnd { get; set; }
         public float? Glow { get; set; }

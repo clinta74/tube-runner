@@ -11,35 +11,58 @@ public enum SessionState
 public enum SessionEvent
 {
     Fired,
+    RingFired,
     Jumped,
     Hit,
     TargetDestroyed,
+    BlockDamaged,
+    BlockDestroyed,
     ShotBlocked,
+    ShieldRestored,
+    ShieldsRefilled,
+    ShieldSlotAdded,
+    RapidFireStarted,
+    RingGunCharged,
     Finished,
     GameOver,
 }
 
 /// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
-public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, bool Fire = false, float Throttle = 0f);
+/// <param name="Special">Fire the ring gun, if it has charges.</param>
+public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, bool Fire = false, float Throttle = 0f, bool Special = false);
 
 /// <param name="Ship">Movement settings.</param>
-/// <param name="Shields">Hits the ship can take; the run ends when they run out.</param>
+/// <param name="Shields">Shields at the start; the run ends when they run out.</param>
+/// <param name="MaxShieldSlots">Most shield slots extra-slot pickups can build up to.</param>
 /// <param name="RecoveryTime">Seconds of invulnerability and slow-down after a hit.</param>
 /// <param name="HitSlowdown">Speed multiplier right after a hit, easing back to 1 over the recovery.</param>
-/// <param name="ShotSpeed">Shot speed on top of the ship's own.</param>
+/// <param name="ShotSpeed">Shot speed on top of the ship's own; ring shots too.</param>
 /// <param name="ShotRange">Distance a shot travels before it fades.</param>
 /// <param name="FireInterval">Seconds between shots while fire is held.</param>
+/// <param name="RapidFireTime">Seconds a rapid-fire pickup lasts.</param>
+/// <param name="RapidFireFactor">Fire interval multiplier during rapid fire.</param>
+/// <param name="RingChargesPerPickup">Ring gun shots each ring-gun pickup gives.</param>
+/// <param name="RingRange">Distance a ring shot sweeps before it fades.</param>
+/// <param name="RingReach">On open planes, how far to either side a ring shot reaches.</param>
+/// <param name="PickupRadius">How close the ship has to pass to a pickup to collect it.</param>
 /// <param name="ShipHalfWidth">Collision half-size across the surface.</param>
 /// <param name="ShipHalfLength">Collision half-size along the track.</param>
 /// <param name="FinishRunOut">Distance before the end of the track where the level counts as finished.</param>
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
+    int MaxShieldSlots = 6,
     float RecoveryTime = 1.5f,
     float HitSlowdown = 0.45f,
     float ShotSpeed = 220f,
     float ShotRange = 300f,
     float FireInterval = 0.15f,
+    float RapidFireTime = 8f,
+    float RapidFireFactor = 0.35f,
+    int RingChargesPerPickup = 3,
+    float RingRange = 250f,
+    float RingReach = 45f,
+    float PickupRadius = 1.5f,
     float ShipHalfWidth = 0.6f,
     float ShipHalfLength = 0.8f,
     float FinishRunOut = 40f);
@@ -55,39 +78,56 @@ public sealed class Shot
     internal double End { get; init; }
 }
 
+/// <summary>A ring gun shot: it sweeps down the track, hitting everything all the way around.</summary>
+public sealed class RingShot
+{
+    public TrackPosition Position { get; internal set; }
+
+    internal double End { get; init; }
+}
+
 /// <summary>
-/// One run through a level: the ship, obstacles, shots, shields, and score. All collision is done
-/// in track space, swept along the track so nothing is skipped at high speed.
+/// One run through a level: the ship, obstacles, power-ups, shots, shields, and score. All
+/// collision is done in track space, swept along the track so nothing is skipped at high speed.
 /// </summary>
 public sealed class GameSession
 {
     public const int TargetPoints = 100;
+    public const int BreakPoints = 50;
+    public const int PickupPoints = 25;
 
-    // Obstacles and shots are only tested within this distance of the swept range.
+    // Obstacles and pickups are only tested within this distance of the swept range.
     private const double SearchMargin = 20.0;
     private const float ShotRadius = 0.3f;
 
     private readonly SessionSettings _settings;
     private readonly List<Obstacle> _obstacles;
+    private readonly List<Pickup> _pickups;
     private readonly List<Shot> _shots = new();
+    private readonly List<RingShot> _rings = new();
     private readonly List<SessionEvent> _events = new();
     private readonly ProfileShapeCache _shapes = new();
     private float _fireCooldown;
-    private int _targetScore;
+    private int _bonus;
 
-    public GameSession(Track track, IEnumerable<Obstacle> obstacles, SessionSettings settings, TrackPosition start)
+    public GameSession(Track track, IEnumerable<Obstacle> obstacles, SessionSettings settings, TrackPosition start,
+        IEnumerable<Pickup>? pickups = null)
     {
         Track = track;
         _settings = settings;
         _obstacles = obstacles.OrderBy(o => o.S).ToList();
+        _pickups = (pickups ?? []).OrderBy(p => p.S).ToList();
         Ship = new ShipSim(settings.Ship, track, start);
-        Shields = settings.Shields;
+        Shields = MaxShields = settings.Shields;
     }
 
     public Track Track { get; }
+    public SessionSettings Settings => _settings;
     public ShipSim Ship { get; }
     public IReadOnlyList<Obstacle> Obstacles => _obstacles;
+    public IReadOnlyList<Pickup> Pickups => _pickups;
     public IReadOnlyList<Shot> Shots => _shots;
+    public IReadOnlyList<RingShot> Rings => _rings;
 
     /// <summary>What happened during the last step.</summary>
     public IReadOnlyList<SessionEvent> Events => _events;
@@ -95,14 +135,23 @@ public sealed class GameSession
     public SessionState State { get; private set; } = SessionState.Playing;
     public int Shields { get; private set; }
 
+    /// <summary>Shield slots; extra-slot pickups raise it.</summary>
+    public int MaxShields { get; private set; }
+
+    /// <summary>Seconds left of rapid fire.</summary>
+    public float RapidFireLeft { get; private set; }
+
+    /// <summary>Ring gun shots available.</summary>
+    public int RingCharges { get; private set; }
+
     /// <summary>Seconds left of post-hit invulnerability.</summary>
     public float RecoveryLeft { get; private set; }
 
     /// <summary>Seconds played so far. It stops when the run ends, so after finishing it's the level time.</summary>
     public float Elapsed { get; private set; }
 
-    /// <summary>Points for targets destroyed plus one point per 10 units travelled.</summary>
-    public int Score => _targetScore + (int)(Ship.Position.S / 10.0);
+    /// <summary>Points for targets, broken blocks, and pickups, plus one point per 10 units travelled.</summary>
+    public int Score => _bonus + (int)(Ship.Position.S / 10.0);
 
     public void Step(float dt, ShipInput input)
     {
@@ -110,6 +159,7 @@ public sealed class GameSession
         if (State != SessionState.Playing) return;
 
         Elapsed += dt;
+        RapidFireLeft = Math.Max(0f, RapidFireLeft - dt);
         RecoveryLeft = Math.Max(0f, RecoveryLeft - dt);
         float recovered = 1f - RecoveryLeft / _settings.RecoveryTime;
         Ship.SpeedScale = _settings.HitSlowdown + (1f - _settings.HitSlowdown) * recovered;
@@ -120,10 +170,13 @@ public sealed class GameSession
         if (Ship.IsJumping && !wasJumping) _events.Add(SessionEvent.Jumped);
 
         CheckShipHits(before, Ship.Position.S);
+        CollectPickups(before, Ship.Position.S);
         MoveShots(dt);
+        MoveRings(dt);
 
         _fireCooldown = Math.Max(0f, _fireCooldown - dt);
         if (State == SessionState.Playing && input.Fire && _fireCooldown <= 0f) Fire();
+        if (State == SessionState.Playing && input.Special && RingCharges > 0) FireRing();
 
         if (State == SessionState.Playing && Ship.Position.S >= Track.Length - _settings.FinishRunOut)
         {
@@ -135,7 +188,7 @@ public sealed class GameSession
     private void CheckShipHits(double from, double to)
     {
         var pos = Ship.Position;
-        foreach (var o in Nearby(from, to))
+        foreach (var o in Nearby(_obstacles, o => o.S, from, to))
         {
             if (o.Destroyed || o.Branch != pos.Branch) continue;
             double reach = o.Length / 2f + _settings.ShipHalfLength;
@@ -144,7 +197,7 @@ public sealed class GameSession
             // Mid-jump the ship is between the surfaces at the same X; otherwise it's on one.
             float lateral = Ship.IsJumping
                 ? MathF.Abs(pos.X - o.X)
-                : TrackSpace.SurfaceDistance(ShapeAt(o), pos.Surface, pos.X, o.Surface, o.X);
+                : TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, o.X);
             if (lateral >= o.Width / 2f + _settings.ShipHalfWidth || Ship.HeightAbove(o.Surface) >= o.Height) continue;
             if (RecoveryLeft > 0f) continue;
 
@@ -162,6 +215,54 @@ public sealed class GameSession
         }
     }
 
+    private void CollectPickups(double from, double to)
+    {
+        var pos = Ship.Position;
+        double reach = _settings.PickupRadius + _settings.ShipHalfLength;
+        foreach (var p in Nearby(_pickups, p => p.S, from, to))
+        {
+            if (p.Collected || p.Branch != pos.Branch || to < p.S - reach || from > p.S + reach) continue;
+
+            float lateral = Ship.IsJumping
+                ? MathF.Abs(pos.X - p.X)
+                : TrackSpace.SurfaceDistance(ShapeAt(p.S, p.Branch), pos.Surface, pos.X, p.Surface, p.X);
+            // Pickups are set into the surface, so the ship has to be riding it (or just leaving it).
+            if (lateral >= _settings.PickupRadius + _settings.ShipHalfWidth || Ship.HeightAbove(p.Surface) > 1f) continue;
+
+            p.Collected = true;
+            _bonus += PickupPoints;
+            Apply(p.Kind);
+        }
+    }
+
+    private void Apply(PickupKind kind)
+    {
+        switch (kind)
+        {
+            case PickupKind.Shield:
+                Shields = Math.Min(MaxShields, Shields + 1);
+                _events.Add(SessionEvent.ShieldRestored);
+                break;
+            case PickupKind.FullShields:
+                Shields = MaxShields;
+                _events.Add(SessionEvent.ShieldsRefilled);
+                break;
+            case PickupKind.ShieldSlot:
+                MaxShields = Math.Min(_settings.MaxShieldSlots, MaxShields + 1);
+                Shields = Math.Min(MaxShields, Shields + 1);
+                _events.Add(SessionEvent.ShieldSlotAdded);
+                break;
+            case PickupKind.RapidFire:
+                RapidFireLeft = _settings.RapidFireTime;
+                _events.Add(SessionEvent.RapidFireStarted);
+                break;
+            case PickupKind.RingGun:
+                RingCharges += _settings.RingChargesPerPickup;
+                _events.Add(SessionEvent.RingGunCharged);
+                break;
+        }
+    }
+
     private void Fire()
     {
         var pos = Ship.Position;
@@ -173,8 +274,20 @@ public sealed class GameSession
             Height = Ship.HeightAbove(surface),
             End = pos.S + _settings.ShotRange,
         });
-        _fireCooldown = _settings.FireInterval;
+        _fireCooldown = _settings.FireInterval * (RapidFireLeft > 0f ? _settings.RapidFireFactor : 1f);
         _events.Add(SessionEvent.Fired);
+    }
+
+    private void FireRing()
+    {
+        RingCharges--;
+        var pos = Ship.Position;
+        _rings.Add(new RingShot
+        {
+            Position = Track.MoveTo(pos, pos.S + _settings.ShipHalfLength),
+            End = pos.S + _settings.RingRange,
+        });
+        _events.Add(SessionEvent.RingFired);
     }
 
     private void MoveShots(float dt)
@@ -189,16 +302,7 @@ public sealed class GameSession
             var hit = FirstShotHit(shot, from, shot.Position.S);
             if (hit is not null)
             {
-                if (hit.Kind == ObstacleKind.Target)
-                {
-                    hit.Destroyed = true;
-                    _targetScore += TargetPoints;
-                    _events.Add(SessionEvent.TargetDestroyed);
-                }
-                else
-                {
-                    _events.Add(SessionEvent.ShotBlocked);
-                }
+                ShotHit(hit);
                 _shots.RemoveAt(i);
             }
             else if (shot.Position.S >= shot.End || shot.Position.S >= Track.Length)
@@ -208,40 +312,75 @@ public sealed class GameSession
         }
     }
 
+    private void ShotHit(Obstacle o)
+    {
+        if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
+        else if (o.Hits <= 0) _events.Add(SessionEvent.ShotBlocked);
+        else if (++o.HitsTaken >= o.Hits) Break(o, BreakPoints, SessionEvent.BlockDestroyed);
+        else _events.Add(SessionEvent.BlockDamaged);
+    }
+
+    private void Break(Obstacle o, int points, SessionEvent e)
+    {
+        o.Destroyed = true;
+        _bonus += points;
+        _events.Add(e);
+    }
+
+    // Ring shots break every target and breakable block they pass, all the way around the tube,
+    // and pass unbreakable blocks by.
+    private void MoveRings(float dt)
+    {
+        double step = (Ship.ForwardSpeed + _settings.ShotSpeed) * dt;
+        for (int i = _rings.Count - 1; i >= 0; i--)
+        {
+            var ring = _rings[i];
+            double from = ring.Position.S;
+            ring.Position = Track.MoveTo(ring.Position, from + step);
+            double to = ring.Position.S;
+
+            foreach (var o in Nearby(_obstacles, o => o.S, from, to))
+            {
+                if (o.Destroyed || o.Branch != ring.Position.Branch) continue;
+                if (to < o.S - o.Length / 2f || from > o.S + o.Length / 2f) continue;
+                // On open planes the ring reaches a fixed distance to either side, on floor and ceiling.
+                if (!ShapeAt(o.S, o.Branch).IsClosed && MathF.Abs(o.X) > _settings.RingReach) continue;
+
+                if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
+                else if (o.Hits > 0) Break(o, BreakPoints, SessionEvent.BlockDestroyed);
+            }
+
+            if (to >= ring.End || to >= Track.Length) _rings.RemoveAt(i);
+        }
+    }
+
     private Obstacle? FirstShotHit(Shot shot, double from, double to)
     {
         var pos = shot.Position;
         Obstacle? first = null;
-        foreach (var o in Nearby(from, to))
+        foreach (var o in Nearby(_obstacles, o => o.S, from, to))
         {
             if (o.Destroyed || o.Branch != pos.Branch) continue;
             if (to < o.S - o.Length / 2f || from > o.S + o.Length / 2f || shot.Height >= o.Height) continue;
-            float lateral = TrackSpace.SurfaceDistance(ShapeAt(o), pos.Surface, pos.X, o.Surface, o.X);
+            float lateral = TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, o.X);
             if (lateral >= o.Width / 2f + ShotRadius) continue;
             if (first is null || o.S < first.S) first = o;
         }
         return first;
     }
 
-    private ProfileShape ShapeAt(Obstacle o) => _shapes.Get(Track.SectionAt(o.S, o.Branch));
+    private ProfileShape ShapeAt(double s, int branch) => _shapes.Get(Track.SectionAt(s, branch));
 
-    private IEnumerable<Obstacle> Nearby(double from, double to)
+    // Items from a list sorted by distance that lie within the search margin of [from, to].
+    private static IEnumerable<T> Nearby<T>(List<T> sorted, Func<T, double> s, double from, double to)
     {
-        for (int i = FirstAtOrAfter(from - SearchMargin); i < _obstacles.Count && _obstacles[i].S <= to + SearchMargin; i++)
-        {
-            yield return _obstacles[i];
-        }
-    }
-
-    private int FirstAtOrAfter(double s)
-    {
-        int lo = 0, hi = _obstacles.Count;
+        int lo = 0, hi = sorted.Count;
         while (lo < hi)
         {
             int mid = (lo + hi) / 2;
-            if (_obstacles[mid].S < s) lo = mid + 1;
+            if (s(sorted[mid]) < from - SearchMargin) lo = mid + 1;
             else hi = mid;
         }
-        return lo;
+        for (int i = lo; i < sorted.Count && s(sorted[i]) <= to + SearchMargin; i++) yield return sorted[i];
     }
 }

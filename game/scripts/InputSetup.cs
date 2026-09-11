@@ -14,6 +14,7 @@ public static class InputSetup
     public const string ThrottleDown = "throttle_down";
     public const string Jump = "jump";
     public const string Fire = "fire";
+    public const string Special = "special";
     public const string Restart = "restart";
 
     public static void Register()
@@ -26,6 +27,8 @@ public static class InputSetup
         Add(Fire, KeyEvent(Key.Ctrl), KeyEvent(Key.J), KeyEvent(Key.Enter), Button(JoyButton.X),
             new InputEventMouseButton { ButtonIndex = MouseButton.Left },
             new InputEventJoypadMotion { Axis = JoyAxis.TriggerRight, AxisValue = 1f });
+        Add(Special, KeyEvent(Key.E), KeyEvent(Key.K), Button(JoyButton.Y),
+            new InputEventMouseButton { ButtonIndex = MouseButton.Right });
         Add(Restart, KeyEvent(Key.R), Button(JoyButton.Start));
     }
 

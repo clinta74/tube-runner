@@ -74,6 +74,7 @@ it can't find its .NET assemblies. Set `$env:GODOT` to point the script at a spe
 | Speed up / slow down (0.5× to 1.75× the level's speed; holds when released) | W/S or ↑/↓ | Left stick up/down, RB/LB |
 | Jump between floor and ceiling (flat sections) | Space | A |
 | Fire (hold) | Ctrl, J, Enter, or left mouse | X or right trigger |
+| Ring gun (needs charges) | E, K, or right mouse | Y |
 | Restart level | R | Start |
 
 Each level is timed: finish it, then try to beat your best time. Best times are saved per level in

@@ -28,6 +28,7 @@ public readonly record struct Rgb(float R, float G, float B)
 /// <param name="Ship">Ship body color.</param>
 /// <param name="Block">Obstacles to dodge.</param>
 /// <param name="Target">Obstacles to shoot.</param>
+/// <param name="Breakable">Blocks that shots can break.</param>
 /// <param name="FadeStart">Distance where the fade begins.</param>
 /// <param name="FadeEnd">Distance where walls are fully faded.</param>
 /// <param name="Glow">Extra brightness on light cells and seams; above 0 they bloom (a neon look).</param>
@@ -40,6 +41,7 @@ public sealed record Theme(
     Rgb Ship,
     Rgb Block,
     Rgb Target,
+    Rgb Breakable,
     float FadeStart,
     float FadeEnd,
     float Glow)
@@ -56,6 +58,7 @@ public sealed record Theme(
         Ship: Rgb.Parse("#d9ad4d"),
         Block: Rgb.Parse("#e8dfc8"),
         Target: Rgb.Parse("#ff5a1f"),
+        Breakable: Rgb.Parse("#8fb8d8"),
         FadeStart: 30f,
         FadeEnd: 320f,
         Glow: 0f);

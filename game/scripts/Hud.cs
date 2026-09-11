@@ -49,12 +49,24 @@ public partial class Hud : CanvasLayer
         _best = best;
         _title.Text = levelName.ToUpperInvariant();
         _titleLeft = TitleSeconds;
+        BuildPips(shields);
+    }
 
+    /// <summary>Briefly shows a line of text at the top of the screen, e.g. for a power-up.</summary>
+    public void Callout(string text)
+    {
+        _title.Text = text;
+        _titleLeft = 1.5f;
+    }
+
+    // One pip per shield slot.
+    private void BuildPips(int slots)
+    {
         foreach (var pip in _pips) pip.QueueFree();
         _pips.Clear();
-        for (int i = 0; i < shields; i++)
+        for (int i = 0; i < slots; i++)
         {
-            var pip = new ColorRect { CustomMinimumSize = new Vector2(34, 14), Color = accent };
+            var pip = new ColorRect { CustomMinimumSize = new Vector2(34, 14), Color = _accent };
             _shieldBar.AddChild(pip);
             _pips.Add(pip);
         }
@@ -64,7 +76,13 @@ public partial class Hud : CanvasLayer
     {
         _score.Text = $"SCORE  {session.Score}";
         _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}";
-        _speed.Text = $"{session.Ship.ForwardSpeed:0} u/s";
+        var status = new List<string>(3);
+        if (session.RapidFireLeft > 0f) status.Add($"RAPID FIRE  {session.RapidFireLeft:0.0}s");
+        if (session.RingCharges > 0) status.Add($"RING GUN  x{session.RingCharges}");
+        status.Add($"{session.Ship.ForwardSpeed:0} u/s");
+        _speed.Text = string.Join("\n", status);
+
+        if (_pips.Count != session.MaxShields) BuildPips(session.MaxShields);
         for (int i = 0; i < _pips.Count; i++)
         {
             _pips[i].Color = i < session.Shields ? _accent : new Color(_accent, 0.15f);
