@@ -37,6 +37,12 @@ public sealed class ShipSim
     /// <summary>Progress through the current jump, from 0 to 1.</summary>
     public float JumpProgress { get; private set; }
 
+    /// <summary>Multiplier on forward speed, e.g. slowed after a hit.</summary>
+    public float SpeedScale { get; set; } = 1f;
+
+    /// <summary>Current forward speed in units per second.</summary>
+    public float ForwardSpeed => _settings.ForwardSpeed * SpeedScale;
+
     /// <param name="dt">Seconds to advance.</param>
     /// <param name="steer">Steering input in [-1, 1]; positive steers to the ship's right.</param>
     /// <param name="jump">Start a jump to the opposite surface. Only possible on fully flat sections.</param>
@@ -49,7 +55,7 @@ public sealed class ShipSim
             JumpProgress = 0f;
         }
 
-        double s = Position.S + _settings.ForwardSpeed * dt;
+        double s = Position.S + ForwardSpeed * dt;
         Shape = _shapes.Get(_track.SectionAt(s));
         var surface = Position.Surface;
 
@@ -95,6 +101,18 @@ public sealed class ShipSim
         float e = MathUtil.SmoothStep(JumpProgress);
         // Roll over during the jump so the ship lands upright on the other surface.
         return (Vector2.Lerp(point, target, e), MathUtil.Rotate(up, MathF.PI * e));
+    }
+
+    /// <summary>
+    /// How far the ship is off <paramref name="surface"/> while jumping between floor and ceiling.
+    /// 0 while riding a surface (lateral distance is what separates surfaces then).
+    /// </summary>
+    public float HeightAbove(Surface surface)
+    {
+        if (!IsJumping) return 0f;
+        float gap = Vector2.Distance(Shape.PointAt(Surface.Floor, Position.X), Shape.PointAt(Surface.Ceiling, Position.X));
+        float e = MathUtil.SmoothStep(JumpProgress);
+        return surface == Position.Surface ? e * gap : (1f - e) * gap;
     }
 
     public static Surface Opposite(Surface surface) => surface == Surface.Floor ? Surface.Ceiling : Surface.Floor;

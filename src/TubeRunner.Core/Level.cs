@@ -17,4 +17,7 @@ public sealed class Level
     public required Theme Theme { get; init; }
 
     public required Track Track { get; init; }
+
+    /// <summary>Obstacles in track order. They hold per-run state, so load the level again to replay it.</summary>
+    public required IReadOnlyList<Obstacle> Obstacles { get; init; }
 }

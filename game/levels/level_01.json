@@ -11,6 +11,8 @@
     "seamLight": "#d9ad4d",
     "far": "#0d0a05",
     "ship": "#d9ad4d",
+    "block": "#e8dfc8",
+    "target": "#ff5a1f",
     "fadeStart": 30,
     "fadeEnd": 320,
     "glow": 0
@@ -25,29 +27,76 @@
 
   "start": "tube",
   "track": [
-    { "length": 150 },
-    { "length": 160, "turn": 40 },
-    { "length": 140, "turn": -60, "climb": 10 },
-    { "length": 80,  "section": "oval", "turn": 15 },
-    { "length": 200, "turn": -30, "climb": -10 },
-    { "length": 80,  "section": "tube" },
-    { "length": 120, "turn": 30 },
+    { "length": 150 },                                  //    0 - 150
+    { "length": 160, "turn": 40 },                      //  150 - 310
+    { "length": 140, "turn": -60, "climb": 10 },        //  310 - 450
+    { "length": 80,  "section": "oval", "turn": 15 },   //  450 - 530
+    { "length": 200, "turn": -30, "climb": -10 },       //  530 - 730
+    { "length": 80,  "section": "tube" },               //  730 - 810
+    { "length": 120, "turn": 30 },                      //  810 - 930
 
     // First flat section: unroll, run, roll back up. Flat pieces are straight.
-    { "length": 100, "section": "flat" },
-    { "length": 400 },
-    { "length": 120, "section": "tube" },
+    { "length": 100, "section": "flat" },               //  930 - 1030
+    { "length": 400 },                                  // 1030 - 1430
+    { "length": 120, "section": "tube" },               // 1430 - 1550
 
-    { "length": 150, "turn": -45, "climb": 15 },
-    { "length": 100, "section": "box" },
-    { "length": 250, "turn": 40 },
-    { "length": 100, "section": "tube" },
-    { "length": 200, "turn": -20, "climb": -15 },
+    { "length": 150, "turn": -45, "climb": 15 },        // 1550 - 1700
+    { "length": 100, "section": "box" },                // 1700 - 1800
+    { "length": 250, "turn": 40 },                      // 1800 - 2050
+    { "length": 100, "section": "tube" },               // 2050 - 2150
+    { "length": 200, "turn": -20, "climb": -15 },       // 2150 - 2350
 
-    { "length": 100, "section": "flat" },
-    { "length": 350 },
-    { "length": 120, "section": "tube" },
+    { "length": 100, "section": "flat" },               // 2350 - 2450
+    { "length": 350 },                                  // 2450 - 2800
+    { "length": 120, "section": "tube" },               // 2800 - 2920
 
-    { "length": 200 }
+    { "length": 200 }                                   // 2920 - 3120
+  ],
+
+  "obstacles": [
+    // Warm-up: shoot a few targets, dodge a first block.
+    { "at": 220, "kind": "target" },
+    { "at": 260, "kind": "target", "x": -3 },
+    { "at": 300, "kind": "target", "x": 3 },
+    { "at": 380 },
+
+    // Slalom around the oval.
+    { "at": 480, "angle": -40, "count": 3, "spacing": 120 },
+    { "at": 540, "angle": 40, "count": 3, "spacing": 120 },
+    { "at": 700, "kind": "target", "angle": 90 },
+    { "at": 760, "kind": "target", "angle": -90 },
+    { "at": 820, "kind": "target", "angle": 180 },
+
+    // Flat section: a gap, targets out wide, then walls that force jumps.
+    { "at": 1080, "x": -6, "width": 8 },
+    { "at": 1080, "x": 8, "width": 6 },
+    { "at": 1160, "kind": "target", "x": -12 },
+    { "at": 1160, "kind": "target", "x": 12 },
+    { "at": 1250, "width": 80, "height": 2.5 },                          // jump to the ceiling
+    { "at": 1320, "surface": "ceiling", "width": 10 },
+    { "at": 1320, "kind": "target", "surface": "ceiling", "x": -10 },
+    { "at": 1400, "surface": "ceiling", "width": 80, "height": 2.5 },    // jump back down
+
+    // Spiral of blocks, then the box.
+    { "at": 1600, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 },
+    { "at": 1850, "x": -5, "width": 10 },
+    { "at": 1920, "x": 5, "width": 10 },
+    { "at": 1990, "kind": "target" },
+    { "at": 2030, "kind": "target", "angle": 90 },
+
+    // A ring of targets with the floor left open, then a twist of blocks.
+    { "at": 2200, "kind": "target", "angle": 90, "count": 3, "angleStep": 90 },
+    { "at": 2260, "angle": 180, "count": 3, "spacing": 25, "angleStep": 45 },
+
+    // Second flat section: a sweeping wall, targets, and one more jump.
+    { "at": 2500, "x": -10, "width": 12, "count": 5, "spacing": 50, "xStep": 5 },
+    { "at": 2530, "kind": "target", "x": 15, "count": 4, "spacing": 50, "xStep": -8 },
+    { "at": 2760, "width": 80, "height": 2.5 },
+    { "at": 2785, "kind": "target", "surface": "ceiling" },
+
+    // Finish.
+    { "at": 2960, "kind": "target" },
+    { "at": 3000, "kind": "target", "angle": 120 },
+    { "at": 3000, "kind": "target", "angle": -120 }
   ]
 }

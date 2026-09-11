@@ -62,7 +62,67 @@ public static class LevelLoader
             SegmentLength = Positive(data.SegmentLength, "segmentLength"),
             Theme = ToTheme(data.Theme),
             Track = track,
+            Obstacles = ToObstacles(data.Obstacles, track),
         };
+    }
+
+    private static List<Obstacle> ToObstacles(List<ObstacleData> list, Track track)
+    {
+        var obstacles = new List<Obstacle>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            var o = list[i];
+            string where = $"Obstacle {i}";
+            var kind = o.Kind.ToLowerInvariant() switch
+            {
+                "block" => ObstacleKind.Block,
+                "target" => ObstacleKind.Target,
+                _ => throw new LevelFormatException($"{where}: unknown kind '{o.Kind}' (use block or target)."),
+            };
+            var surface = o.Surface.ToLowerInvariant() switch
+            {
+                "floor" => Surface.Floor,
+                "ceiling" => Surface.Ceiling,
+                _ => throw new LevelFormatException($"{where}: unknown surface '{o.Surface}' (use floor or ceiling)."),
+            };
+            if (o.Count < 1 || o.Width <= 0f || o.Length <= 0f || o.Height <= 0f)
+            {
+                throw new LevelFormatException($"{where}: count and sizes must be positive.");
+            }
+
+            for (int n = 0; n < o.Count; n++)
+            {
+                double s = o.At + n * o.Spacing;
+                if (s < 0 || s > track.Length)
+                {
+                    throw new LevelFormatException($"{where}: 'at' {s:0} is off the track (0 to {track.Length:0}).");
+                }
+
+                var (onSurface, x) = (surface, o.X + n * o.XStep);
+                if (o.Angle is float angle)
+                {
+                    var shape = new ProfileShape(track.SectionAt(s));
+                    if (!shape.IsClosed)
+                    {
+                        throw new LevelFormatException($"{where}: 'angle' only works in closed tubes; use 'x' and 'surface' on flat sections.");
+                    }
+                    // Degrees around the tube from the floor center, positive to the right.
+                    (onSurface, x) = shape.Wrap(Surface.Floor, (angle + n * o.AngleStep) / 360f * shape.Perimeter);
+                }
+
+                obstacles.Add(new Obstacle
+                {
+                    Kind = kind,
+                    S = s,
+                    Surface = onSurface,
+                    X = x,
+                    Width = o.Width,
+                    Length = o.Length,
+                    Height = o.Height,
+                });
+            }
+        }
+        return obstacles;
     }
 
     private static CrossSection ToSection(string name, SectionData s)
@@ -93,6 +153,8 @@ public static class LevelLoader
                 SeamLight: Color(t.SeamLight, d.SeamLight),
                 Far: Color(t.Far, d.Far),
                 Ship: Color(t.Ship, d.Ship),
+                Block: Color(t.Block, d.Block),
+                Target: Color(t.Target, d.Target),
                 FadeStart: t.FadeStart ?? d.FadeStart,
                 FadeEnd: t.FadeEnd ?? d.FadeEnd,
                 Glow: t.Glow ?? d.Glow);
@@ -137,6 +199,23 @@ public static class LevelLoader
         public Dictionary<string, SectionData> Sections { get; set; } = new();
         public string Start { get; set; } = "";
         public List<PieceData> Track { get; set; } = new();
+        public List<ObstacleData> Obstacles { get; set; } = new();
+    }
+
+    private sealed class ObstacleData
+    {
+        public double At { get; set; }
+        public string Kind { get; set; } = "block";
+        public string Surface { get; set; } = "floor";
+        public float X { get; set; }
+        public float? Angle { get; set; }
+        public float Width { get; set; } = 3f;
+        public float Length { get; set; } = 2f;
+        public float Height { get; set; } = 2f;
+        public int Count { get; set; } = 1;
+        public double Spacing { get; set; }
+        public float XStep { get; set; }
+        public float AngleStep { get; set; }
     }
 
     private sealed class SectionData
@@ -164,6 +243,8 @@ public static class LevelLoader
         public string? SeamLight { get; set; }
         public string? Far { get; set; }
         public string? Ship { get; set; }
+        public string? Block { get; set; }
+        public string? Target { get; set; }
         public float? FadeStart { get; set; }
         public float? FadeEnd { get; set; }
         public float? Glow { get; set; }

@@ -10,6 +10,8 @@
     "seamLight": "#ffffff",
     "far": "#000000",
     "ship": "#ffffff",
+    "block": "#dfe6ff",
+    "target": "#ff2050",
     "fadeStart": 40,
     "fadeEnd": 360,
     "glow": 0.6
@@ -25,26 +27,57 @@
 
   "start": "tube",
   "track": [
-    { "length": 200 },
-    { "length": 150, "turn": -50 },
-    { "length": 150, "turn": 50, "climb": -12 },
+    { "length": 200 },                                  //    0 - 200
+    { "length": 150, "turn": -50 },                     //  200 - 350
+    { "length": 150, "turn": 50, "climb": -12 },        //  350 - 500
 
-    { "length": 100, "section": "flat" },
-    { "length": 500 },
-    { "length": 120, "section": "tube" },
+    { "length": 100, "section": "flat" },               //  500 - 600
+    { "length": 500 },                                  //  600 - 1100
+    { "length": 120, "section": "tube" },               // 1100 - 1220
 
-    { "length": 100, "section": "oval", "turn": 20 },
-    { "length": 250, "turn": -60 },
-    { "length": 100, "section": "tube", "turn": 20 },
-    { "length": 200, "turn": 30, "climb": 20 },
+    { "length": 100, "section": "oval", "turn": 20 },   // 1220 - 1320
+    { "length": 250, "turn": -60 },                     // 1320 - 1570
+    { "length": 100, "section": "tube", "turn": 20 },   // 1570 - 1670
+    { "length": 200, "turn": 30, "climb": 20 },         // 1670 - 1870
 
-    { "length": 100, "section": "box" },
-    { "length": 200, "turn": -40 },
-    { "length": 100, "section": "box-flat" },
-    { "length": 400 },
-    { "length": 120, "section": "tube" },
+    { "length": 100, "section": "box" },                // 1870 - 1970
+    { "length": 200, "turn": -40 },                     // 1970 - 2170
+    { "length": 100, "section": "box-flat" },           // 2170 - 2270
+    { "length": 400 },                                  // 2270 - 2670
+    { "length": 120, "section": "tube" },               // 2670 - 2790
 
-    { "length": 250, "turn": 60 },
-    { "length": 200 }
+    { "length": 250, "turn": 60 },                      // 2790 - 3040
+    { "length": 200 }                                   // 3040 - 3240
+  ],
+
+  "obstacles": [
+    { "at": 260, "angle": 0, "count": 4, "spacing": 50, "angleStep": 60 },
+    { "at": 300, "kind": "target", "angle": 180, "count": 3, "spacing": 50 },
+
+    // Flat: a gap, a jump to the ceiling, a zigzag up there, and a jump back.
+    { "at": 650, "x": -8, "width": 14 },
+    { "at": 650, "x": 12, "width": 10 },
+    { "at": 720, "width": 80, "height": 2.5 },
+    { "at": 800, "surface": "ceiling", "x": 5, "width": 12, "count": 3, "spacing": 60, "xStep": -10 },
+    { "at": 820, "kind": "target", "surface": "ceiling", "x": -12, "count": 3, "spacing": 60, "xStep": 12 },
+    { "at": 1020, "surface": "ceiling", "width": 80, "height": 2.5 },
+    { "at": 1060, "kind": "target" },
+
+    { "at": 1350, "angle": 60, "count": 4, "spacing": 55, "angleStep": -40 },
+    { "at": 1400, "kind": "target", "angle": 180, "count": 3, "spacing": 55 },
+    { "at": 1700, "angle": 0, "count": 6, "spacing": 30, "angleStep": 60 },
+
+    { "at": 2000, "width": 6 },
+    { "at": 2060, "x": -6, "width": 6 },
+    { "at": 2060, "x": 6, "width": 6 },
+    { "at": 2120, "kind": "target", "angle": 90 },
+    { "at": 2120, "kind": "target", "angle": -90 },
+
+    { "at": 2320, "x": -15, "width": 14, "count": 6, "spacing": 45, "xStep": 6 },
+    { "at": 2600, "width": 80, "height": 2.5 },
+    { "at": 2640, "kind": "target", "surface": "ceiling" },
+
+    { "at": 2850, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 },
+    { "at": 3100, "angle": 180 }
   ]
 }

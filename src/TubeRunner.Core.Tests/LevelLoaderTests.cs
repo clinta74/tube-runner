@@ -103,11 +103,46 @@ public class LevelLoaderTests
         }
     }
 
-    private static string Level(string piece) => $$"""
+    [Fact]
+    public void Obstacles_RepeatAndConvertAngles()
+    {
+        var level = LevelLoader.Parse(Level("""{ "length": 500 }""", """
+            { "at": 100, "kind": "target", "x": -2, "count": 3, "spacing": 20, "xStep": 2 },
+            { "at": 200, "angle": 180 },
+            """));
+
+        Assert.Equal(4, level.Obstacles.Count);
+        Assert.Equal(new[] { 100.0, 120.0, 140.0 }, level.Obstacles.Take(3).Select(o => o.S));
+        Assert.Equal(new[] { -2f, 0f, 2f }, level.Obstacles.Take(3).Select(o => o.X));
+        Assert.All(level.Obstacles.Take(3), o => Assert.Equal(ObstacleKind.Target, o.Kind));
+
+        // Halfway around the tube is the center of the ceiling.
+        var top = level.Obstacles[3];
+        Assert.Equal(ObstacleKind.Block, top.Kind);
+        Assert.Equal(Surface.Ceiling, top.Surface);
+        Assert.Equal(0f, top.X, precision: 2);
+    }
+
+    [Theory]
+    [InlineData("""{ "at": 50, "kind": "boulder" }""", "unknown kind 'boulder'")]
+    [InlineData("""{ "at": 900 }""", "off the track")]
+    [InlineData("""{ "at": 150, "angle": 90 }""", "only works in closed tubes")]
+    public void Parse_ReportsBadObstacles(string obstacle, string message)
+    {
+        var track = """{ "length": 100 }, { "length": 100, "section": "flat" }""";
+
+        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse(Level(track, obstacle)));
+
+        Assert.Contains("Obstacle 0", e.Message);
+        Assert.Contains(message, e.Message);
+    }
+
+    private static string Level(string pieces, string obstacles = "") => $$"""
         {
           "sections": { "tube": { "radius": 6 }, "flat": { "radius": 6, "opening": 1 } },
           "start": "tube",
-          "track": [ {{piece}} ]
+          "track": [ {{pieces}} ],
+          "obstacles": [ {{obstacles}} ]
         }
         """;
 

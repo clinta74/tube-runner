@@ -23,9 +23,11 @@ public readonly record struct Rgb(float R, float G, float B)
 /// <param name="Darks">1–4 colors for the dark checker cells.</param>
 /// <param name="Lights">1–4 colors for the light checker cells.</param>
 /// <param name="SeamDark">Groove around each segment seam.</param>
-/// <param name="SeamLight">Thin line at the center of each seam.</param>
+/// <param name="SeamLight">Thin line at the center of each seam; also shots and HUD accents.</param>
 /// <param name="Far">Color the walls fade to with distance.</param>
 /// <param name="Ship">Ship body color.</param>
+/// <param name="Block">Obstacles to dodge.</param>
+/// <param name="Target">Obstacles to shoot.</param>
 /// <param name="FadeStart">Distance where the fade begins.</param>
 /// <param name="FadeEnd">Distance where walls are fully faded.</param>
 /// <param name="Glow">Extra brightness on light cells and seams; above 0 they bloom (a neon look).</param>
@@ -36,6 +38,8 @@ public sealed record Theme(
     Rgb SeamLight,
     Rgb Far,
     Rgb Ship,
+    Rgb Block,
+    Rgb Target,
     float FadeStart,
     float FadeEnd,
     float Glow)
@@ -50,6 +54,8 @@ public sealed record Theme(
         SeamLight: Rgb.Parse("#d9ad4d"),
         Far: Rgb.Parse("#0d0a05"),
         Ship: Rgb.Parse("#d9ad4d"),
+        Block: Rgb.Parse("#e8dfc8"),
+        Target: Rgb.Parse("#ff5a1f"),
         FadeStart: 30f,
         FadeEnd: 320f,
         Glow: 0f);

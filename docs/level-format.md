@@ -17,6 +17,7 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | `sections` | required | Named cross-sections used by the track. |
 | `start` | required | Section name the track starts with. |
 | `track` | required | Ordered list of track pieces. |
+| `obstacles` | none | Blocks to dodge and targets to shoot; see below. |
 
 ## Sections
 
@@ -71,6 +72,41 @@ Each piece continues from the end of the previous one.
 
 Keep curves gentle: a turn tighter than about 1° per unit length will fold the tube wall.
 
+Tip: annotate pieces with their start and end distance (`// 930 - 1030`) so obstacles are easy to place.
+
+## Obstacles
+
+A **block** is solid: hitting one breaks it, costs a shield, and slows the ship briefly. It also stops shots.
+A **target** is destroyed by shots for 100 points, and hurts like a block if you fly into it.
+The ship has three shields; losing them all ends the run.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `at` | required | Distance along the track of the obstacle's center. |
+| `kind` | `"block"` | `"block"` or `"target"`. |
+| `surface` | `"floor"` | `"floor"` or `"ceiling"`. |
+| `x` | `0` | Distance across the surface from its center; positive is right. |
+| `angle` | none | **Tubes only**, instead of `surface`/`x`: degrees around the tube from the floor center. 90 = right wall, 180 = ceiling, -90 = left wall. |
+| `width`, `length`, `height` | `3`, `2`, `2` | Size across the surface, along the track, and off the surface. |
+| `count` | `1` | Place several, each one shifted by the steps below. |
+| `spacing` | `0` | Distance along the track between repeats. |
+| `xStep` | `0` | Change in `x` per repeat. |
+| `angleStep` | `0` | Change in `angle` per repeat. |
+
+```json
+"obstacles": [
+  { "at": 380 },                                                            // block, floor center
+  { "at": 700, "kind": "target", "angle": 90 },                             // target on the right wall
+  { "at": 1600, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 },   // spiral of blocks
+  { "at": 1250, "width": 80, "height": 2.5 },                               // full-width wall on a flat section: jump over it
+  { "at": 1320, "kind": "target", "surface": "ceiling", "x": -10 }
+]
+```
+
+On flat sections the ship can strafe 40 units either side of center, so a block 80 wide spans
+the whole floor. The ship jumps between floor and ceiling in about 0.55 s, covering
+`0.55 × speed` units, so leave that much room before a full-width wall.
+
 ## Theme
 
 | Field | Meaning |
@@ -79,6 +115,7 @@ Keep curves gentle: a turn tighter than about 1° per unit length will fold the 
 | `seamDark`, `seamLight` | The groove and center line at each seam. |
 | `far` | Color the walls fade to with distance; also the horizon of flat sections. |
 | `ship` | Ship body color. |
+| `block`, `target` | Obstacle colors. |
 | `fadeStart`, `fadeEnd` | Distance range of the fade. |
 | `glow` | Extra brightness on light cells and seams. Above 0 they bloom, for a neon look. |
 

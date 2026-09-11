@@ -3,6 +3,8 @@
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_main"]
 [ext_resource type="Shader" path="res://shaders/tube_wall.gdshader" id="2_wall"]
 [ext_resource type="Script" path="res://scripts/TrackRenderer.cs" id="3_track"]
+[ext_resource type="Script" path="res://scripts/ObstacleRenderer.cs" id="4_obstacles"]
+[ext_resource type="Script" path="res://scripts/Hud.cs" id="5_hud"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wall"]
 shader = ExtResource("2_wall")
@@ -29,6 +31,9 @@ WallMaterial = SubResource("ShaderMaterial_wall")
 [node name="TrackRenderer" type="Node3D" parent="."]
 script = ExtResource("3_track")
 
+[node name="ObstacleRenderer" type="Node3D" parent="."]
+script = ExtResource("4_obstacles")
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
 
@@ -41,3 +46,6 @@ fov = 80.0
 
 [node name="HeadLight" type="DirectionalLight3D" parent="Camera3D"]
 light_energy = 1.4
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("5_hud")
