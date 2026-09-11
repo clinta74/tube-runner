@@ -12,6 +12,7 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | `name` | `"Untitled"` | Shown when the level starts. |
 | `next` | none | File name of the following level. |
 | `speed` | `80` | Starting forward speed, units per second. Track pieces can change it. |
+| `timeLimit` | none | Seconds to reach the finish; running out ends the run. Omit for an untimed level. A test checks every limit can be beaten flat out. |
 | `segmentLength` | `60` | Distance between wall seams. The checker pattern can change at each seam. |
 | `theme` | Earth theme | Colors; see below. |
 | `sections` | required | Named cross-sections used by the track. |
@@ -43,8 +44,13 @@ A section is a cross-section shape. Every shape blends smoothly into every other
 
 Blending into a section with `opening: 1` unrolls the tube: its lower half flattens into a floor and
 its upper half into a ceiling, then both spread sideways to the horizon. On flat sections the player
-strafes left and right (the view stays level) and can jump between floor and ceiling. Blending back to
-a closed section rolls the planes back up, easing the player toward the center first.
+strafes left and right (the view stays level) and can jump between floor and ceiling.
+
+Blending back into a closed section goes through a **funnel**. For the first 15% of that piece, the far
+edges of the floor and ceiling roll up into walls about 150 units out, inside the distance fade, so the
+void past the planes is never seen. For the rest, the funnel narrows to the tube: quickly while its
+walls are far away, easing off as they close in. Meanwhile the player stays on the floor or ceiling and
+is eased toward the center. Give the rejoin piece room: 300 units or more feels smooth.
 
 **Pieces that start or end on an open section must be straight** (no `turn` or `climb`).
 
@@ -58,7 +64,7 @@ Each piece continues from the end of the previous one.
 | `section` | previous | Section to blend into over the piece. Omit to keep the current shape. |
 | `turn` | `0` | Total heading change over the piece, in degrees; positive turns right. |
 | `climb` | `0` | Total pitch change over the piece, in degrees; positive climbs. |
-| `speed` | previous | Speed to reach by the end of the piece (units per second), blended smoothly. Screen effects, field of view, and engine sound follow it. |
+| `speed` | previous | Speed to reach by the end of the piece (units per second), blended smoothly. The player's throttle multiplies it (0.5× to 1.75×). Screen effects, field of view, and engine sound follow the result. |
 
 ```json
 "track": [

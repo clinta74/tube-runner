@@ -12,6 +12,7 @@ public partial class Hud : CanvasLayer
 
     private readonly List<ColorRect> _pips = new();
     private Label _score = null!;
+    private Label _time = null!;
     private Label _speed = null!;
     private Label _title = null!;
     private Label _message = null!;
@@ -28,6 +29,7 @@ public partial class Hud : CanvasLayer
         _flash.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
         _score = AddLabel(34, Control.LayoutPreset.TopRight, HorizontalAlignment.Right);
+        _time = AddLabel(34, Control.LayoutPreset.TopLeft, HorizontalAlignment.Left);
         _speed = AddLabel(24, Control.LayoutPreset.BottomRight, HorizontalAlignment.Right);
         _title = AddLabel(56, Control.LayoutPreset.CenterTop, HorizontalAlignment.Center);
         _message = AddLabel(44, Control.LayoutPreset.Center, HorizontalAlignment.Center);
@@ -58,6 +60,10 @@ public partial class Hud : CanvasLayer
     public void Update(GameSession session, float dt)
     {
         _score.Text = $"SCORE  {session.Score}";
+        // Timed levels count down, turning red near the end; untimed ones count up.
+        float? left = session.TimeLeft;
+        _time.Text = $"TIME  {left ?? session.Elapsed:0.0}";
+        _time.Modulate = left < 10f ? new Color(1f, 0.35f, 0.25f) : Colors.White;
         _speed.Text = $"{session.Ship.ForwardSpeed:0} u/s";
         for (int i = 0; i < _pips.Count; i++)
         {

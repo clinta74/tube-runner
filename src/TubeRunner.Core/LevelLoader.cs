@@ -73,6 +73,7 @@ public static class LevelLoader
             Next = data.Next,
             Speed = Positive(data.Speed, "speed"),
             SegmentLength = Positive(data.SegmentLength, "segmentLength"),
+            TimeLimit = data.TimeLimit is float limit ? Positive(limit, "timeLimit") : null,
             Theme = ToTheme(data.Theme),
             Track = track,
             Obstacles = ToObstacles(data.Obstacles, track),
@@ -236,6 +237,7 @@ public static class LevelLoader
         public string? Next { get; set; }
         public float Speed { get; set; } = 80f;
         public float SegmentLength { get; set; } = 60f;
+        public float? TimeLimit { get; set; }
         public ThemeData? Theme { get; set; }
         public Dictionary<string, SectionData> Sections { get; set; } = new();
         public string Start { get; set; } = "";

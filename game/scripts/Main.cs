@@ -83,7 +83,7 @@ public partial class Main : Node3D
             return;
         }
 
-        var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
+        var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset), TimeLimit: _level.TimeLimit ?? 0f);
         // Start on the floor; by default far enough in that the camera has track behind it.
         var start = new TrackPosition(startS, Surface.Floor, 0f);
         _session = new GameSession(_level.Track, _level.Obstacles, settings, start);
@@ -109,7 +109,8 @@ public partial class Main : Node3D
         _session.Step(dt, new ShipInput(
             steer,
             Input.IsActionJustPressed(InputSetup.Jump),
-            Input.IsActionPressed(InputSetup.Fire)));
+            Input.IsActionPressed(InputSetup.Fire),
+            Input.GetAxis(InputSetup.ThrottleDown, InputSetup.ThrottleUp)));
         HandleEvents();
         if (_session.State != SessionState.Playing && WaitForContinue(dt)) return;
 
@@ -179,12 +180,11 @@ public partial class Main : Node3D
                     _shake = 1f;
                     break;
                 case SessionEvent.GameOver:
-                    _hud.ShowMessage("SHIELDS DOWN\nSpace or R to retry");
+                    _hud.ShowMessage((_session.TimedOut ? "OUT OF TIME" : "SHIELDS DOWN") + "\nSpace or R to retry");
                     break;
                 case SessionEvent.Finished:
-                    _hud.ShowMessage(_level.Next is null
-                        ? $"LEVEL COMPLETE\nScore {_session.Score}\nSpace to play again"
-                        : $"LEVEL COMPLETE\nScore {_session.Score}\nSpace for the next level");
+                    string result = $"LEVEL COMPLETE\nTime {_session.Elapsed:0.00}s   Score {_session.Score}";
+                    _hud.ShowMessage(result + (_level.Next is null ? "\nSpace to play again" : "\nSpace for the next level"));
                     break;
             }
         }

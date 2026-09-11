@@ -123,6 +123,30 @@ public class ShipSimTests
         Assert.False(sim.IsJumping);
     }
 
+    [Fact]
+    public void Throttle_ChangesSpeedWithinLimits()
+    {
+        var sim = Sim(Circle);   // track speed 50
+
+        for (int i = 0; i < 60; i++) sim.Step(0.1f, steer: 0f, throttle: 1f);
+        Assert.Equal(1.75f, sim.Throttle, precision: 4);
+        Assert.Equal(87.5f, sim.ForwardSpeed, precision: 3);
+
+        for (int i = 0; i < 60; i++) sim.Step(0.1f, steer: 0f, throttle: -1f);
+        Assert.Equal(0.5f, sim.Throttle, precision: 4);
+    }
+
+    [Fact]
+    public void Throttle_HoldsWhenReleased()
+    {
+        var sim = Sim(Circle);
+
+        sim.Step(0.4f, steer: 0f, throttle: 1f);   // 1 + 0.75 × 0.4
+        sim.Step(1f, steer: 0f);
+
+        Assert.Equal(1.3f, sim.Throttle, precision: 4);
+    }
+
     private static ShipSim Sim(CrossSection section, Surface surface = Surface.Floor, float x = 0f)
     {
         var track = new Track(section, startSpeed: 50f);

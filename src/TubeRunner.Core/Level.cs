@@ -14,6 +14,9 @@ public sealed class Level
     /// <summary>Distance between wall seams, where the checker pattern can change.</summary>
     public required float SegmentLength { get; init; }
 
+    /// <summary>Seconds to finish the level in, or null if it's untimed.</summary>
+    public float? TimeLimit { get; init; }
+
     public required Theme Theme { get; init; }
 
     public required Track Track { get; init; }

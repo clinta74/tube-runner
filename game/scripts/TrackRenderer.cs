@@ -15,7 +15,7 @@ namespace TubeRunner.Game;
 public partial class TrackRenderer : Node3D
 {
     private const int RingsPerChunk = 40;
-    private const int SurfaceSegments = 32;
+    private const int SurfaceSegments = 48;
     private const int CapSegments = 96;
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
     private static readonly float[] WingSteps = { 0.02f, 0.1f, 0.35f, 1f };

@@ -10,15 +10,19 @@ public static class InputSetup
 {
     public const string SteerLeft = "steer_left";
     public const string SteerRight = "steer_right";
+    public const string ThrottleUp = "throttle_up";
+    public const string ThrottleDown = "throttle_down";
     public const string Jump = "jump";
     public const string Fire = "fire";
     public const string Restart = "restart";
 
     public static void Register()
     {
-        Add(SteerLeft, KeyEvent(Key.A), KeyEvent(Key.Left), Stick(-1f));
-        Add(SteerRight, KeyEvent(Key.D), KeyEvent(Key.Right), Stick(1f));
-        Add(Jump, KeyEvent(Key.Space), KeyEvent(Key.W), KeyEvent(Key.Up), Button(JoyButton.A));
+        Add(SteerLeft, KeyEvent(Key.A), KeyEvent(Key.Left), Stick(JoyAxis.LeftX, -1f));
+        Add(SteerRight, KeyEvent(Key.D), KeyEvent(Key.Right), Stick(JoyAxis.LeftX, 1f));
+        Add(ThrottleUp, KeyEvent(Key.W), KeyEvent(Key.Up), Button(JoyButton.RightShoulder), Stick(JoyAxis.LeftY, -1f));
+        Add(ThrottleDown, KeyEvent(Key.S), KeyEvent(Key.Down), Button(JoyButton.LeftShoulder), Stick(JoyAxis.LeftY, 1f));
+        Add(Jump, KeyEvent(Key.Space), Button(JoyButton.A));
         Add(Fire, KeyEvent(Key.Ctrl), KeyEvent(Key.J), KeyEvent(Key.Enter), Button(JoyButton.X),
             new InputEventMouseButton { ButtonIndex = MouseButton.Left },
             new InputEventJoypadMotion { Axis = JoyAxis.TriggerRight, AxisValue = 1f });
@@ -36,6 +40,6 @@ public static class InputSetup
 
     private static InputEventJoypadButton Button(JoyButton button) => new() { ButtonIndex = button };
 
-    private static InputEventJoypadMotion Stick(float direction) =>
-        new() { Axis = JoyAxis.LeftX, AxisValue = direction };
+    private static InputEventJoypadMotion Stick(JoyAxis axis, float direction) =>
+        new() { Axis = axis, AxisValue = direction };
 }

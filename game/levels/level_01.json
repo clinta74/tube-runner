@@ -2,6 +2,7 @@
   "name": "Earthworks",
   "next": "level_02.json",
   "speed": 80,
+  "timeLimit": 40,
   "segmentLength": 60,
 
   "theme": {
@@ -28,40 +29,40 @@
 
   "start": "tube",
   "track": [
-    { "length": 150 },                                  //    0 - 150
-    { "length": 160, "turn": 40 },                      //  150 - 310
-    { "length": 140, "turn": -60, "climb": 10 },        //  310 - 450
-    { "length": 80,  "section": "oval", "turn": 15, "speed": 90 },    //  450 - 530
-    { "length": 200, "turn": -30, "climb": -10 },       //  530 - 730
-    { "length": 80,  "section": "tube" },               //  730 - 810
-    { "length": 120, "turn": 30 },                      //  810 - 930
+    { "length": 150 },                                              //    0 - 150
+    { "length": 160, "turn": 40 },                                  //  150 - 310
+    { "length": 140, "turn": -60, "climb": 10 },                    //  310 - 450
+    { "length": 80,  "section": "oval", "turn": 15, "speed": 90 },  //  450 - 530
+    { "length": 200, "turn": -30, "climb": -10 },                   //  530 - 730
+    { "length": 80,  "section": "tube" },                           //  730 - 810
+    { "length": 120, "turn": 30 },                                  //  810 - 930
 
-    // First flat section: unroll, run, roll back up. Flat pieces are straight.
-    { "length": 100, "section": "flat", "speed": 100 }, //  930 - 1030
-    { "length": 400 },                                  // 1030 - 1430
-    { "length": 120, "section": "tube", "speed": 90 },  // 1430 - 1550
+    // First flat section: unroll, run, then a long funnel back into the tube. Flat pieces are straight.
+    { "length": 100, "section": "flat", "speed": 100 },             //  930 - 1030
+    { "length": 400 },                                              // 1030 - 1430
+    { "length": 360, "section": "tube", "speed": 90 },              // 1430 - 1790
 
-    { "length": 150, "turn": -45, "climb": 15 },        // 1550 - 1700
-    { "length": 100, "section": "box", "speed": 100 },  // 1700 - 1800
-    { "length": 250, "turn": 40 },                      // 1800 - 2050
-    { "length": 100, "section": "tube" },               // 2050 - 2150
-    { "length": 200, "turn": -20, "climb": -15 },       // 2150 - 2350
+    { "length": 150, "turn": -45, "climb": 15 },                    // 1790 - 1940
+    { "length": 100, "section": "box", "speed": 100 },              // 1940 - 2040
+    { "length": 250, "turn": 40 },                                  // 2040 - 2290
+    { "length": 100, "section": "tube" },                           // 2290 - 2390
+    { "length": 200, "turn": -20, "climb": -15 },                   // 2390 - 2590
 
-    { "length": 100, "section": "flat", "speed": 115 }, // 2350 - 2450
-    { "length": 350 },                                  // 2450 - 2800
-    { "length": 120, "section": "tube" },               // 2800 - 2920
+    { "length": 100, "section": "flat", "speed": 115 },             // 2590 - 2690
+    { "length": 350 },                                              // 2690 - 3040
+    { "length": 360, "section": "tube" },                           // 3040 - 3400
 
     // Widen into a chamber, fork left/right, merge, and narrow back down.
-    { "length": 100, "section": "chamber", "speed": 125 },         // 2920 - 3020
-    { "length": 400, "turn": 20, "split": {                         // 3020 - 3420
+    { "length": 100, "section": "chamber", "speed": 125 },          // 3400 - 3500
+    { "length": 400, "turn": 20, "split": {                         // 3500 - 3900
         "section": "tube",
         "branches": [
           { "offsets": [[0, -7.5, 0], [120, -22, 0], [280, -22, 0], [400, -7.5, 0]] },
           { "offsets": [[0, 7.5, 0], [120, 22, 5], [280, 22, 5], [400, 7.5, 0]] }
         ]
     } },
-    { "length": 100, "section": "tube" },                           // 3420 - 3520
-    { "length": 200 }                                               // 3520 - 3720
+    { "length": 100, "section": "tube" },                           // 3900 - 4000
+    { "length": 200 }                                               // 4000 - 4200
   ],
 
   "obstacles": [
@@ -89,28 +90,28 @@
     { "at": 1400, "surface": "ceiling", "width": 80, "height": 2.5 },    // jump back down
 
     // Spiral of blocks, then the box.
-    { "at": 1600, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 },
-    { "at": 1850, "x": -5, "width": 10 },
-    { "at": 1920, "x": 5, "width": 10 },
-    { "at": 1990, "kind": "target" },
-    { "at": 2030, "kind": "target", "angle": 90 },
+    { "at": 1840, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 },
+    { "at": 2090, "x": -5, "width": 10 },
+    { "at": 2160, "x": 5, "width": 10 },
+    { "at": 2230, "kind": "target" },
+    { "at": 2270, "kind": "target", "angle": 90 },
 
     // A ring of targets with the floor left open, then a twist of blocks.
-    { "at": 2200, "kind": "target", "angle": 90, "count": 3, "angleStep": 90 },
-    { "at": 2260, "angle": 180, "count": 3, "spacing": 25, "angleStep": 45 },
+    { "at": 2440, "kind": "target", "angle": 90, "count": 3, "angleStep": 90 },
+    { "at": 2500, "angle": 180, "count": 3, "spacing": 25, "angleStep": 45 },
 
     // Second flat section: a sweeping wall, targets, and one more jump.
-    { "at": 2500, "x": -10, "width": 12, "count": 5, "spacing": 50, "xStep": 5 },
-    { "at": 2530, "kind": "target", "x": 15, "count": 4, "spacing": 50, "xStep": -8 },
-    { "at": 2760, "width": 80, "height": 2.5 },
-    { "at": 2785, "kind": "target", "surface": "ceiling" },
+    { "at": 2740, "x": -10, "width": 12, "count": 5, "spacing": 50, "xStep": 5 },
+    { "at": 2770, "kind": "target", "x": 15, "count": 4, "spacing": 50, "xStep": -8 },
+    { "at": 3000, "width": 80, "height": 2.5 },
+    { "at": 3025, "kind": "target", "surface": "ceiling" },
 
     // Into the chamber, then the fork: targets down the left branch, blocks down the right.
-    { "at": 2960, "kind": "target" },
-    { "at": 3120, "branch": 0, "kind": "target", "angle": 0, "count": 4, "spacing": 60, "angleStep": 90 },
-    { "at": 3150, "branch": 1, "angle": 0, "count": 4, "spacing": 50, "angleStep": 90 },
+    { "at": 3440, "kind": "target" },
+    { "at": 3600, "branch": 0, "kind": "target", "angle": 0, "count": 4, "spacing": 60, "angleStep": 90 },
+    { "at": 3630, "branch": 1, "angle": 0, "count": 4, "spacing": 50, "angleStep": 90 },
 
     // Finish.
-    { "at": 3600, "kind": "target", "angle": 180 }
+    { "at": 4080, "kind": "target", "angle": 180 }
   ]
 }

@@ -135,6 +135,35 @@ public class GameSessionTests
     }
 
     [Fact]
+    public void RunningOutOfTime_EndsTheRun()
+    {
+        var track = new Track(Circle, startSpeed: 50f);
+        track.Append(new TrackPiece(2000f, Circle));
+        var game = new GameSession(track, [], Settings with { TimeLimit = 2f }, new TrackPosition(0, Surface.Floor, 0f));
+
+        var events = Run(game, 3f);
+
+        Assert.Equal(SessionState.GameOver, game.State);
+        Assert.True(game.TimedOut);
+        Assert.Equal(0f, game.TimeLeft);
+        Assert.Contains(SessionEvent.TimeUp, events);
+    }
+
+    [Fact]
+    public void FinishingInTime_Wins()
+    {
+        var track = new Track(Circle, startSpeed: 50f);
+        track.Append(new TrackPiece(300f, Circle));
+        var game = new GameSession(track, [], Settings with { TimeLimit = 10f }, new TrackPosition(0, Surface.Floor, 0f));
+
+        Run(game, 7f);
+
+        Assert.Equal(SessionState.Finished, game.State);
+        Assert.False(game.TimedOut);
+        Assert.InRange(game.Elapsed, 5f, 5.5f);   // 260 units at 50 u/s
+    }
+
+    [Fact]
     public void SurfaceDistance_WrapsInTubesButNotOnPlanes()
     {
         var tube = new ProfileShape(Circle);

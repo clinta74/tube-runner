@@ -32,6 +32,15 @@ public sealed class Track
     public const float SampleSpacing = 1f;
     public const int MaxBranches = 4;
 
+    /// <summary>
+    /// Half-width of the funnel flat planes close through on their way back into a tube. Far enough
+    /// out that its walls rise inside the distance fade, so the void past the planes is never seen.
+    /// </summary>
+    public const float FunnelHalfWidth = 150f;
+
+    // Fraction of a rejoining piece spent sealing the planes into the wide funnel.
+    private const float SealFraction = 0.15f;
+
     private readonly List<TrackFrame> _frames = new();
     private readonly List<PlacedPiece> _pieces = new();
     private readonly List<TrackSplit> _splits = new();
@@ -174,7 +183,41 @@ public sealed class Track
 
         var p = _pieces[i];
         float t = (float)((s - p.StartS) / p.Piece.Length);
+        if (IsRejoining(p)) return Funnel(p.StartSection, p.Piece.EndSection, t);
         return CrossSection.Lerp(p.StartSection, p.Piece.EndSection, MathUtil.SmoothStep(t));
+    }
+
+    /// <summary>Whether <paramref name="s"/> is in a piece where flat planes close back into a tube.</summary>
+    public bool IsRejoining(double s)
+    {
+        int i = FindPiece(s);
+        return i >= 0 && s < Length && IsRejoining(_pieces[i]);
+    }
+
+    private static bool IsRejoining(PlacedPiece p) => !p.StartSection.IsClosed && p.Piece.EndSection.IsClosed;
+
+    // Planes rejoining a tube: first the far edges of the floor and ceiling roll up into walls well
+    // out in the fade, sealing off the void; then the funnel narrows to the tube, quickly while its
+    // walls are far away and easing off as they close in.
+    private static CrossSection Funnel(CrossSection open, CrossSection tube, float t)
+    {
+        if (t < SealFraction)
+        {
+            // While the planes are still open their width doesn't show, so widen them to the funnel.
+            float u = MathUtil.SmoothStep(t / SealFraction);
+            return new CrossSection(
+                open.HalfWidth + (FunnelHalfWidth - open.HalfWidth) * u,
+                open.HalfHeight,
+                open.Squareness + (1f - open.Squareness) * u,
+                open.Opening * (1f - u));
+        }
+
+        float v = (t - SealFraction) / (1f - SealFraction);
+        float k = (1f - v) * (1f - v) * (1f - v);
+        return new CrossSection(
+            tube.HalfWidth + (FunnelHalfWidth - tube.HalfWidth) * k,
+            tube.HalfHeight + (open.HalfHeight - tube.HalfHeight) * k,
+            1f + (tube.Squareness - 1f) * MathUtil.SmoothStep(v));
     }
 
     /// <summary>Forward speed at distance <paramref name="s"/>; blends smoothly across pieces that change it.</summary>

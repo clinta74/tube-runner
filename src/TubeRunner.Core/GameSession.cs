@@ -16,10 +16,12 @@ public enum SessionEvent
     TargetDestroyed,
     ShotBlocked,
     Finished,
+    TimeUp,
     GameOver,
 }
 
-public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, bool Fire = false);
+/// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
+public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, bool Fire = false, float Throttle = 0f);
 
 /// <param name="Ship">Movement settings.</param>
 /// <param name="Shields">Hits the ship can take; the run ends when they run out.</param>
@@ -31,6 +33,7 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 /// <param name="ShipHalfWidth">Collision half-size across the surface.</param>
 /// <param name="ShipHalfLength">Collision half-size along the track.</param>
 /// <param name="FinishRunOut">Distance before the end of the track where the level counts as finished.</param>
+/// <param name="TimeLimit">Seconds to finish the level in; 0 means untimed.</param>
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
@@ -41,7 +44,8 @@ public sealed record SessionSettings(
     float FireInterval = 0.15f,
     float ShipHalfWidth = 0.6f,
     float ShipHalfLength = 0.8f,
-    float FinishRunOut = 40f);
+    float FinishRunOut = 40f,
+    float TimeLimit = 0f);
 
 /// <summary>A shot flying down the track ahead of the ship.</summary>
 public sealed class Shot
@@ -97,6 +101,15 @@ public sealed class GameSession
     /// <summary>Seconds left of post-hit invulnerability.</summary>
     public float RecoveryLeft { get; private set; }
 
+    /// <summary>Seconds played so far in this run.</summary>
+    public float Elapsed { get; private set; }
+
+    /// <summary>Seconds left to finish, or null if the level is untimed.</summary>
+    public float? TimeLeft => _settings.TimeLimit > 0f ? Math.Max(0f, _settings.TimeLimit - Elapsed) : null;
+
+    /// <summary>Whether the run ended because time ran out (rather than shields).</summary>
+    public bool TimedOut { get; private set; }
+
     /// <summary>Points for targets destroyed plus one point per 10 units travelled.</summary>
     public int Score => _targetScore + (int)(Ship.Position.S / 10.0);
 
@@ -105,13 +118,14 @@ public sealed class GameSession
         _events.Clear();
         if (State != SessionState.Playing) return;
 
+        Elapsed += dt;
         RecoveryLeft = Math.Max(0f, RecoveryLeft - dt);
         float recovered = 1f - RecoveryLeft / _settings.RecoveryTime;
         Ship.SpeedScale = _settings.HitSlowdown + (1f - _settings.HitSlowdown) * recovered;
 
         double before = Ship.Position.S;
         bool wasJumping = Ship.IsJumping;
-        Ship.Step(dt, input.Steer, input.Jump);
+        Ship.Step(dt, input.Steer, input.Jump, input.Throttle);
         if (Ship.IsJumping && !wasJumping) _events.Add(SessionEvent.Jumped);
 
         CheckShipHits(before, Ship.Position.S);
@@ -124,6 +138,14 @@ public sealed class GameSession
         {
             State = SessionState.Finished;
             _events.Add(SessionEvent.Finished);
+        }
+
+        if (State == SessionState.Playing && _settings.TimeLimit > 0f && Elapsed >= _settings.TimeLimit)
+        {
+            TimedOut = true;
+            State = SessionState.GameOver;
+            _events.Add(SessionEvent.TimeUp);
+            _events.Add(SessionEvent.GameOver);
         }
     }
 

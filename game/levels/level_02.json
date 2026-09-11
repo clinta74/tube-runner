@@ -1,6 +1,7 @@
 {
   "name": "Neon Run",
   "speed": 100,
+  "timeLimit": 31,
   "segmentLength": 60,
 
   "theme": {
@@ -28,37 +29,38 @@
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                  //    0 - 200
-    { "length": 150, "turn": -50 },                     //  200 - 350
-    { "length": 150, "turn": 50, "climb": -12 },        //  350 - 500
+    { "length": 200 },                                              //    0 - 200
+    { "length": 150, "turn": -50 },                                 //  200 - 350
+    { "length": 150, "turn": 50, "climb": -12 },                    //  350 - 500
 
-    { "length": 100, "section": "flat", "speed": 125 }, //  500 - 600
-    { "length": 500 },                                  //  600 - 1100
-    { "length": 120, "section": "tube" },               // 1100 - 1220
+    { "length": 100, "section": "flat", "speed": 125 },             //  500 - 600
+    { "length": 500 },                                              //  600 - 1100
+    { "length": 360, "section": "tube" },                           // 1100 - 1460
 
-    { "length": 100, "section": "oval", "turn": 20, "speed": 110 },   // 1220 - 1320
-    { "length": 250, "turn": -60 },                     // 1320 - 1570
-    { "length": 100, "section": "tube", "turn": 20 },   // 1570 - 1670
-    { "length": 200, "turn": 30, "climb": 20 },         // 1670 - 1870
+    { "length": 100, "section": "oval", "turn": 20, "speed": 110 }, // 1460 - 1560
+    { "length": 250, "turn": -60 },                                 // 1560 - 1810
+    { "length": 100, "section": "tube", "turn": 20 },               // 1810 - 1910
+    { "length": 200, "turn": 30, "climb": 20 },                     // 1910 - 2110
 
-    { "length": 100, "section": "box", "speed": 125 },  // 1870 - 1970
-    { "length": 200, "turn": -40 },                     // 1970 - 2170
-    { "length": 100, "section": "box-flat", "speed": 145 },           // 2170 - 2270
-    { "length": 400 },                                  // 2270 - 2670
-    { "length": 120, "section": "tube" },               // 2670 - 2790
+    { "length": 100, "section": "box", "speed": 125 },              // 2110 - 2210
+    { "length": 200, "turn": -40 },                                 // 2210 - 2410
+    { "length": 100, "section": "box-flat", "speed": 145 },         // 2410 - 2510
+    { "length": 400 },                                              // 2510 - 2910
+    { "length": 360, "section": "tube" },                           // 2910 - 3270
 
-    { "length": 250, "turn": 60 },                      // 2790 - 3040
+    { "length": 250, "turn": 60 },                                  // 3270 - 3520
+
     // Stretch tall, fork over/under, merge, and narrow back down.
-    { "length": 100, "section": "tall-chamber", "speed": 160 },    // 3040 - 3140
-    { "length": 400, "split": {                                     // 3140 - 3540
+    { "length": 100, "section": "tall-chamber", "speed": 160 },     // 3520 - 3620
+    { "length": 400, "split": {                                     // 3620 - 4020
         "section": "tube",
         "branches": [
           { "offsets": [[0, 0, -7], [120, 0, -20], [280, 0, -20], [400, 0, -7]] },
           { "offsets": [[0, 0, 7], [120, -6, 20], [280, 6, 20], [400, 0, 7]] }
         ]
     } },
-    { "length": 100, "section": "tube" },                           // 3540 - 3640
-    { "length": 200 }                                               // 3640 - 3840
+    { "length": 100, "section": "tube" },                           // 4020 - 4120
+    { "length": 200 }                                               // 4120 - 4320
   ],
 
   "obstacles": [
@@ -74,26 +76,26 @@
     { "at": 1020, "surface": "ceiling", "width": 80, "height": 2.5 },
     { "at": 1060, "kind": "target" },
 
-    { "at": 1350, "angle": 60, "count": 4, "spacing": 55, "angleStep": -40 },
-    { "at": 1400, "kind": "target", "angle": 180, "count": 3, "spacing": 55 },
-    { "at": 1700, "angle": 0, "count": 6, "spacing": 30, "angleStep": 60 },
+    { "at": 1590, "angle": 60, "count": 4, "spacing": 55, "angleStep": -40 },
+    { "at": 1640, "kind": "target", "angle": 180, "count": 3, "spacing": 55 },
+    { "at": 1940, "angle": 0, "count": 6, "spacing": 30, "angleStep": 60 },
 
-    { "at": 2000, "width": 6 },
-    { "at": 2060, "x": -6, "width": 6 },
-    { "at": 2060, "x": 6, "width": 6 },
-    { "at": 2120, "kind": "target", "angle": 90 },
-    { "at": 2120, "kind": "target", "angle": -90 },
+    { "at": 2240, "width": 6 },
+    { "at": 2300, "x": -6, "width": 6 },
+    { "at": 2300, "x": 6, "width": 6 },
+    { "at": 2360, "kind": "target", "angle": 90 },
+    { "at": 2360, "kind": "target", "angle": -90 },
 
-    { "at": 2320, "x": -15, "width": 14, "count": 6, "spacing": 45, "xStep": 6 },
-    { "at": 2600, "width": 80, "height": 2.5 },
-    { "at": 2640, "kind": "target", "surface": "ceiling" },
+    { "at": 2560, "x": -15, "width": 14, "count": 6, "spacing": 45, "xStep": 6 },
+    { "at": 2840, "width": 80, "height": 2.5 },
+    { "at": 2880, "kind": "target", "surface": "ceiling" },
 
-    { "at": 2850, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 },
-    { "at": 3100, "angle": 180 },
+    { "at": 3330, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 },
+    { "at": 3580, "angle": 180 },
 
     // Over/under fork: a spiral of blocks below, targets above.
-    { "at": 3250, "branch": 0, "angle": 0, "count": 5, "spacing": 45, "angleStep": 72 },
-    { "at": 3270, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 50 },
-    { "at": 3750, "kind": "target" }
+    { "at": 3730, "branch": 0, "angle": 0, "count": 5, "spacing": 45, "angleStep": 72 },
+    { "at": 3750, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 50 },
+    { "at": 4230, "kind": "target" }
   ]
 }

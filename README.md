@@ -70,7 +70,8 @@ it can't find its .NET assemblies. Set `$env:GODOT` to point the script at a spe
 
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
-| Steer | A/D or ←/→ | Left stick |
-| Jump between floor and ceiling (flat sections) | Space, W, or ↑ | A |
+| Steer | A/D or ←/→ | Left stick left/right |
+| Speed up / slow down (0.5× to 1.75× the level's speed; holds when released) | W/S or ↑/↓ | Left stick up/down, RB/LB |
+| Jump between floor and ceiling (flat sections) | Space | A |
 | Fire (hold) | Ctrl, J, Enter, or left mouse | X or right trigger |
 | Restart level | R | Start |
