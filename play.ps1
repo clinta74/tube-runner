@@ -16,14 +16,9 @@ param(
     [switch]$Editor
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'tools/godot.ps1')
 
-# Godot .NET looks for its GodotSharp folder next to the executable it was launched as, so starting
-# it through a symlink (like winget's `godot` alias) fails with ".NET assemblies not found".
-# Resolve the real executable. Set $env:GODOT to use a specific one.
-$godot = if ($env:GODOT) { $env:GODOT } else { (Get-Command godot -ErrorAction Stop).Source }
-$item = Get-Item $godot
-if ($item.LinkType -eq 'SymbolicLink') { $godot = @($item.Target)[0] }
-
+$godot = Get-GodotPath
 $game = Join-Path $PSScriptRoot 'game'
 dotnet build (Join-Path $game 'TubeRunner.sln') -v q -nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

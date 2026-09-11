@@ -31,7 +31,21 @@ To test a section while designing, launch a level partway through it (from the r
 ./play.ps1 -Level level_02.json -Start 3000
 ```
 
-When exporting the game, add `*.json` to the export preset's non-resource file filter so levels are included.
+## Export a standalone build
+
+One-time setup: install Godot's export templates (in the editor, **Editor > Manage Export Templates >
+Download and Install**). Then from the repo root:
+
+```bash
+./export.ps1
+```
+
+This writes `builds/windows/TubeRunner.exe` plus its `data_TubeRunner_windows_x86_64` folder (the game's
+.NET code and a private .NET runtime, so players don't need .NET installed), and zips both into
+`builds/TubeRunner-windows.zip`. Ship the whole folder or the zip; the exe won't run on its own.
+
+The export preset is `game/export_presets.cfg`. It includes `levels/*.json`, which Godot wouldn't
+package otherwise, so new level files are picked up automatically.
 
 ## Requirements
 - [Godot 4.7.x **.NET** edition](https://godotengine.org/download/windows/)
