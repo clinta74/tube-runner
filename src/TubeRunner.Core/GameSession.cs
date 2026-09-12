@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace TubeRunner.Core;
 
 public enum SessionState
@@ -19,6 +21,7 @@ public enum SessionEvent
     BlockDestroyed,
     ShotBlocked,
     Rammed,
+    WarpEntered,
     Warped,
     ShieldRestored,
     ShieldsRefilled,
@@ -63,6 +66,7 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 /// <param name="ShipHalfLength">Collision half-size along the track.</param>
 /// <param name="FinishRunOut">Distance before the end of the track where the level counts as finished.</param>
 /// <param name="WarpBack">How far a warp zone throws the ship back up the track.</param>
+/// <param name="WarpDive">Seconds the ship spends falling down a warp mouth before it is thrown back.</param>
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
@@ -82,7 +86,8 @@ public sealed record SessionSettings(
     float ShipHalfWidth = 0.6f,
     float ShipHalfLength = 0.8f,
     float FinishRunOut = 40f,
-    float WarpBack = 250f);
+    float WarpBack = 250f,
+    float WarpDive = 0.55f);
 
 /// <summary>A shot flying down the track ahead of the ship.</summary>
 public sealed class Shot
@@ -183,6 +188,14 @@ public sealed class GameSession
     /// <summary>Seconds left of post-hit invulnerability.</summary>
     public float RecoveryLeft { get; private set; }
 
+    /// <summary>The warp mouth the ship is falling down, if it is in one.</summary>
+    public Warp? Diving { get; private set; }
+
+    /// <summary>How far through the dive, from 0 at the mouth to 1 when it throws.</summary>
+    public float DiveProgress => Diving is null ? 0f : 1f - DiveLeft / _settings.WarpDive;
+
+    private float DiveLeft { get; set; }
+
     /// <summary>Seconds played so far. It stops when the run ends, so after finishing it's the level time.</summary>
     public float Elapsed { get; private set; }
 
@@ -201,6 +214,16 @@ public sealed class GameSession
         RapidFireLeft = Math.Max(0f, RapidFireLeft - dt);
         RamLeft = Math.Max(0f, RamLeft - dt);
         RecoveryLeft = Math.Max(0f, RecoveryLeft - dt);
+
+        // Down a warp mouth the ship holds station and nothing else happens to it, but the clock
+        // keeps running: the whole cost of a warp is time.
+        if (Diving is not null)
+        {
+            DiveLeft -= dt;
+            if (DiveLeft <= 0f) FinishWarp();
+            return;
+        }
+
         float recovered = 1f - RecoveryLeft / _settings.RecoveryTime;
         Ship.SpeedScale = _settings.HitSlowdown + (1f - _settings.HitSlowdown) * recovered;
 
@@ -283,15 +306,15 @@ public sealed class GameSession
         }
     }
 
-    // Warp zones: a mouth in the wall that throws the ship back up the track. The cost is time, not
-    // a shield, and each fires once so repeatedly clipping the same one can't trap the run. The
-    // sweep stays forward-only because this runs before the ship is moved back.
+    // Warp wells: a hole in the wall that throws the ship back up the track. The cost is time, not a
+    // shield, and a well stays armed - fly into the same one again and it takes you again. The sweep
+    // stays forward-only because this runs before the ship is moved back.
     private void CheckWarps(double from, double to)
     {
         var pos = Ship.Position;
         foreach (var w in Nearby(_warps, w => w.S, from, to))
         {
-            if (w.Used || w.Branch != pos.Branch) continue;
+            if (w.Branch != pos.Branch) continue;
             double reach = w.Length / 2f + _settings.ShipHalfLength;
             if (to < w.S - reach || from > w.S + reach) continue;
 
@@ -301,10 +324,32 @@ public sealed class GameSession
             if (lateral >= w.Width / 2f + _settings.ShipHalfWidth) continue;
 
             w.Used = true;
-            Ship.WarpTo(w.S - (w.Back > 0f ? w.Back : _settings.WarpBack));
-            _events.Add(SessionEvent.Warped);
+            Diving = w;
+            DiveLeft = _settings.WarpDive;
+            _events.Add(SessionEvent.WarpEntered);
             return;
         }
+    }
+
+    private void FinishWarp()
+    {
+        var w = Diving!;
+        Diving = null;
+        DiveLeft = 0f;
+        Ship.WarpTo(w.S - (w.Back > 0f ? w.Back : _settings.WarpBack));
+        _events.Add(SessionEvent.Warped);
+    }
+
+    /// <summary>
+    /// Where the ship sits while falling down a warp mouth, in the section space of the mouth's own
+    /// distance along the track. <paramref name="depth"/> is how far it has sunk through the wall.
+    /// </summary>
+    public (Vector2 Point, Vector2 Up) DivePose(float depth)
+    {
+        var w = Diving ?? throw new InvalidOperationException("The ship is not in a warp.");
+        var shape = ShapeAt(w.S, w.Branch);
+        var up = shape.NormalAt(w.Surface, w.X);
+        return (shape.PointAt(w.Surface, w.X) - up * depth, up);
     }
 
     private void Apply(PickupKind kind)

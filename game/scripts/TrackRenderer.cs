@@ -15,6 +15,8 @@ namespace TubeRunner.Game;
 public partial class TrackRenderer : Node3D
 {
     private const int RingsPerChunk = 40;
+    // How far into a well the wall keeps going before the throat is left open.
+    private const float ThroatFraction = 0.72f;
     private const int SurfaceSegments = 48;
     private const int CapSegments = 96;
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
@@ -29,6 +31,7 @@ public partial class TrackRenderer : Node3D
     private readonly List<int> _staleCaps = new();
     private readonly ProfileShapeCache _shapes = new();
     private readonly float[] _xs = new float[StripVertices];
+    private readonly List<WarpCut> _warpCuts = new();
     private Track _track = null!;
     private Material _material = null!;
     private ShaderMaterial _capMaterial = null!;
@@ -49,11 +52,22 @@ public partial class TrackRenderer : Node3D
         _capSpecs.Clear();
     }
 
-    public void Init(Track track, Material material, float chunkLength, Theme theme)
+    /// <param name="warps">Warp mouths, whose openings are cut out of the wall as it is built.</param>
+    public void Init(Track track, Material material, float chunkLength, Theme theme, IReadOnlyList<Warp>? warps = null)
     {
         _track = track;
         _material = material;
         _chunkLength = chunkLength;
+
+        // Each mouth is measured once into distance along the track and distance around the tube,
+        // so the cut works the same on either surface and across the seam between them.
+        _warpCuts.Clear();
+        foreach (var w in warps ?? Array.Empty<Warp>())
+        {
+            var shape = _shapes.Get(track.SectionAt(w.S, w.Branch));
+            _warpCuts.Add(new WarpCut(w.S, shape.Loop(w.Surface, w.X), shape.Perimeter,
+                w.Length / 2f, w.Width / 2f, 2.1f * (w.Width / 2f), w.Branch));
+        }
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a
         // finished level never looks out into the void.
@@ -161,14 +175,61 @@ public partial class TrackRenderer : Node3D
                 FillStrip(shape);
                 foreach (float x in _xs)
                 {
-                    st.SetUV(new Vector2(0.75f + shape.Loop(surface, x) / shape.Perimeter, (float)(s - s0)));
-                    st.AddVertex(frame.PointOnSection(shape.PointAt(surface, x)).RelativeTo(origin).ToGodot());
+                    // The wall itself is drawn down into any well here, so the tube extrudes into it
+                    // as one surface: no separate funnel, and no seam to mismatch at the lip. How far
+                    // in each point lies rides along in UV2, and the shader takes the inside to black
+                    // - unlit wall alone gives the lip nothing to read against.
+                    float loop = shape.Loop(surface, x);
+                    var p = shape.PointAt(surface, x);
+                    float well = 0f;
+                    if (_warpCuts.Count > 0)
+                    {
+                        well = WellDepth(s, loop, branch, out float sink);
+                        if (well > 0f) p -= shape.NormalAt(surface, x) * sink;
+                    }
+                    st.SetUV(new Vector2(0.75f + loop / shape.Perimeter, (float)(s - s0)));
+                    st.SetUV2(new Vector2(well, 0f));
+                    st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
                 }
             }
-            AddGridIndices(st, start, rings, StripVertices);
+            // Cut against the section in the middle of the span; it barely changes across a chunk.
+            var midShape = _shapes.Get(split is null ? _track.SectionAt((from + to) * 0.5) : split.Section(branch));
+            FillStrip(midShape);
+            AddGridIndices(st, start, rings, StripVertices, from, to, surface, branch, midShape);
             start += (rings + 1) * StripVertices;
         }
         return start;
+    }
+
+    // How far into a warp well a point on the wall lies, from 0 at the rim to 1 at the centre.
+    // Measured around the tube rather than across one strip, so a well can straddle the seam
+    // between the floor and ceiling halves without tearing either of them.
+    private float WellDepth(double s, float loop, int branch, out float sink)
+    {
+        float deepest = 0f;
+        sink = 0f;
+        foreach (var c in _warpCuts)
+        {
+            if (c.Branch != branch) continue;
+
+            double along = s - c.S;
+            if (Math.Abs(along) > c.HalfLength) continue;
+
+            float around = MathF.Abs(loop - c.Loop);
+            around = MathF.Min(around, c.Perimeter - around);   // the shorter way round
+            if (around > c.HalfWidth) continue;
+
+            double a = along / c.HalfLength, b = around / c.HalfWidth;
+            double q = Math.Sqrt(a * a + b * b);
+            if (q >= 1.0) continue;
+
+            float into = 1f - (float)q;
+            if (into <= deepest) continue;
+            deepest = into;
+            // Tangent to the wall at the rim, so the well blends in with no visible lip.
+            sink = c.Depth * MathF.Pow(MathF.Cos((float)q * MathF.PI / 2f), 1.2f);
+        }
+        return deepest;
     }
 
     private void UpdateCaps(double from, double to)
@@ -252,12 +313,23 @@ public partial class TrackRenderer : Node3D
         }
     }
 
-    private static void AddGridIndices(SurfaceTool st, int start, int rings, int stride)
+    private void AddGridIndices(SurfaceTool st, int start, int rings, int stride,
+        double from, double to, Surface surface, int branch, ProfileShape shape)
     {
+        bool cutting = _warpCuts.Count > 0;
         for (int r = 0; r < rings; r++)
         {
+            double s = from + (to - from) * (r + 0.5) / rings;
             for (int a = 0; a < stride - 1; a++)
             {
+                // Only the throat at the very bottom of a well is left open; the rest of it is wall
+                // drawn sinking inwards, which is what makes the tube extrude into the well.
+                if (cutting)
+                {
+                    float loop = 0.5f * (shape.Loop(surface, _xs[a]) + shape.Loop(surface, _xs[a + 1]));
+                    if (WellDepth(s, loop, branch, out _) > ThroatFraction) continue;
+                }
+
                 int i = start + r * stride + a;
                 st.AddIndex(i);
                 st.AddIndex(i + stride);
@@ -273,6 +345,10 @@ public partial class TrackRenderer : Node3D
 
     // A wall across the track: a split's fork or merge, or the end of the level.
     private readonly record struct CapSpec(double S, TrackSplit? Split, float Along);
+
+    // A warp well, reduced to what shaping the wall around it needs.
+    private readonly record struct WarpCut(
+        double S, float Loop, float Perimeter, float HalfLength, float HalfWidth, float Depth, int Branch);
 
     private readonly record struct Placed(MeshInstance3D Node, Vector3d Origin);
 }

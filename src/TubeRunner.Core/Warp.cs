@@ -1,9 +1,9 @@
 namespace TubeRunner.Core;
 
 /// <summary>
-/// A mouth in the tube wall opening into black: a side tube at right angles to the track. Flying
-/// into one throws the ship back up the track, so it costs time rather than a shield. Each fires
-/// once, so a player who keeps clipping the same mouth still gets past it.
+/// A well sunk into the tube wall: a hole cut through it, with a funnel hanging below. Flying into
+/// one carries the ship down it and then throws it back up the track, so it costs time rather than
+/// a shield. A well stays armed, so flying into the same one again takes the ship again.
 /// </summary>
 public sealed class Warp
 {
@@ -18,18 +18,23 @@ public sealed class Warp
     /// <summary>Center across the surface (see <see cref="TrackPosition.X"/>).</summary>
     public float X { get; init; }
 
-    /// <summary>Extent across the surface.</summary>
-    public float Width { get; init; } = 7f;
+    /// <summary>
+    /// Extent across the surface. A well should never block more than about a third of the way round
+    /// the tube, so the rest of it always stays safe to fly: this is a hazard to steer around, not a
+    /// wall to thread. 14 units is a little over a third of the way around a radius-6 tube.
+    /// </summary>
+    public float Width { get; init; } = 14f;
 
     /// <summary>
-    /// Extent along the track. Long by default: seen from inside a tube a mouth is edge-on, so a
-    /// short one is barely a mark on the wall.
+    /// Extent along the track. Longer than it is wide: the way round the tube is capped by
+    /// <see cref="Width"/> so the rest of the tube stays flyable, which leaves along the track as the
+    /// only axis free to grow, and a mouth you meet end-on needs the length to read at all.
     /// </summary>
-    public float Length { get; init; } = 18f;
+    public float Length { get; init; } = 32f;
 
     /// <summary>How far back it throws the ship; 0 takes the session's default.</summary>
     public float Back { get; init; }
 
-    /// <summary>Whether it has already fired.</summary>
+    /// <summary>Whether it has taken the ship at least once. It stays armed either way.</summary>
     public bool Used { get; internal set; }
 }

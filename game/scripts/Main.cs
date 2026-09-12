@@ -23,6 +23,8 @@ public partial class Main : Node3D
     /// <summary>How far the ship may strafe from the center on open planes.</summary>
     [Export] public float MaxPlaneOffset { get; set; } = 40f;
     [Export] public float RideHeight { get; set; } = 0.6f;
+    /// <summary>How far the ship sinks through the wall while falling down a warp mouth.</summary>
+    [Export] public float DiveDepth { get; set; } = 7f;
     [Export] public float CameraHeight { get; set; } = 2.2f;
     [Export] public float CameraBehind { get; set; } = 6f;
     [Export] public float LookAhead { get; set; } = 14f;
@@ -49,6 +51,7 @@ public partial class Main : Node3D
     private double _levelStart;
     private bool _practice;
     private bool _running;
+    private bool _paused;
     private bool _levelDone;
     private float _bank;
     private float _shake;
@@ -117,6 +120,7 @@ public partial class Main : Node3D
         Fire             Ctrl / J / Enter / left mouse
         Ring gun         E / K / right mouse
         Retry level      R
+        Pause            P
 
         Gamepad: stick to steer and set speed, A to jump, X to fire, Y for the ring gun
 
@@ -141,6 +145,7 @@ public partial class Main : Node3D
 
         _level = level;
         _levelEntry = carry;
+        _paused = false;
         _levelDone = false;
         _endedFor = 0f;
         _snap = 0f;
@@ -157,7 +162,7 @@ public partial class Main : Node3D
         _ship.ApplyTheme(level.Theme);
         WallMaterial.SetShaderParameter("segment_length", level.SegmentLength);
         _track.Reset();
-        _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme);
+        _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps);
         _obstacles.Reset();
         _obstacles.Init(_session, level.Theme);
         _fx.SetStreakColor(level.Theme.SeamLight.ToColor());
@@ -171,6 +176,22 @@ public partial class Main : Node3D
         {
             LoadLevel(LevelPath, _levelEntry, _levelStart);
             DrawWorld(dt, steer: 0f);
+            return;
+        }
+
+        // Pause holds the world still for a screenshot: the session isn't stepped and the frame is
+        // drawn with no time passing, so nothing drifts or shakes. The HUD still gets the real delta,
+        // so the PAUSED callout fades out of the shot instead of sitting frozen on top of it.
+        if (_running && _session.State == SessionState.Playing && Input.IsActionJustPressed(InputSetup.Pause))
+        {
+            _paused = !_paused;
+            _shake = 0f;
+            if (_paused) _hud.Callout("PAUSED");
+        }
+        if (_paused)
+        {
+            _hud.Update(_session, dt, SplitTotal);
+            DrawWorld(0f, steer: 0f);
             return;
         }
 
@@ -223,9 +244,21 @@ public partial class Main : Node3D
         _hud.Update(_session, dt, SplitTotal);
 
         var (point, up2) = ship.Pose(RideHeight);
+        var forward = frame.Forward.ToGodot();
+
+        // Down a warp well the ship sinks through the wall and tips nose-first into it. The camera
+        // keeps the pose the ship had on the track, so it stays in the tube and turns to watch,
+        // rather than plunging along with it - which just reads as falling.
+        var (ridePoint, rideUp) = (point, up2);
+        if (_session.Diving is not null)
+        {
+            (point, up2) = _session.DivePose(DiveDepth * _session.DiveProgress);
+            var into = -frame.DirectionOnSection(up2).ToGodot();
+            forward = forward.Lerp(into, _session.DiveProgress).Normalized();
+        }
+
         var shipWorld = frame.PointOnSection(point);
         var up = frame.DirectionOnSection(up2).ToGodot();
-        var forward = frame.Forward.ToGodot();
 
         if (pos.Branch != _lastBranch)
         {
@@ -250,9 +283,17 @@ public partial class Main : Node3D
         // The camera follows the ship's section-space pose along its path, so it stays level on
         // open planes and rolls with the ship around tubes and through jumps.
         var camPos = FrameOnPath(pos.S - CameraBehind)
-            .PointOnSection(point + up2 * (CameraHeight - RideHeight)).RelativeTo(origin).ToGodot() + snapOffset;
+            .PointOnSection(ridePoint + rideUp * (CameraHeight - RideHeight)).RelativeTo(origin).ToGodot() + snapOffset;
         var target = FrameOnPath(pos.S + LookAhead)
-            .PointOnSection(point + up2 * 0.4f).RelativeTo(origin).ToGodot() + snapOffset;
+            .PointOnSection(ridePoint + rideUp * 0.4f).RelativeTo(origin).ToGodot() + snapOffset;
+        // Going down a well, swing the aim onto the ship so the view tilts to follow it in. The swing
+        // eases out hard, because tracking the dive at an even rate leaves the aim behind the ship the
+        // whole way down and you end up watching it drop out of frame instead of following it in.
+        if (_session.Diving is not null)
+        {
+            float left = 1f - _session.DiveProgress;
+            target = target.Lerp(shipPos, 1f - left * left * left);
+        }
         _camera.LookAtFromPosition(camPos, target, up);
         _camera.Fov = Mathf.Lerp(BaseFov, MaxFov, _fx.Intensity);
         Shake(dt);
@@ -271,6 +312,9 @@ public partial class Main : Node3D
             {
                 case SessionEvent.Fired:
                     _ship.Fire();
+                    break;
+                case SessionEvent.WarpEntered:
+                    _shake = 0.7f;
                     break;
                 case SessionEvent.Warped:
                     // No shield lost; the cost is the ground you have to cover again.

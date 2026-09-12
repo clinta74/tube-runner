@@ -151,15 +151,15 @@
       { "at": 70, "angle": 180, "count": 2, "spacing": 50, "angleStep": 60 },
       { "at": 180, "kind": "target", "angle": 0 }
     ] },
+    // A last sting, signed well in advance. It sits on the outer wall of this left-hander, which
+    // is the wall the tube swings away from: you look into that patch almost face-on as the bend
+    // opens up, so the mouth is seen properly instead of edge-on.
     { "length": 250, "turn": -75, "climb": 15, "obstacles": [       // 3850 - 4100
       { "at": 80, "angle": -90, "count": 3, "angleStep": 60 },
       { "at": 200, "angle": 0 }
+    ], "warps": [
+      { "at": 170, "angle": 90 }
     ] },
-    // A last sting, signed well in advance. It sits up on the ceiling, where the tube curves away
-    // from a ship on the floor: that patch of wall faces back at you on the approach, so the black
-    // reads from a long way out and only goes edge-on once you are under it.
-    { "length": 250, "warps": [                                     // 4100 - 4350
-      { "at": 100, "angle": 180, "length": 30 }
-    ] }
+    { "length": 250 }                                               // 4100 - 4350
   ]
 }

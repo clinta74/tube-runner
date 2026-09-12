@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Godot;
 using TubeRunner.Core;
 using Theme = TubeRunner.Core.Theme;
+// Track-space maths comes back in System.Numerics vectors, which collide with Godot's own.
+using Vec3 = System.Numerics.Vector3;
 
 namespace TubeRunner.Game;
 
@@ -14,6 +16,7 @@ namespace TubeRunner.Game;
 public partial class ObstacleRenderer : Node3D
 {
     private const float BurstSeconds = 0.8f;
+    private const int FunnelSegments = 40;
 
     // Placeholder power-up looks: pad color and floating label.
     private static readonly Dictionary<PickupKind, (Color Color, string Label)> PickupLooks = new()
@@ -26,12 +29,12 @@ public partial class ObstacleRenderer : Node3D
         [PickupKind.Unstoppable] = (new Color(1f, 0.2f, 0.2f), "RAM"),
     };
 
-    // Warning signs stand these far back up the track from a warp mouth.
-    private static readonly float[] SignDistances = { 55f, 110f, 170f };
+    // Warning signs stand in one ring around the tube, this far back from a warp well.
+    private const float SignRing = 75f;
+    private const int SignsInRing = 6;
 
     private readonly Dictionary<Obstacle, View> _views = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
-    private readonly Dictionary<Warp, View> _warpViews = new();
     private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
     private readonly List<MeshInstance3D> _shotViews = new();
@@ -41,16 +44,11 @@ public partial class ObstacleRenderer : Node3D
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
     private Func<Pickup, View> _createPickup = null!;
-    private Func<Warp, View> _createWarp = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
-    private StandardMaterial3D _voidMaterial = null!;
-    private StandardMaterial3D _throatMaterial = null!;
-    private StandardMaterial3D _rimMaterial = null!;
-    private StandardMaterial3D _signMaterial = null!;
-    private Mesh _mouthMesh = null!;
-    private Mesh _throatMesh = null!;
-    private Mesh _rimMesh = null!;
+    private StandardMaterial3D _plateMaterial = null!;
+    private StandardMaterial3D _iconMaterial = null!;
     private Mesh _signMesh = null!;
+    private Mesh _wellIcon = null!;
     private StandardMaterial3D _blockMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
@@ -72,14 +70,12 @@ public partial class ObstacleRenderer : Node3D
     {
         foreach (var view in _views.Values) view.Node.QueueFree();
         foreach (var view in _pickupViews.Values) view.Node.QueueFree();
-        foreach (var view in _warpViews.Values) view.Node.QueueFree();
         foreach (var view in _signViews.Values) view.Node.QueueFree();
         foreach (var node in _shotViews) node.QueueFree();
         foreach (var node in _ringViews) node.QueueFree();
         foreach (var burst in _bursts) burst.Node.QueueFree();
         _views.Clear();
         _pickupViews.Clear();
-        _warpViews.Clear();
         _signViews.Clear();
         _shotViews.Clear();
         _ringViews.Clear();
@@ -91,7 +87,6 @@ public partial class ObstacleRenderer : Node3D
         _session = session;
         _createObstacle = CreateObstacleView;
         _createPickup = CreatePickupView;
-        _createWarp = CreateWarpView;
         _createSign = CreateSignView;
         _glow = theme.Glow;
         _breakable = theme.Breakable.ToColor();
@@ -103,28 +98,18 @@ public partial class ObstacleRenderer : Node3D
         _ringMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
         foreach (var (kind, look) in PickupLooks) _pickupMaterials[kind] = Glowing(look.Color, 2.5f);
 
-        // A warp mouth is a hole, so it is unlit and near black however the level is lit; the rim
-        // and the signs leading up to it are the only bright parts.
-        _voidMaterial = new StandardMaterial3D
+        // A road sign: a yellow triangular plate with a black hole on it.
+        _plateMaterial = Glowing(new Color(1f, 0.86f, 0.32f), 2.1f);
+        _plateMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+        _iconMaterial = new StandardMaterial3D
         {
-            AlbedoColor = new Color(0.01f, 0.01f, 0.02f),
+            AlbedoColor = new Color(0.02f, 0.02f, 0.02f),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
         };
-        // The throat is lit, unlike the void behind it: catching the headlight is what shows the
-        // wall turning inwards, so the black reads as depth rather than a decal.
-        _throatMaterial = new StandardMaterial3D
-        {
-            AlbedoColor = new Color(0.2f, 0.21f, 0.25f),
-            Roughness = 0.6f,
-            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-        };
-        _rimMaterial = Glowing(new Color(1f, 0.5f, 0.08f), 2.5f);
-        _signMaterial = Glowing(new Color(1f, 0.72f, 0.1f), 2f);
-        _mouthMesh = new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 1f, RadialSegments = 24 };
-        _throatMesh = new CylinderMesh { TopRadius = 1f, BottomRadius = 0.72f, Height = 1f, RadialSegments = 24 };
-        _rimMesh = new TorusMesh { InnerRadius = 0.74f, OuterRadius = 1f, Rings = 32, RingSegments = 8 };
-        _signMesh = new BoxMesh { Size = new Vector3(2.1f, 1.3f, 0.12f) };
+        // A three-sided cylinder is a flat triangular plate; a many-sided one is the disc on it.
+        _signMesh = new CylinderMesh { TopRadius = 1.5f, BottomRadius = 1.5f, Height = 0.12f, RadialSegments = 3 };
+        _wellIcon = new CylinderMesh { TopRadius = 0.62f, BottomRadius = 0.62f, Height = 0.06f, RadialSegments = 24 };
 
         _shotMesh = new CapsuleMesh { Radius = 0.12f, Height = 1.4f };
         _burstMesh = new SphereMesh { Radius = 0.15f, Height = 0.3f, RadialSegments = 6, Rings = 3 };
@@ -136,20 +121,16 @@ public partial class ObstacleRenderer : Node3D
     public void UpdateView(Vector3d origin, float dt)
     {
         _time += dt;
-        // From the cockpit a warp is only ever seen edge-on, so its lit rim is the whole read.
-        // Pulsing it is what makes the gash catch the eye at speed.
-        _rimMaterial.EmissionEnergyMultiplier = 3.4f + 1.8f * MathF.Sin(_time * 4f);
         double s = _session.Ship.Position.S;
 
         foreach (var o in _session.Obstacles) Sync(_views, o, !o.Destroyed && InView(o.S, s), o.Destroyed, _createObstacle, origin);
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
         foreach (var w in _session.Warps)
         {
-            // The mouth stays whether or not it has fired; it is a hole in the wall, not a pickup.
-            Sync(_warpViews, w, InView(w.S, s), burst: false, _createWarp, origin);
-            for (int i = 0; i < SignDistances.Length; i++)
+            // The well itself is the tube wall extruded into it by TrackRenderer; only signs here.
+            for (int i = 0; i < SignsInRing; i++)
             {
-                Sync(_signViews, (w, i), InView(w.S - SignDistances[i], s), burst: false, _createSign, origin);
+                Sync(_signViews, (w, i), InView(w.S - SignRing, s), burst: false, _createSign, origin);
             }
         }
         foreach (var (o, view) in _views)
@@ -225,77 +206,114 @@ public partial class ObstacleRenderer : Node3D
         return new View(pad, center, forward, up, Spins: true, material);
     }
 
-    // The mouth of a side tube at right angles to the track, opening into black. The bore sinks into
-    // the wall so it reads as a hole, and a lit rim keeps it from looking like a shadow.
-    private View CreateWarpView(Warp w)
+    // A wireframe picture of a well, for the warning signs: rings down to a throat, plus meridians.
+    private static Mesh BuildWellIcon()
     {
-        var (center, forward, up) = Pose(w.S, w.Branch, w.Surface, w.X, 0f);
-        var node = new Node3D();
-
-        // Place points the node's +Y along the surface normal and -Z down the track, so X is the
-        // opening across the surface, Z is its extent along the track, and Y is depth into the
-        // wall. Everything below y = 0 sits inside the wall rather than standing on it.
-        float halfWidth = w.Width / 2f;
-        float halfLength = w.Length / 2f;
-        const float inset = 1.1f;
-        const float depth = 2.5f;
-
-        // A lit throat turns in from the rim before the black starts, which is all the depth that
-        // survives being seen from inside the tube.
-        node.AddChild(new MeshInstance3D
+        const int rings = 4, segments = 16;
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Lines);
+        Vector3 At(int i, int a)
         {
-            Mesh = _throatMesh,
-            MaterialOverride = _throatMaterial,
-            Scale = new Vector3(halfWidth, inset, halfLength),
-            Position = new Vector3(0f, -inset / 2f, 0f),
-        });
-        node.AddChild(new MeshInstance3D
+            float t = i / (float)rings;
+            float r = 0.18f + 0.82f * MathF.Cos(t * MathF.PI / 2f);
+            float angle = 2f * MathF.PI * a / segments;
+            return new Vector3(r * MathF.Cos(angle), -0.9f * MathF.Pow(t, 1.6f), r * MathF.Sin(angle));
+        }
+        for (int i = 0; i <= rings; i++)
         {
-            Mesh = _mouthMesh,
-            MaterialOverride = _voidMaterial,
-            Scale = new Vector3(halfWidth * 0.78f, depth, halfLength * 0.93f),
-            Position = new Vector3(0f, -inset - depth / 2f, 0f),
-        });
-        // A torus lies in its XZ plane with its hole along Y, already the wall's normal; stretching
-        // X and Z separately makes the ring match an elongated slot instead of a circle.
-        node.AddChild(new MeshInstance3D
+            for (int a = 0; a < segments; a++)
+            {
+                st.AddVertex(At(i, a));
+                st.AddVertex(At(i, a + 1));
+            }
+        }
+        for (int a = 0; a < segments; a += 2)
         {
-            Mesh = _rimMesh,
-            MaterialOverride = _rimMaterial,
-            Scale = new Vector3(halfWidth, MathF.Min(halfWidth, 1.6f), halfLength),
-        });
-
-        AddChild(node);
-        return new View(node, center, forward, up, Spins: false, _rimMaterial);
+            for (int i = 0; i < rings; i++)
+            {
+                st.AddVertex(At(i, a));
+                st.AddVertex(At(i + 1, a));
+            }
+        }
+        return st.Commit();
     }
 
-    // A warning plate hanging off the wall, back up the track from a mouth, so the hazard is
-    // telegraphed. They flank the approach on alternating sides: a sign sitting on the mouth's own
-    // line would block the view of exactly the thing it is warning about.
+    /// <summary>
+    /// The funnel of a warp mouth, as rings of a surface of revolution squashed to the opening's
+    /// shape. Place points +Y along the surface normal, so it hangs below the wall. The radius
+    /// leaves the wall tangentially, which is what makes the lip a round-over rather than an edge,
+    /// and the depth starts flat and accelerates, which is what makes it read as a well rather than
+    /// a cone. The throat is left open, so it falls away into black.
+    /// </summary>
+    /// <param name="throat">Radius it narrows to, as a fraction of the mouth; 0 closes it to a point.</param>
+    private static Mesh BuildFunnel(float halfWidth, float halfLength, float throat, float depthScale)
+    {
+        const int rings = 16;
+        const int segments = 32;
+        float depth = depthScale * MathF.Max(halfWidth, halfLength);
+
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (int i = 0; i <= rings; i++)
+        {
+            float t = i / (float)rings;
+            float r = throat + (1f - throat) * MathF.Cos(t * MathF.PI / 2f);
+            float d = depth * MathF.Pow(t, 1.6f);
+            for (int a = 0; a <= segments; a++)
+            {
+                float angle = 2f * MathF.PI * a / segments;
+                st.SetUV(new Vector2(a / (float)segments, t));
+                st.AddVertex(new Vector3(r * halfWidth * MathF.Cos(angle), -d, r * halfLength * MathF.Sin(angle)));
+            }
+        }
+        for (int i = 0; i < rings; i++)
+        {
+            for (int a = 0; a < segments; a++)
+            {
+                int p = i * (segments + 1) + a;
+                st.AddIndex(p);
+                st.AddIndex(p + segments + 1);
+                st.AddIndex(p + 1);
+                st.AddIndex(p + 1);
+                st.AddIndex(p + segments + 1);
+                st.AddIndex(p + segments + 2);
+            }
+        }
+        st.GenerateNormals();
+        return st.Commit();
+    }
+
+    // One warning plate from the ring standing around the tube ahead of a well. A ring warns whatever
+    // way round the player is flying, and sits clear of the well's own line so it hides nothing.
     private View CreateSignView((Warp Warp, int Index) sign)
     {
         var w = sign.Warp;
-        double s = w.S - SignDistances[sign.Index];
-        float side = sign.Index % 2 == 0 ? 1f : -1f;
-        float across = w.X + side * (w.Width / 2f + 5f);
-
-        // Around a closed tube that offset wraps onto the wall; on open planes it just steps aside.
+        double s = w.S - SignRing;
         var shape = _shapes.Get(_session.Track.SectionAt(s, w.Branch));
-        var (surface, x) = shape.IsClosed ? shape.Wrap(w.Surface, across) : (w.Surface, across);
+        var (surface, x) = shape.IsClosed
+            ? shape.Wrap(Surface.Floor, shape.Perimeter * sign.Index / SignsInRing)
+            : (w.Surface, w.X + (sign.Index - (SignsInRing - 1) / 2f) * 9f);
+
         var (center, forward, up) = Pose(s, w.Branch, surface, x, 1.4f);
-        var plate = new MeshInstance3D { Mesh = _signMesh, MaterialOverride = _signMaterial };
-        plate.AddChild(new Label3D
+        // A cylinder's axis is Y and Place points that along the surface normal, so tipping the
+        // plate a quarter turn stands it up facing back at the oncoming ship, point upwards.
+        var plate = new MeshInstance3D
         {
-            Text = "WARP",
-            Position = new Vector3(0f, 0f, 0.2f),
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            FontSize = 64,
-            PixelSize = 0.012f,
-            OutlineSize = 14,
-            Modulate = new Color(0.12f, 0.06f, 0f),
+            Mesh = _signMesh,
+            MaterialOverride = _plateMaterial,
+            RotationDegrees = new Vector3(90f, 0f, 0f),
+        };
+        // The disc stands proud of both faces. Local Y is the plate's thickness once the quarter turn
+        // is applied, and the plate is only 0.12 thick, so a disc long enough to pass right through it
+        // shows whichever side the player sees - no guessing which face ends up pointing back.
+        plate.AddChild(new MeshInstance3D
+        {
+            Mesh = _wellIcon,
+            MaterialOverride = _iconMaterial,
+            Scale = new Vector3(1f, 5f, 1f),
         });
         AddChild(plate);
-        return new View(plate, center, forward, up, Spins: false, _signMaterial);
+        return new View(plate, center, forward, up, Spins: false, _plateMaterial);
     }
 
     // Breakable blocks darken with each hit.

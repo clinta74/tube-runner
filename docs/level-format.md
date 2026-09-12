@@ -202,20 +202,21 @@ answers: a ring of targets after the ring gun, tough blocks after rapid fire.
 
 ## Warp zones
 
-A `warps` list, on a piece or at the top level, puts a mouth in the tube wall: a side tube at right
-angles to the track, opening into black. Fly into one and it throws the ship back up the track. It
-costs **time, never a shield**, and each fires once, so repeatedly clipping the same mouth cannot
-trap a run.
+A `warps` list, on a piece or at the top level, sinks a **well** into the tube wall: the wall itself
+bends down into a throat that opens through it. Fly into one and the ship falls down it for a moment
+before being thrown back up the track. It costs **time, never a shield**, and a well stays armed —
+fly into the same one again and it takes you again.
 
-Three warning signs are placed automatically at 55, 110 and 170 units back up the track from the
-mouth, so the hazard is always telegraphed. Nothing needs declaring for them.
+A ring of six warning signs is placed automatically 75 units back up the track, each a yellow
+triangular plate carrying a black disc. Six is enough that one faces the player whichever way round
+the tube they are flying. Nothing needs declaring for them.
 
 | Field | Default | Meaning |
 |---|---|---|
 | `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
 | `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
-| `width` | `7` | Opening across the surface. |
-| `length` | `18` | Opening along the track. Long by default, see below. |
+| `width` | `14` | Opening across the surface. A little over a third of the way around a radius-6 tube. |
+| `length` | `32` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
 | `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
 | `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
 
@@ -234,9 +235,27 @@ curve of the wall turns that patch back towards the ship: it stands out as a cle
 long way out and only goes edge-on once you are on top of it, which is exactly the right order for
 a hazard.
 
-Either way it reads as a **glowing slot in the wall**, not a hole into blackness. The lit rim is
-what the player actually sees, which is why it pulses and why mouths are long along the track
-rather than round; the dark bore behind it only really shows from outside the tube.
+**Keep a mouth to about a third of the way around the tube**, so two thirds of the circumference
+stays safe. A warp is something the player steers around, not a gap they thread: on a radius-6 tube
+(perimeter about 37.7) the default `width` of 14 is already at that share, so **grow a mouth along
+the track, not around it**. That is why `length` is the longer axis — it is the only one free, and
+the long-range read is what a small mouth loses.
+
+**The wall is drawn down into the well**, rather than the opening being a hole with something else
+hung behind it. Vertices inside the mouth are displaced inwards along the surface normal, so the
+tube extrudes into the throat as one continuous surface with no seam to mismatch at the lip, and
+only the cells past the throat are omitted. Each vertex carries how far in it lies as `UV2.x`, and
+`tube_wall.gdshader` takes the inside to black just past the rim: an unlit wall bending inwards
+gives the lip nothing to read against, which is what made earlier versions read as a flat smudge.
+A separate funnel mesh was tried first and abandoned — its rim never matched the wall it met.
+
+The cut is measured around the tube rather than across one strip, so a mouth can sit on the seam
+between the floor and ceiling halves without tearing either open.
+
+Going down a well the camera holds the pose the ship had on the track and swings its aim onto the
+ship, easing out hard so the view has caught up early in the dive. Tracking the ship at an even rate
+leaves the aim trailing it the whole way down, which reads as the ship dropping out of frame rather
+than the player following it in.
 
 A warp is worth more than an obstacle in a time trial, because a block costs a shield and about
 0.4 s while a warp costs whatever the ship takes to fly that ground again — at 120 u/s a default

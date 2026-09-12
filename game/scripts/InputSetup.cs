@@ -16,6 +16,7 @@ public static class InputSetup
     public const string Fire = "fire";
     public const string Special = "special";
     public const string Restart = "restart";
+    public const string Pause = "pause";
 
     public static void Register()
     {
@@ -30,6 +31,7 @@ public static class InputSetup
         Add(Special, KeyEvent(Key.E), KeyEvent(Key.K), Button(JoyButton.Y),
             new InputEventMouseButton { ButtonIndex = MouseButton.Right });
         Add(Restart, KeyEvent(Key.R), Button(JoyButton.Start));
+        Add(Pause, KeyEvent(Key.P), Button(JoyButton.Back));
     }
 
     private static void Add(string action, params InputEvent[] events)

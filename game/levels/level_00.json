@@ -1,0 +1,41 @@
+{
+  "name": "Warp Test",
+  "speed": 80,
+  "segmentLength": 60,
+
+  // A bare level for trying the warp by hand: one round tube, no obstacles, no power-ups, and a
+  // single mouth on the outside wall of a long left-hander. Not part of the run - play it with
+  //   ./play.ps1 -Level level_00.json
+  // Walls are deliberately mid-grey rather than near-black, so a dark hole has something to read
+  // against. P pauses, for a still of the approach.
+  "theme": {
+    "darks": ["#3a4450", "#33404a", "#42404f"],
+    "lights": ["#aebccb", "#9fb4c4", "#b9b3c6"],
+    "seamDark": "#20262c",
+    "seamLight": "#dff0ff",
+    "far": "#0b0e12",
+    "ship": "#dff0ff",
+    "block": "#ffffff",
+    "target": "#ff5a7a",
+    "fadeStart": 30,
+    "fadeEnd": 330,
+    "glow": 0.15
+  },
+
+  "sections": {
+    "tube": { "radius": 6 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 300 },                                  //   0 -  300  settle in
+
+    // The bend. The mouth sits at 500 on the outer wall, where the tube curves away from a ship on
+    // the floor, so it is presented to you rather than seen edge-on. Signs at 330, 390 and 445.
+    { "length": 400, "turn": -70, "warps": [            // 300 -  700
+      { "at": 200, "angle": 90 }
+    ] },
+
+    { "length": 400 }                                   // 700 - 1100  run to the finish
+  ]
+}

@@ -28,20 +28,20 @@ public class WarpTests
     }
 
     [Fact]
-    public void Warp_FiresOnlyOnce_SoItCannotTrapTheRun()
+    public void Warp_StaysArmed_SoTheSameWellCanTakeTheShipAgain()
     {
         var warp = new Warp { S = 400 };
         var game = Session(warp);
         int warps = 0;
 
-        // Long enough to pass 400 once, be thrown back, and fly through the same spot again.
+        // Long enough to be thrown back and fly into the same well a second time.
         for (int i = 0; i < 3000; i++)
         {
             game.Step(1f / 60f, default);
             warps += game.Events.Count(e => e == SessionEvent.Warped);
         }
 
-        Assert.Equal(1, warps);
+        Assert.True(warps >= 2, $"the well only took the ship {warps} time(s)");
     }
 
     [Fact]
@@ -76,6 +76,30 @@ public class WarpTests
         Assert.Equal(150.0, warp.S);
         Assert.Equal(8f, warp.Width);
         Assert.Equal(120f, warp.Back);
+    }
+
+    [Fact]
+    public void Warp_CarriesTheShipDownTheWellBeforeThrowingItBack()
+    {
+        var warp = new Warp { S = 400 };
+        var game = Session(warp);
+
+        while (game.Diving is null && game.Ship.Position.S < 600) game.Step(1f / 60f, default);
+        Assert.NotNull(game.Diving);
+        Assert.Contains(SessionEvent.WarpEntered, game.Events);
+
+        // Partway down the well the ship holds station and has not been thrown back yet.
+        double atTheMouth = game.Ship.Position.S;
+        game.Step(1f / 60f, default);
+        Assert.Equal(atTheMouth, game.Ship.Position.S);
+        Assert.DoesNotContain(SessionEvent.Warped, game.Events);
+        Assert.InRange(game.DiveProgress, 0f, 1f);
+
+        while (game.Diving is not null) game.Step(1f / 60f, default);
+
+        Assert.Contains(SessionEvent.Warped, game.Events);
+        Assert.True(game.Ship.Position.S < atTheMouth - 100,
+            $"landed at {game.Ship.Position.S:0} from {atTheMouth:0}");
     }
 
     private static Track Track()
