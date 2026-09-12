@@ -73,10 +73,12 @@ public static class LevelLoader
         // Things inside a piece are placed from its start; top-level ones from the track's start.
         var obstacles = ToObstacles(data.Obstacles, track, 0, "Obstacle");
         var pickups = ToPickups(data.Pickups, track, 0, "Pickup");
+        var warps = ToWarps(data.Warps, track, 0, "Warp");
         for (int i = 0; i < data.Track.Count; i++)
         {
             obstacles.AddRange(ToObstacles(data.Track[i].Obstacles, track, pieceStarts[i], $"Track piece {i}, obstacle"));
             pickups.AddRange(ToPickups(data.Track[i].Pickups, track, pieceStarts[i], $"Track piece {i}, pickup"));
+            warps.AddRange(ToWarps(data.Track[i].Warps, track, pieceStarts[i], $"Track piece {i}, warp"));
         }
 
         return new Level
@@ -89,6 +91,7 @@ public static class LevelLoader
             Track = track,
             Obstacles = obstacles,
             Pickups = pickups,
+            Warps = warps,
         };
     }
 
@@ -189,6 +192,32 @@ public static class LevelLoader
             }
         }
         return pickups;
+    }
+
+    private static List<Warp> ToWarps(List<WarpData> list, Track track, double offset, string label)
+    {
+        var warps = new List<Warp>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            var w = list[i];
+            string where = $"{label} {i}";
+            if (w.Back < 0f) throw new LevelFormatException($"{where}: 'back' can't be negative.");
+
+            foreach (var (s, branch, surface, x) in Place(w, track, offset, where))
+            {
+                warps.Add(new Warp
+                {
+                    S = s,
+                    Branch = branch,
+                    Surface = surface,
+                    X = x,
+                    Width = w.Width,
+                    Length = w.Length,
+                    Back = w.Back,
+                });
+            }
+        }
+        return warps;
     }
 
     // Where a placement and each of its repeats land on the track.
@@ -314,6 +343,7 @@ public static class LevelLoader
         public List<PieceData> Track { get; set; } = new();
         public List<ObstacleData> Obstacles { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
+        public List<WarpData> Warps { get; set; } = new();
     }
 
     private sealed class SectionData
@@ -335,6 +365,7 @@ public static class LevelLoader
         public SplitData? Split { get; set; }
         public List<ObstacleData> Obstacles { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
+        public List<WarpData> Warps { get; set; } = new();
     }
 
     private sealed class SplitData
@@ -347,6 +378,15 @@ public static class LevelLoader
     {
         public List<float[]> Offsets { get; set; } = new();
         public string? Section { get; set; }
+    }
+
+    private sealed class WarpData : PlacementData
+    {
+        public float Width { get; set; } = 6f;
+        public float Length { get; set; } = 6f;
+
+        /// <summary>How far back it throws the ship; 0 takes the game's default.</summary>
+        public float Back { get; set; }
     }
 
     // Where something sits on the track, with optional repeats.

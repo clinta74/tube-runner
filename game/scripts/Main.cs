@@ -151,7 +151,7 @@ public partial class Main : Node3D
         // Start on the floor; by default far enough in that the camera has track behind it.
         _levelStart = startS ?? CameraBehind + 10.0;
         var start = new TrackPosition(_levelStart, Surface.Floor, 0f);
-        _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry);
+        _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry, level.Warps);
 
         ThemeView.Apply(level.Theme, WallMaterial);
         _ship.ApplyTheme(level.Theme);
@@ -271,6 +271,11 @@ public partial class Main : Node3D
             {
                 case SessionEvent.Fired:
                     _ship.Fire();
+                    break;
+                case SessionEvent.Warped:
+                    // No shield lost; the cost is the ground you have to cover again.
+                    _hud.Callout("WARPED BACK");
+                    _shake = 1f;
                     break;
                 case SessionEvent.Hit:
                     _hud.Flash();

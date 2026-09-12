@@ -200,6 +200,37 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 Put a power-up in a calm stretch the first time a level uses it, then follow it with the obstacle it
 answers: a ring of targets after the ring gun, tough blocks after rapid fire.
 
+## Warp zones
+
+A `warps` list, on a piece or at the top level, puts a mouth in the tube wall: a side tube at right
+angles to the track, opening into black. Fly into one and it throws the ship back up the track. It
+costs **time, never a shield**, and each fires once, so repeatedly clipping the same mouth cannot
+trap a run.
+
+Three warning signs are placed automatically at 55, 110 and 170 units back up the track from the
+mouth, so the hazard is always telegraphed. Nothing needs declaring for them.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
+| `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
+| `width` | `6` | Opening across the surface. |
+| `length` | `6` | Opening along the track. |
+| `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
+| `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
+
+```json
+{ "length": 400, "warps": [
+  { "at": 150, "angle": 180 },              // a mouth in the ceiling
+  { "at": 300, "x": -8, "back": 400 }       // wider of the mark, and a longer way back
+] }
+```
+
+A warp is worth more than an obstacle in a time trial, because a block costs a shield and about
+0.4 s while a warp costs whatever the ship takes to fly that ground again — at 120 u/s a default
+warp is a little over two seconds. Put one where the fast line is obvious and tempting, so the
+greedy route is the one that risks it.
+
 ## Theme
 
 | Field | Meaning |

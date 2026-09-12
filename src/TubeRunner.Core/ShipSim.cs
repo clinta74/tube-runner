@@ -112,6 +112,21 @@ public sealed class ShipSim
         Position = new TrackPosition(s, surface, x, moved.Branch);
     }
 
+    /// <summary>
+    /// Drops the ship at another point on the track, keeping where it sits on the surface. Warp
+    /// zones use this to throw it back the way it came, which is the one time S goes backwards.
+    /// Any jump in progress is cancelled, since the section it was crossing is no longer there.
+    /// </summary>
+    public void WarpTo(double s)
+    {
+        s = Math.Clamp(s, 0, _track.Length);
+        var moved = _track.MoveTo(Position, s);
+        Shape = _shapes.Get(_track.SectionAt(s, moved.Branch));
+        IsJumping = false;
+        JumpProgress = 0f;
+        Position = moved;
+    }
+
     /// <summary>Ship position and up direction in section space, <paramref name="rideHeight"/> above its surface.</summary>
     public (Vector2 Point, Vector2 Up) Pose(float rideHeight)
     {

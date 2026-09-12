@@ -19,6 +19,7 @@ public enum SessionEvent
     BlockDestroyed,
     ShotBlocked,
     Rammed,
+    Warped,
     ShieldRestored,
     ShieldsRefilled,
     ShieldSlotAdded,
@@ -61,6 +62,7 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 /// <param name="ShipHalfWidth">Collision half-size across the surface.</param>
 /// <param name="ShipHalfLength">Collision half-size along the track.</param>
 /// <param name="FinishRunOut">Distance before the end of the track where the level counts as finished.</param>
+/// <param name="WarpBack">How far a warp zone throws the ship back up the track.</param>
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
@@ -79,7 +81,8 @@ public sealed record SessionSettings(
     float PickupRadius = 1.5f,
     float ShipHalfWidth = 0.6f,
     float ShipHalfLength = 0.8f,
-    float FinishRunOut = 40f);
+    float FinishRunOut = 40f,
+    float WarpBack = 250f);
 
 /// <summary>A shot flying down the track ahead of the ship.</summary>
 public sealed class Shot
@@ -117,6 +120,7 @@ public sealed class GameSession
     private readonly SessionSettings _settings;
     private readonly List<Obstacle> _obstacles;
     private readonly List<Pickup> _pickups;
+    private readonly List<Warp> _warps;
     private readonly List<Shot> _shots = new();
     private readonly List<RingShot> _rings = new();
     private readonly List<SessionEvent> _events = new();
@@ -127,12 +131,13 @@ public sealed class GameSession
 
     /// <param name="carry">State from earlier levels of the same run; null starts fresh.</param>
     public GameSession(Track track, IEnumerable<Obstacle> obstacles, SessionSettings settings, TrackPosition start,
-        IEnumerable<Pickup>? pickups = null, RunState? carry = null)
+        IEnumerable<Pickup>? pickups = null, RunState? carry = null, IEnumerable<Warp>? warps = null)
     {
         Track = track;
         _settings = settings;
         _obstacles = obstacles.OrderBy(o => o.S).ToList();
         _pickups = (pickups ?? []).OrderBy(p => p.S).ToList();
+        _warps = (warps ?? []).OrderBy(w => w.S).ToList();
         Ship = new ShipSim(settings.Ship, track, start);
         Shields = MaxShields = settings.Shields;
 
@@ -153,6 +158,7 @@ public sealed class GameSession
     public ShipSim Ship { get; }
     public IReadOnlyList<Obstacle> Obstacles => _obstacles;
     public IReadOnlyList<Pickup> Pickups => _pickups;
+    public IReadOnlyList<Warp> Warps => _warps;
     public IReadOnlyList<Shot> Shots => _shots;
     public IReadOnlyList<RingShot> Rings => _rings;
 
@@ -205,6 +211,7 @@ public sealed class GameSession
 
         CheckShipHits(before, Ship.Position.S);
         CollectPickups(before, Ship.Position.S);
+        CheckWarps(before, Ship.Position.S);
         MoveShots(dt);
         MoveRings(dt);
 
@@ -273,6 +280,30 @@ public sealed class GameSession
             p.Collected = true;
             _bonus += PickupPoints;
             Apply(p.Kind);
+        }
+    }
+
+    // Warp zones: a mouth in the wall that throws the ship back up the track. The cost is time, not
+    // a shield, and each fires once so repeatedly clipping the same one can't trap the run. The
+    // sweep stays forward-only because this runs before the ship is moved back.
+    private void CheckWarps(double from, double to)
+    {
+        var pos = Ship.Position;
+        foreach (var w in Nearby(_warps, w => w.S, from, to))
+        {
+            if (w.Used || w.Branch != pos.Branch) continue;
+            double reach = w.Length / 2f + _settings.ShipHalfLength;
+            if (to < w.S - reach || from > w.S + reach) continue;
+
+            float lateral = Ship.IsJumping
+                ? MathF.Abs(pos.X - w.X)
+                : TrackSpace.SurfaceDistance(ShapeAt(w.S, w.Branch), pos.Surface, pos.X, w.Surface, w.X);
+            if (lateral >= w.Width / 2f + _settings.ShipHalfWidth) continue;
+
+            w.Used = true;
+            Ship.WarpTo(w.S - (w.Back > 0f ? w.Back : _settings.WarpBack));
+            _events.Add(SessionEvent.Warped);
+            return;
         }
     }
 

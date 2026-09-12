@@ -23,4 +23,7 @@ public sealed class Level
 
     /// <summary>Power-ups. Like obstacles, they hold per-run state.</summary>
     public required IReadOnlyList<Pickup> Pickups { get; init; }
+
+    /// <summary>Warp zones. Like obstacles, they hold per-run state.</summary>
+    public IReadOnlyList<Warp> Warps { get; init; } = [];
 }

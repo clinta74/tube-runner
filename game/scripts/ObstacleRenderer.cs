@@ -26,8 +26,13 @@ public partial class ObstacleRenderer : Node3D
         [PickupKind.Unstoppable] = (new Color(1f, 0.2f, 0.2f), "RAM"),
     };
 
+    // Warning signs stand these far back up the track from a warp mouth.
+    private static readonly float[] SignDistances = { 55f, 110f, 170f };
+
     private readonly Dictionary<Obstacle, View> _views = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
+    private readonly Dictionary<Warp, View> _warpViews = new();
+    private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
     private readonly List<MeshInstance3D> _shotViews = new();
     private readonly List<MeshInstance3D> _ringViews = new();
@@ -36,6 +41,14 @@ public partial class ObstacleRenderer : Node3D
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
     private Func<Pickup, View> _createPickup = null!;
+    private Func<Warp, View> _createWarp = null!;
+    private Func<(Warp Warp, int Index), View> _createSign = null!;
+    private StandardMaterial3D _voidMaterial = null!;
+    private StandardMaterial3D _rimMaterial = null!;
+    private StandardMaterial3D _signMaterial = null!;
+    private Mesh _mouthMesh = null!;
+    private Mesh _rimMesh = null!;
+    private Mesh _signMesh = null!;
     private StandardMaterial3D _blockMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
@@ -57,11 +70,15 @@ public partial class ObstacleRenderer : Node3D
     {
         foreach (var view in _views.Values) view.Node.QueueFree();
         foreach (var view in _pickupViews.Values) view.Node.QueueFree();
+        foreach (var view in _warpViews.Values) view.Node.QueueFree();
+        foreach (var view in _signViews.Values) view.Node.QueueFree();
         foreach (var node in _shotViews) node.QueueFree();
         foreach (var node in _ringViews) node.QueueFree();
         foreach (var burst in _bursts) burst.Node.QueueFree();
         _views.Clear();
         _pickupViews.Clear();
+        _warpViews.Clear();
+        _signViews.Clear();
         _shotViews.Clear();
         _ringViews.Clear();
         _bursts.Clear();
@@ -72,6 +89,8 @@ public partial class ObstacleRenderer : Node3D
         _session = session;
         _createObstacle = CreateObstacleView;
         _createPickup = CreatePickupView;
+        _createWarp = CreateWarpView;
+        _createSign = CreateSignView;
         _glow = theme.Glow;
         _breakable = theme.Breakable.ToColor();
 
@@ -81,6 +100,20 @@ public partial class ObstacleRenderer : Node3D
         _ringMaterial = Glowing(new Color(1f, 0.3f, 1f), 4f);
         _ringMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
         foreach (var (kind, look) in PickupLooks) _pickupMaterials[kind] = Glowing(look.Color, 2.5f);
+
+        // A warp mouth is a hole, so it is unlit and near black however the level is lit; the rim
+        // and the signs leading up to it are the only bright parts.
+        _voidMaterial = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.01f, 0.01f, 0.02f),
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
+        _rimMaterial = Glowing(new Color(1f, 0.5f, 0.08f), 2.5f);
+        _signMaterial = Glowing(new Color(1f, 0.72f, 0.1f), 2f);
+        _mouthMesh = new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 1f, RadialSegments = 24 };
+        _rimMesh = new TorusMesh { InnerRadius = 0.86f, OuterRadius = 1f, Rings = 32, RingSegments = 8 };
+        _signMesh = new BoxMesh { Size = new Vector3(2.1f, 1.3f, 0.12f) };
 
         _shotMesh = new CapsuleMesh { Radius = 0.12f, Height = 1.4f };
         _burstMesh = new SphereMesh { Radius = 0.15f, Height = 0.3f, RadialSegments = 6, Rings = 3 };
@@ -96,6 +129,15 @@ public partial class ObstacleRenderer : Node3D
 
         foreach (var o in _session.Obstacles) Sync(_views, o, !o.Destroyed && InView(o.S, s), o.Destroyed, _createObstacle, origin);
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
+        foreach (var w in _session.Warps)
+        {
+            // The mouth stays whether or not it has fired; it is a hole in the wall, not a pickup.
+            Sync(_warpViews, w, InView(w.S, s), burst: false, _createWarp, origin);
+            for (int i = 0; i < SignDistances.Length; i++)
+            {
+                Sync(_signViews, (w, i), InView(w.S - SignDistances[i], s), burst: false, _createSign, origin);
+            }
+        }
         foreach (var (o, view) in _views)
         {
             if (o.Hits > 0 && view.HitsShown != o.HitsTaken) ShowDamage(o, view);
@@ -167,6 +209,64 @@ public partial class ObstacleRenderer : Node3D
         });
         AddChild(pad);
         return new View(pad, center, forward, up, Spins: true, material);
+    }
+
+    // The mouth of a side tube at right angles to the track, opening into black. The bore sinks into
+    // the wall so it reads as a hole, and a lit rim keeps it from looking like a shadow.
+    private View CreateWarpView(Warp w)
+    {
+        float radius = w.Width / 2f;
+        var (center, forward, up) = Pose(w.S, w.Branch, w.Surface, w.X, 0f);
+        var node = new Node3D();
+
+        // Place points the node's +Y along the surface normal, and the cylinder's axis is Y, so
+        // shifting it down sinks the bore into the wall instead of standing it on top.
+        node.AddChild(new MeshInstance3D
+        {
+            Mesh = _mouthMesh,
+            MaterialOverride = _voidMaterial,
+            Scale = new Vector3(radius, w.Length, radius),
+            Position = new Vector3(0f, -w.Length / 2f, 0f),
+        });
+        // A torus lies in its XZ plane with its hole along Y, which is already the wall's normal.
+        node.AddChild(new MeshInstance3D
+        {
+            Mesh = _rimMesh,
+            MaterialOverride = _rimMaterial,
+            Scale = new Vector3(radius, radius, radius),
+        });
+
+        AddChild(node);
+        return new View(node, center, forward, up, Spins: false, _rimMaterial);
+    }
+
+    // A warning plate hanging off the wall, back up the track from a mouth, so the hazard is
+    // telegraphed. They flank the approach on alternating sides: a sign sitting on the mouth's own
+    // line would block the view of exactly the thing it is warning about.
+    private View CreateSignView((Warp Warp, int Index) sign)
+    {
+        var w = sign.Warp;
+        double s = w.S - SignDistances[sign.Index];
+        float side = sign.Index % 2 == 0 ? 1f : -1f;
+        float across = w.X + side * (w.Width / 2f + 5f);
+
+        // Around a closed tube that offset wraps onto the wall; on open planes it just steps aside.
+        var shape = _shapes.Get(_session.Track.SectionAt(s, w.Branch));
+        var (surface, x) = shape.IsClosed ? shape.Wrap(w.Surface, across) : (w.Surface, across);
+        var (center, forward, up) = Pose(s, w.Branch, surface, x, 1.4f);
+        var plate = new MeshInstance3D { Mesh = _signMesh, MaterialOverride = _signMaterial };
+        plate.AddChild(new Label3D
+        {
+            Text = "WARP",
+            Position = new Vector3(0f, 0f, 0.2f),
+            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            FontSize = 64,
+            PixelSize = 0.012f,
+            OutlineSize = 14,
+            Modulate = new Color(0.12f, 0.06f, 0f),
+        });
+        AddChild(plate);
+        return new View(plate, center, forward, up, Spins: false, _signMaterial);
     }
 
     // Breakable blocks darken with each hit.

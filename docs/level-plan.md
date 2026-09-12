@@ -132,7 +132,8 @@ line or down the meaner branch, so they cost something to take.
 | Unstoppable | 6, before the breakable rows | 7 at the box, 9 before the twisting finish |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
-| Forks | 7 | 8, branches with different rewards |
+| Forks | 7 | 8, three junctions where the short way is the tight one |
+| Warp zones | 8, in the run for home | later levels, sitting on the tempting line |
 
 ## Placeholder art to replace later
 

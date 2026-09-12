@@ -155,6 +155,9 @@
       { "at": 80, "angle": -90, "count": 3, "angleStep": 60 },
       { "at": 200, "angle": 0 }
     ] },
-    { "length": 250 }                                               // 4100 - 4350
+    // A last sting: a mouth in the floor, sitting on the natural line and signed well in advance.
+    { "length": 250, "warps": [                                     // 4100 - 4350
+      { "at": 100 }
+    ] }
   ]
 }
