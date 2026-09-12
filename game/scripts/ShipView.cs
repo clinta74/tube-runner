@@ -80,7 +80,9 @@ public partial class ShipView : Node3D
         {
             float pulse = 0.5f + 0.5f * Mathf.Sin(_time * 26f);
             _shellMaterial.AlbedoColor = new Color(_accentColor, 0.05f + 0.12f * pulse);
-            _shellMaterial.EmissionEnergyMultiplier = 0.25f + 0.55f * pulse;
+            // Peaks over the 1.3 threshold so the shell actually flares as it pulses, which is the
+            // whole point of it: it has to be visible at the moment the ship has just been hit.
+            _shellMaterial.EmissionEnergyMultiplier = 0.6f + 1.1f * pulse;
         }
 
         // Ailerons deflect into the bank, opposite sides opposite ways.
@@ -107,9 +109,11 @@ public partial class ShipView : Node3D
             _plumes[i].Scale = new Vector3(width, length, width);
             _plumes[i].Position = new Vector3(Side(i) * 0.28f, -0.01f, 1.14f + 0.35f * length);
         }
-        // Kept near the glow's HDR threshold of 1.0: any hotter and the two nozzles bloom into one
-        // white mass that swallows the back of the ship.
-        _nozzleMaterial.EmissionEnergyMultiplier = 0.5f + 1.8f * intensity;
+        // Straddles the glow's HDR threshold of 1.3, so the engines are lit at rest and bloom once
+        // there is real speed on. Any hotter and the two nozzles bloom into one white mass that
+        // swallows the back of the ship. This tracks the threshold in main.tscn: it was tuned to 1.0
+        // and left behind when that moved, which quietly put the thrusters out altogether.
+        _nozzleMaterial.EmissionEnergyMultiplier = 0.9f + 2.1f * intensity;
 
         // Unstoppable burns the hull hot; otherwise it sits at the theme's glow.
         if (ramLeft > 0f)
@@ -140,8 +144,10 @@ public partial class ShipView : Node3D
         // to reflect, so a metallic hull goes black wherever a face sits edge-on to it.
         _hullMaterial = new StandardMaterial3D { AlbedoColor = Colors.White, Metallic = 0.2f, Roughness = 0.5f };
         _darkMaterial = new StandardMaterial3D { AlbedoColor = Colors.Gray, Metallic = 0.25f, Roughness = 0.55f };
-        _accentMaterial = Glowing(1.2f);
-        _nozzleMaterial = Glowing(1.2f);
+        // Above the 1.3 HDR threshold, or these read as flat paint: the accents are the few bright
+        // marks meant to carry the silhouette from six units back.
+        _accentMaterial = Glowing(1.7f);
+        _nozzleMaterial = Glowing(1.7f);
         // Only the far side of the shell is drawn, so it reads as a bubble the ship sits inside
         // rather than a blob painted over it.
         _shellMaterial = new StandardMaterial3D
@@ -149,7 +155,8 @@ public partial class ShipView : Node3D
             AlbedoColor = new Color(1f, 1f, 1f, 0.1f),
             EmissionEnabled = true,
             Emission = Colors.White,
-            EmissionEnergyMultiplier = 0.5f,
+            // Replaced every frame while the shell is up; this is just the value it starts at.
+            EmissionEnergyMultiplier = 1.1f,
             Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
             CullMode = BaseMaterial3D.CullModeEnum.Front,
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,

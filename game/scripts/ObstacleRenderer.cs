@@ -102,7 +102,7 @@ public partial class ObstacleRenderer : Node3D
         _blockMaterial = Solid(theme.Block.ToColor());
         // Hazard stripes for plates. Nothing else in the game is this colour, because nothing else
         // has to be read as "no way through this one" from as far off as the player can see it.
-        _hazardMaterial = Glowing(new Color(1f, 0.42f, 0.05f), 1.2f + theme.Glow);
+        _hazardMaterial = Glowing(new Color(1f, 0.42f, 0.05f), 1.6f + theme.Glow);
         // Gates take the level's own seam colour rather than the block white, which is the brightest
         // thing on screen and painful to stare at for a stretch built around watching one thing.
         _gateMaterial = Glowing(theme.SeamLight.ToColor().Darkened(0.25f), 0.6f + theme.Glow);
@@ -113,7 +113,9 @@ public partial class ObstacleRenderer : Node3D
             AlbedoColor = theme.SeamDark.ToColor(),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
         };
-        _targetMaterial = Glowing(theme.Target.ToColor(), 1.5f + theme.Glow);
+        // Everything below is set against the glow's HDR threshold of 1.3 in main.tscn. Under it a
+        // material is flat paint; over it, it blooms. Move that threshold and these move with it.
+        _targetMaterial = Glowing(theme.Target.ToColor(), 1.9f + theme.Glow);
         _shotMaterial = Glowing(theme.SeamLight.ToColor(), 4f);
         _ringMaterial = Glowing(new Color(1f, 0.3f, 1f), 4f);
         _ringMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
@@ -151,7 +153,7 @@ public partial class ObstacleRenderer : Node3D
 
         // Warning signs pulse. Nothing else on a wall does, so movement is what separates a sign
         // from an obstacle at the distance where it still matters which one you are looking at.
-        _plateMaterial.EmissionEnergyMultiplier = 1.7f + 0.9f * Mathf.Sin(_time * 5f);
+        _plateMaterial.EmissionEnergyMultiplier = 2.0f + 0.9f * Mathf.Sin(_time * 5f);
 
         // A gate keeps its view the whole time and slides into the wall instead, so the eye can
         // follow it. The burst flag stays tied to being destroyed alone - otherwise every cycle
