@@ -1,5 +1,6 @@
 {
   "name": "Neon Run",
+  "next": "level_10.json",
   "speed": 100,
   "segmentLength": 60,
 

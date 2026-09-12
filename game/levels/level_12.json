@@ -1,0 +1,113 @@
+{
+  "name": "Firing Order",
+  "next": "level_13.json",
+  "speed": 115,
+  "segmentLength": 60,
+
+  // Target groups that must be shot in order. Two rules shape every group here:
+  //   - order gates shooting, not ramming, so a group on the flight line gets cleared by driving
+  //     through it. Every group below sits out at an angle, off the line the ship holds.
+  //   - shots leave at the ship's own position around the tube and fly straight, so lining a target
+  //     up means steering onto it. A group spread around the wall costs real travel to clear; one
+  //     stacked at a single angle costs almost none. That travel is the puzzle.
+  // The ring gun ignores ordered groups entirely, so it is handed out freely here - it is the tool
+  // for everything that is not a group, and useless against the ones that are.
+  "theme": {
+    "darks": ["#241a2e", "#1d1526", "#2b1f38"],
+    "lights": ["#9a7fc4", "#8469ad", "#a98fd1"],
+    "seamDark": "#120c18",
+    "seamLight": "#e2c3ff",
+    "far": "#08050b",
+    "ship": "#e2c3ff",
+    "block": "#ece3f7",
+    "target": "#ffcf3a",
+    "breakable": "#8affc4",
+    "fadeStart": 35,
+    "fadeEnd": 340,
+    "glow": 0.3
+  },
+
+  "sections": {
+    "tube": { "radius": 6 },
+    "wide": { "radius": 7 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 200 },                                              //    0 -  200
+
+    // FREE LOOK. A pair, a quarter turn apart, numbered. Shoot the far one first or nothing happens.
+    // Wide enough round the tube that steering between them is the whole exercise.
+    { "length": 300, "section": "wide", "obstacles": [              //  200 -  500
+      { "at": 150, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
+      { "at": 150, "kind": "target", "angle": -90, "group": "a", "order": 1 }
+    ] },
+
+    // Three, spread right round the wall. The order runs against the direction of travel, so the
+    // cheapest steering line is the wrong one.
+    { "length": 340, "section": "tube", "turn": 30, "obstacles": [  //  500 -  840
+      { "at": 120, "kind": "target", "angle": 180, "group": "b", "order": 0 },
+      { "at": 180, "kind": "target", "angle": 60,  "group": "b", "order": 1 },
+      { "at": 240, "kind": "target", "angle": -60, "group": "b", "order": 2 }
+    ] },
+
+    // Rapid fire, then a group tight enough that the firing interval matters as much as the aim.
+    { "length": 300, "pickups": [                                   //  840 - 1140
+      { "at": 80, "kind": "rapid-fire" }
+    ], "obstacles": [
+      { "at": 190, "kind": "target", "angle": 90,  "group": "c", "order": 0 },
+      { "at": 220, "kind": "target", "angle": 140, "group": "c", "order": 1 },
+      { "at": 250, "kind": "target", "angle": 40,  "group": "c", "order": 2 }
+    ] },
+
+    { "length": 220, "section": "oval", "speed": 125, "pickups": [  // 1140 - 1360
+      { "at": 110, "kind": "shield", "angle": 180 }
+    ] },
+
+    // Two groups at once, interleaved around the tube. Each has its own order, and picking the wrong
+    // one to start costs the whole approach.
+    { "length": 420, "section": "tube", "turn": -35, "obstacles": [ // 1360 - 1780
+      { "at": 120, "kind": "target", "angle": 0,    "group": "d", "order": 0 },
+      { "at": 120, "kind": "target", "angle": 90,   "group": "e", "order": 0 },
+      { "at": 240, "kind": "target", "angle": 180,  "group": "d", "order": 1 },
+      { "at": 240, "kind": "target", "angle": -90,  "group": "e", "order": 1 },
+      { "at": 340, "kind": "target", "angle": 45,   "group": "d", "order": 2 },
+      { "at": 340, "kind": "target", "angle": -135, "group": "e", "order": 2 }
+    ] },
+
+    // The ring gun: useless on the groups, but it clears the ring of loose targets in one sweep.
+    // Holding it for the wrong thing is the mistake on offer.
+    { "length": 300, "pickups": [                                   // 1780 - 2080
+      { "at": 90, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": 0, "count": 6, "angleStep": 60 }
+    ] },
+
+    // Order under pressure: a group to clear while blocks come past on the same stretch. The blocks
+    // are on the floor line, so the steering the group needs is also the steering that dodges them.
+    { "length": 460, "speed": 135, "turn": 45, "pickups": [         // 2080 - 2540
+      { "at": 60, "kind": "shield", "angle": 90 }
+    ], "obstacles": [
+      { "at": 130, "width": 10 },
+      { "at": 150, "kind": "target", "angle": 120, "group": "f", "order": 0 },
+      { "at": 250, "width": 10, "angle": 30 },
+      { "at": 270, "kind": "target", "angle": -120, "group": "f", "order": 1 },
+      { "at": 370, "width": 10, "angle": -30 },
+      { "at": 390, "kind": "target", "angle": 180, "group": "f", "order": 2 }
+    ] },
+
+    // Run for home. One last group, on a twist, where each target is out of sight until it is close.
+    { "length": 190, "turn": 70, "obstacles": [                     // 2540 - 2730
+      { "at": 110, "kind": "target", "angle": 90, "group": "g", "order": 0 }
+    ] },
+    { "length": 190, "turn": -75, "climb": 12, "obstacles": [       // 2730 - 2920
+      { "at": 100, "kind": "target", "angle": -90, "group": "g", "order": 1 }
+    ] },
+    { "length": 190, "turn": 65, "climb": -14, "obstacles": [       // 2920 - 3110
+      { "at": 100, "kind": "target", "angle": 180, "group": "g", "order": 2 }
+    ] },
+
+    { "length": 250 }                                               // 3110 - 3360
+  ]
+}

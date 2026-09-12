@@ -50,6 +50,7 @@ public partial class ObstacleRenderer : Node3D
     private Mesh _signMesh = null!;
     private Mesh _wellIcon = null!;
     private StandardMaterial3D _blockMaterial = null!;
+    private StandardMaterial3D _hazardMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
     private StandardMaterial3D _ringMaterial = null!;
@@ -92,6 +93,9 @@ public partial class ObstacleRenderer : Node3D
         _breakable = theme.Breakable.ToColor();
 
         _blockMaterial = Solid(theme.Block.ToColor());
+        // Hazard stripes for plates. Nothing else in the game is this colour, because nothing else
+        // has to be read as "no way through this one" from as far off as the player can see it.
+        _hazardMaterial = Glowing(new Color(1f, 0.42f, 0.05f), 1.2f + theme.Glow);
         _targetMaterial = Glowing(theme.Target.ToColor(), 1.5f + theme.Glow);
         _shotMaterial = Glowing(theme.SeamLight.ToColor(), 4f);
         _ringMaterial = Glowing(new Color(1f, 0.3f, 1f), 4f);
@@ -123,7 +127,13 @@ public partial class ObstacleRenderer : Node3D
         _time += dt;
         double s = _session.Ship.Position.S;
 
-        foreach (var o in _session.Obstacles) Sync(_views, o, !o.Destroyed && InView(o.S, s), o.Destroyed, _createObstacle, origin);
+        // A gate is only shown while it is solid, so it disappears as it opens. The burst flag stays
+        // tied to being destroyed alone - otherwise every cycle would set off a fake explosion.
+        foreach (var o in _session.Obstacles)
+        {
+            bool there = !o.Destroyed && o.IsSolidAt(_session.Elapsed) && InView(o.S, s);
+            Sync(_views, o, there, o.Destroyed, _createObstacle, origin);
+        }
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
         foreach (var w in _session.Warps)
         {
@@ -171,18 +181,25 @@ public partial class ObstacleRenderer : Node3D
 
     private View CreateObstacleView(Obstacle o)
     {
-        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.X, o.Height / 2f);
+        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f);
         bool target = o.Kind == ObstacleKind.Target;
         float size = Mathf.Min(o.Width, o.Height);
         Mesh mesh = target
             // A four-sided "sphere" with one ring is a diamond.
             ? new SphereMesh { Radius = size / 2f, Height = size, RadialSegments = 4, Rings = 1 }
             : new BoxMesh { Size = new Vector3(o.Width, o.Height, o.Length) };
-        // Breakable blocks get their own material so each can darken as it takes hits.
-        var material = target ? _targetMaterial : o.Hits > 0 ? Solid(_breakable) : _blockMaterial;
+        // Breakable blocks get their own material so each can darken as it takes hits. A plate has
+        // to be unmistakable: it is the one obstacle nothing answers, so a player who meets one while
+        // unstoppable has to read it as a rule rather than a bug.
+        var material = o.Kind switch
+        {
+            ObstacleKind.Target => _targetMaterial,
+            ObstacleKind.Plate => _hazardMaterial,
+            _ => o.Hits > 0 ? Solid(_breakable) : _blockMaterial,
+        };
         var node = new MeshInstance3D { Mesh = mesh, MaterialOverride = material };
         AddChild(node);
-        return new View(node, center, forward, up, Spins: target, material);
+        return new View(node, center, forward, up, Spins: target, material) { Obstacle = o };
     }
 
     // Placeholder power-up: a glowing pad set into the surface with a floating label.
@@ -325,7 +342,12 @@ public partial class ObstacleRenderer : Node3D
 
     private void Place(View view, Vector3d origin)
     {
-        var pos = view.Center.RelativeTo(origin).ToGodot();
+        // A mover's pose is recomputed every frame: its center is captured once at creation, so
+        // without this its collision box slides around the tube while the thing you can see stays put.
+        var center = view.Obstacle is { Sweep: not 0f } o
+            ? Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f).Center
+            : view.Center;
+        var pos = center.RelativeTo(origin).ToGodot();
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
         if (view.Spins) view.Node.RotateObjectLocal(Vector3.Up, _time * 2.5f);
     }
@@ -448,6 +470,9 @@ public partial class ObstacleRenderer : Node3D
     private sealed record View(Node3D Node, Vector3d Center, Vector3 Forward, Vector3 Up, bool Spins, Material BurstMaterial)
     {
         public int HitsShown { get; set; }
+
+        /// <summary>The obstacle this shows, when it is one that moves; null for anything fixed.</summary>
+        public Obstacle? Obstacle { get; init; }
     }
 
     private sealed record Burst(CpuParticles3D Node, Vector3d Center, float Expires);

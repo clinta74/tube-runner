@@ -1,0 +1,107 @@
+{
+  "name": "Metronome",
+  "next": "level_12.json",
+  "speed": 110,
+  "segmentLength": 60,
+
+  // Gates in rhythm with jumps. On a flat section the ship can cross between floor and ceiling, and
+  // a gate is a full-width wall - so every obstacle here has two answers, timing or the jump, and
+  // the level alternates which one is cheaper. Gates on flat have to be placed by x and surface:
+  // 'angle' only works in a closed tube.
+  "theme": {
+    "darks": ["#1b2430", "#16202b", "#232b38"],
+    "lights": ["#7f96ad", "#6d8499", "#8d9bb2"],
+    "seamDark": "#0d1319",
+    "seamLight": "#9fe8ff",
+    "far": "#060a0e",
+    "ship": "#9fe8ff",
+    "block": "#e6eef7",
+    "target": "#ff5a7a",
+    "breakable": "#7cc4ff",
+    "fadeStart": 35,
+    "fadeEnd": 340,
+    "glow": 0.25
+  },
+
+  "sections": {
+    "tube": { "radius": 6 },
+    "flat": { "radius": 6, "opening": 1 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 200 },                                              //    0 -  200
+
+    // Unroll into the flat. Flat pieces are straight, so everything here is read early - which is
+    // the point while a new pairing is being taught.
+    { "length": 120, "section": "flat", "speed": 115 },             //  200 -  320
+
+    // FREE LOOK. One full-width gate. Jump it, or wait it out: both work, and both are worth feeling.
+    { "length": 260, "obstacles": [                                 //  320 -  580
+      { "at": 130, "period": 2.6, "width": 80, "height": 2.5 }
+    ] },
+
+    // Two in opposite phase, one on each surface. Whichever is shut, the other is open - so this is
+    // the jump used as timing rather than as a dodge.
+    { "length": 320, "pickups": [                                   //  580 -  900
+      { "at": 60, "kind": "shield", "surface": "ceiling", "x": -12 }
+    ], "obstacles": [
+      { "at": 140, "period": 2.6, "phase": 0,   "width": 80, "height": 2.5 },
+      { "at": 140, "period": 2.6, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 260, "period": 2.6, "phase": 0.5, "width": 80, "height": 2.5 },
+      { "at": 260, "period": 2.6, "phase": 0,   "surface": "ceiling", "width": 80, "height": 2.5 }
+    ] },
+
+    // A solid wall between two gates: the jump is forced here, and the gates set when it can happen.
+    { "length": 360, "speed": 125, "obstacles": [                   //  900 - 1260
+      { "at": 70,  "period": 2.4, "width": 80, "height": 2.5 },
+      { "at": 180, "width": 80, "height": 2.5 },
+      { "at": 180, "kind": "target", "surface": "ceiling", "x": -14 },
+      { "at": 290, "period": 2.4, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 }
+    ] },
+
+    // Back into the tube to breathe, with the rapid fire the next stretch wants.
+    { "length": 300, "section": "tube", "speed": 115, "pickups": [  // 1260 - 1560
+      { "at": 140, "kind": "rapid-fire" }
+    ], "obstacles": [
+      { "at": 220, "kind": "target", "angle": 90 },
+      { "at": 220, "kind": "target", "angle": -90 }
+    ] },
+
+    // Gates in a closed tube again, so the rhythm has to be read around the wall instead of across
+    // it. Same cycle as the flat stretch, which is the joke: it is the same problem rotated.
+    { "length": 380, "turn": 40, "obstacles": [                     // 1560 - 1940
+      { "at": 90,  "period": 2.6, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 210, "period": 2.6, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 320, "period": 2.6, "angle": 90,  "width": 20, "height": 3 }
+    ] },
+
+    { "length": 200, "section": "oval", "pickups": [                // 1940 - 2140
+      { "at": 100, "kind": "shield", "angle": 180 }
+    ] },
+
+    // The hard pairing: flat again, faster, gates on both surfaces on a tighter cycle. A jump takes
+    // 0.55 s, so at this speed the crossing itself has to be timed into the gap.
+    { "length": 120, "section": "flat", "speed": 135 },             // 2140 - 2260
+    { "length": 460, "obstacles": [                                 // 2260 - 2720
+      { "at": 80,  "period": 2.0, "phase": 0,   "width": 80, "height": 2.5 },
+      { "at": 80,  "period": 2.0, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 200, "period": 2.0, "phase": 0.5, "width": 80, "height": 2.5 },
+      { "at": 200, "period": 2.0, "phase": 0,   "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 320, "period": 2.0, "phase": 0,   "width": 80, "height": 2.5 },
+      { "at": 320, "period": 2.0, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 420, "kind": "target", "x": 10 }
+    ] },
+
+    // Roll back into the tube for the finish.
+    { "length": 300, "section": "tube", "speed": 125 },             // 2720 - 3020
+    { "length": 170, "turn": 60, "obstacles": [                     // 3020 - 3190
+      { "at": 90, "period": 2.2, "angle": 0, "width": 20, "height": 3 }
+    ] },
+    { "length": 170, "turn": -65, "climb": 12, "obstacles": [       // 3190 - 3360
+      { "at": 85, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 240 }                                               // 3360 - 3600
+  ]
+}

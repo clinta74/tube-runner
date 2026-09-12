@@ -29,10 +29,10 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 7 | **Earthworks** | Boxy sections, a long flat run, a fork | Box, flat, split | ✅ |
 | 8 | **Crossroads** | Forks as a real choice: short-and-mean vs long-and-clear | Split-heavy | ✅ |
 | 9 | **Neon Run** | Everything, faster | All | ✅ |
-| 10 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ⬜ |
-| 11 | **Metronome** | Gates in rhythm with jumps | Flat, round | ⬜ |
-| 12 | **Firing Order** | Target groups that must be shot in order | Round, oval | ⬜ |
-| 13 | **Gauntlet** | Block A's test: gates and order together, dense | All but flat | ⬜ |
+| 10 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ✅ |
+| 11 | **Metronome** | Gates in rhythm with jumps | Flat, round | ✅ |
+| 12 | **Firing Order** | Target groups that must be shot in order | Round, oval | ✅ |
+| 13 | **Gauntlet** | Block A's test: gates and order together, dense | All, incl. flat and box | ✅ |
 | 14 | **Speed Trap** | Speed-limit zones: stretches that cost a shield if taken fast | Round, box | ⬜ |
 | 15 | **Restraint** | Limits right after the straights that invite speed | Round, oval | ⬜ |
 | 16 | **Shoal** | Movers: blocks that slide around the tube as you close | Round | ⬜ |
