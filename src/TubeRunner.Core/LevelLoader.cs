@@ -13,6 +13,10 @@ public static class LevelLoader
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        // A key we don't recognise is a mistake, not something to skip. Levels are written by hand,
+        // and a misspelled "turn" or an invented field that silently does nothing is the worst kind
+        // of bug here: the level still loads, still plays, and is quietly not what was written.
+        UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow,
     };
 
     public static Level Parse(string json)
@@ -74,11 +78,13 @@ public static class LevelLoader
         var obstacles = ToObstacles(data.Obstacles, track, 0, "Obstacle");
         var pickups = ToPickups(data.Pickups, track, 0, "Pickup");
         var warps = ToWarps(data.Warps, track, 0, "Warp");
+        var speedLimits = ToSpeedLimits(data.SpeedLimits, track, 0, "Speed limit");
         for (int i = 0; i < data.Track.Count; i++)
         {
             obstacles.AddRange(ToObstacles(data.Track[i].Obstacles, track, pieceStarts[i], $"Track piece {i}, obstacle"));
             pickups.AddRange(ToPickups(data.Track[i].Pickups, track, pieceStarts[i], $"Track piece {i}, pickup"));
             warps.AddRange(ToWarps(data.Track[i].Warps, track, pieceStarts[i], $"Track piece {i}, warp"));
+            speedLimits.AddRange(ToSpeedLimits(data.Track[i].SpeedLimits, track, pieceStarts[i], $"Track piece {i}, speed limit"));
         }
 
         return new Level
@@ -92,6 +98,7 @@ public static class LevelLoader
             Obstacles = obstacles,
             Pickups = pickups,
             Warps = warps,
+            SpeedLimits = speedLimits,
         };
     }
 
@@ -137,15 +144,24 @@ public static class LevelLoader
             {
                 "block" => ObstacleKind.Block,
                 "target" => ObstacleKind.Target,
-                _ => throw new LevelFormatException($"{where}: unknown kind '{o.Kind}' (use block or target)."),
+                "plate" => ObstacleKind.Plate,
+                _ => throw new LevelFormatException($"{where}: unknown kind '{o.Kind}' (use block, target or plate)."),
             };
             if (o.Width <= 0f || o.Length <= 0f || o.Height <= 0f)
             {
                 throw new LevelFormatException($"{where}: sizes must be positive.");
             }
-            if (o.Hits < 0 || (kind == ObstacleKind.Target && o.Hits > 0))
+            if (o.Hits < 0 || (kind != ObstacleKind.Block && o.Hits > 0))
             {
                 throw new LevelFormatException($"{where}: 'hits' is for blocks, and can't be negative.");
+            }
+            if (o.Period < 0f || o.Sweep < 0f || o.SweepTime <= 0f)
+            {
+                throw new LevelFormatException($"{where}: 'period' and 'sweep' can't be negative, and 'sweepTime' must be positive.");
+            }
+            if (o.Group is null && o.Order != 0)
+            {
+                throw new LevelFormatException($"{where}: 'order' needs a 'group' to be ordered within.");
             }
 
             foreach (var (s, branch, surface, x) in Place(o, track, offset, where))
@@ -161,6 +177,13 @@ public static class LevelLoader
                     Length = o.Length,
                     Height = o.Height,
                     Hits = o.Hits,
+                    Period = o.Period,
+                    Phase = o.Phase,
+                    Sweep = o.Sweep,
+                    SweepTime = o.SweepTime,
+                    Group = o.Group,
+                    Order = o.Order,
+                    LockedBy = o.LockedBy,
                 });
             }
         }
@@ -218,6 +241,24 @@ public static class LevelLoader
             }
         }
         return warps;
+    }
+
+    private static List<SpeedLimit> ToSpeedLimits(List<SpeedLimitData> list, Track track, double offset, string label)
+    {
+        var zones = new List<SpeedLimit>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            var z = list[i];
+            string where = $"{label} {i}";
+            if (z.MaxSpeed <= 0f) throw new LevelFormatException($"{where}: 'maxSpeed' must be positive.");
+            if (z.Length <= 0f) throw new LevelFormatException($"{where}: 'length' must be positive.");
+
+            foreach (var (s, branch, _, _) in Place(z, track, offset, where))
+            {
+                zones.Add(new SpeedLimit { S = s, Branch = branch, Length = z.Length, MaxSpeed = z.MaxSpeed });
+            }
+        }
+        return zones;
     }
 
     // Where a placement and each of its repeats land on the track.
@@ -344,6 +385,7 @@ public static class LevelLoader
         public List<ObstacleData> Obstacles { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
         public List<WarpData> Warps { get; set; } = new();
+        public List<SpeedLimitData> SpeedLimits { get; set; } = new();
     }
 
     private sealed class SectionData
@@ -366,6 +408,13 @@ public static class LevelLoader
         public List<ObstacleData> Obstacles { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
         public List<WarpData> Warps { get; set; } = new();
+        public List<SpeedLimitData> SpeedLimits { get; set; } = new();
+    }
+
+    private sealed class SpeedLimitData : PlacementData
+    {
+        public float Length { get; set; } = 120f;
+        public float MaxSpeed { get; set; }
     }
 
     private sealed class SplitData
@@ -410,6 +459,13 @@ public static class LevelLoader
         public float Length { get; set; } = 2f;
         public float Height { get; set; } = 2f;
         public int Hits { get; set; }
+        public float Period { get; set; }
+        public float Phase { get; set; }
+        public float Sweep { get; set; }
+        public float SweepTime { get; set; } = 2f;
+        public string? Group { get; set; }
+        public int Order { get; set; }
+        public string? LockedBy { get; set; }
     }
 
     private sealed class PickupData : PlacementData

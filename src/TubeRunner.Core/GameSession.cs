@@ -23,6 +23,7 @@ public enum SessionEvent
     Rammed,
     WarpEntered,
     Warped,
+    SpeedTripped,
     ShieldRestored,
     ShieldsRefilled,
     ShieldSlotAdded,
@@ -126,6 +127,7 @@ public sealed class GameSession
     private readonly List<Obstacle> _obstacles;
     private readonly List<Pickup> _pickups;
     private readonly List<Warp> _warps;
+    private readonly List<SpeedLimit> _speedLimits;
     private readonly List<Shot> _shots = new();
     private readonly List<RingShot> _rings = new();
     private readonly List<SessionEvent> _events = new();
@@ -136,13 +138,15 @@ public sealed class GameSession
 
     /// <param name="carry">State from earlier levels of the same run; null starts fresh.</param>
     public GameSession(Track track, IEnumerable<Obstacle> obstacles, SessionSettings settings, TrackPosition start,
-        IEnumerable<Pickup>? pickups = null, RunState? carry = null, IEnumerable<Warp>? warps = null)
+        IEnumerable<Pickup>? pickups = null, RunState? carry = null, IEnumerable<Warp>? warps = null,
+        IEnumerable<SpeedLimit>? speedLimits = null)
     {
         Track = track;
         _settings = settings;
         _obstacles = obstacles.OrderBy(o => o.S).ToList();
         _pickups = (pickups ?? []).OrderBy(p => p.S).ToList();
         _warps = (warps ?? []).OrderBy(w => w.S).ToList();
+        _speedLimits = (speedLimits ?? []).OrderBy(z => z.S).ToList();
         Ship = new ShipSim(settings.Ship, track, start);
         Shields = MaxShields = settings.Shields;
 
@@ -164,6 +168,7 @@ public sealed class GameSession
     public IReadOnlyList<Obstacle> Obstacles => _obstacles;
     public IReadOnlyList<Pickup> Pickups => _pickups;
     public IReadOnlyList<Warp> Warps => _warps;
+    public IReadOnlyList<SpeedLimit> SpeedLimits => _speedLimits;
     public IReadOnlyList<Shot> Shots => _shots;
     public IReadOnlyList<RingShot> Rings => _rings;
 
@@ -235,6 +240,7 @@ public sealed class GameSession
         CheckShipHits(before, Ship.Position.S);
         CollectPickups(before, Ship.Position.S);
         CheckWarps(before, Ship.Position.S);
+        CheckSpeedLimits();
         MoveShots(dt);
         MoveRings(dt);
 
@@ -254,36 +260,94 @@ public sealed class GameSession
         var pos = Ship.Position;
         foreach (var o in Nearby(_obstacles, o => o.S, from, to))
         {
-            if (o.Destroyed || o.Branch != pos.Branch) continue;
+            if (o.Destroyed || o.Branch != pos.Branch || !IsSolid(o)) continue;
             double reach = o.Length / 2f + _settings.ShipHalfLength;
             if (to < o.S - reach || from > o.S + reach) continue;
 
-            // Mid-jump the ship is between the surfaces at the same X; otherwise it's on one.
+            // Mid-jump the ship is between the surfaces at the same X; otherwise it's on one. A mover
+            // is wherever its sweep has carried it by now, not where it was authored.
+            float x = o.XAt(Elapsed);
             float lateral = Ship.IsJumping
-                ? MathF.Abs(pos.X - o.X)
-                : TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, o.X);
+                ? MathF.Abs(pos.X - x)
+                : TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, x);
             if (lateral >= o.Width / 2f + _settings.ShipHalfWidth || Ship.HeightAbove(o.Surface) >= o.Height) continue;
 
-            // Unstoppable: smash straight through and score it, with no shield lost.
-            if (RamLeft > 0f)
+            // Unstoppable: smash straight through and score it, with no shield lost. A plate is the
+            // one thing it cannot answer - that is the whole reason plates exist.
+            if (RamLeft > 0f && o.Kind != ObstacleKind.Plate)
             {
                 Break(o, Points(o), SessionEvent.Rammed);
                 continue;
             }
             if (RecoveryLeft > 0f) continue;
 
-            // Whatever the ship hits breaks apart, so it doesn't fly on through it.
-            o.Destroyed = true;
-            Shields--;
-            RecoveryLeft = _settings.RecoveryTime;
-            _events.Add(SessionEvent.Hit);
-            if (Shields <= 0)
-            {
-                State = SessionState.GameOver;
-                _events.Add(SessionEvent.GameOver);
-                return;
-            }
+            // Whatever the ship hits breaks apart, so it doesn't fly on through it. A plate is wall:
+            // it stays, and flying into it again costs again.
+            if (o.Kind != ObstacleKind.Plate) o.Destroyed = true;
+            if (!TakeHit()) return;
         }
+    }
+
+    // Speed-limit zones: a stretch that costs a shield if it is flown too fast. The recovery window
+    // means one pass costs one shield, so it reads as a price for speed rather than a grinder.
+    private void CheckSpeedLimits()
+    {
+        var pos = Ship.Position;
+        foreach (var z in _speedLimits)
+        {
+            // Outside it, the zone re-arms: fly through it fast again and it costs again.
+            if (pos.S < z.S - z.Length / 2f || pos.S > z.S + z.Length / 2f)
+            {
+                z.BitThisPass = false;
+                continue;
+            }
+            if (z.Branch != pos.Branch || z.BitThisPass || Ship.ForwardSpeed <= z.MaxSpeed) continue;
+
+            // One pass costs one shield. Recovery alone will not do it: a zone outlasts the recovery
+            // window, so without the per-pass latch a single zone empties the whole bar.
+            z.BitThisPass = true;
+            z.Tripped = true;
+            _events.Add(SessionEvent.SpeedTripped);
+            if (!TakeHit()) return;
+        }
+    }
+
+    /// <returns>False if that was the last shield and the run is over.</returns>
+    private bool TakeHit()
+    {
+        Shields--;
+        RecoveryLeft = _settings.RecoveryTime;
+        _events.Add(SessionEvent.Hit);
+        if (Shields > 0) return true;
+
+        State = SessionState.GameOver;
+        _events.Add(SessionEvent.GameOver);
+        return false;
+    }
+
+    // A gate is only there for half its cycle. Anything without a period is always solid.
+    private bool IsSolid(Obstacle o) => o.IsSolidAt(Elapsed) && !IsUnlocked(o);
+
+    // A locked gate opens once every target keyed to it is gone, so shooting buys passage.
+    private bool IsUnlocked(Obstacle o)
+    {
+        if (o.LockedBy is null) return false;
+        foreach (var key in _obstacles)
+        {
+            if (key.Group == o.LockedBy && !key.Destroyed) return false;
+        }
+        return true;
+    }
+
+    // Within an ordered group, a target only breaks once everything earlier in it has gone.
+    private bool CanBreak(Obstacle o)
+    {
+        if (o.Group is null) return true;
+        foreach (var other in _obstacles)
+        {
+            if (other.Group == o.Group && other.Order < o.Order && !other.Destroyed) return false;
+        }
+        return true;
     }
 
     private void CollectPickups(double from, double to)
@@ -435,7 +499,10 @@ public sealed class GameSession
 
     private void ShotHit(Obstacle o)
     {
-        if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
+        // A plate cannot be shot, and a target out of its group's turn refuses the shot, so the
+        // player has to work out the order rather than hold the trigger down.
+        if (o.Kind == ObstacleKind.Plate || !CanBreak(o)) _events.Add(SessionEvent.ShotBlocked);
+        else if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
         else if (o.Hits <= 0) _events.Add(SessionEvent.ShotBlocked);
         else if (++o.HitsTaken >= o.Hits) Break(o, Points(o), SessionEvent.BlockDestroyed);
         else _events.Add(SessionEvent.BlockDamaged);
@@ -469,7 +536,11 @@ public sealed class GameSession
                 if (o.Destroyed || o.Branch != ring.Position.Branch) continue;
                 if (to < o.S - o.Length / 2f || from > o.S + o.Length / 2f) continue;
                 // On open planes the ring reaches a fixed distance to either side, on floor and ceiling.
-                if (!ShapeAt(o.S, o.Branch).IsClosed && MathF.Abs(o.X) > _settings.RingReach) continue;
+                if (!ShapeAt(o.S, o.Branch).IsClosed && MathF.Abs(o.XAt(Elapsed)) > _settings.RingReach) continue;
+                // A ring sweeps everything at once, so it ignores ordered groups entirely. Testing
+                // the order instead is not enough: the ring overlaps an obstacle for several frames,
+                // so it would take the group one member per frame and the puzzle would be no puzzle.
+                if (o.Kind == ObstacleKind.Plate || o.Group is not null) continue;
 
                 if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
                 else if (o.Hits > 0) Break(o, Points(o), SessionEvent.BlockDestroyed);
@@ -485,9 +556,12 @@ public sealed class GameSession
         Obstacle? first = null;
         foreach (var o in Nearby(_obstacles, o => o.S, from, to))
         {
-            if (o.Destroyed || o.Branch != pos.Branch) continue;
+            if (o.Destroyed || o.Branch != pos.Branch || !IsSolid(o)) continue;
+            // A target waiting its turn lets shots pass. Swallowing them would make an ordered group
+            // unsolvable whenever the one to shoot first stands behind one that comes later.
+            if (o.Kind == ObstacleKind.Target && !CanBreak(o)) continue;
             if (to < o.S - o.Length / 2f || from > o.S + o.Length / 2f || shot.Height >= o.Height) continue;
-            float lateral = TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, o.X);
+            float lateral = TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, o.XAt(Elapsed));
             if (lateral >= o.Width / 2f + ShotRadius) continue;
             if (first is null || o.S < first.S) first = o;
         }

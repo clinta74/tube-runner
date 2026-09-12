@@ -29,9 +29,79 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 7 | **Earthworks** | Boxy sections, a long flat run, a fork | Box, flat, split | ✅ |
 | 8 | **Crossroads** | Forks as a real choice: short-and-mean vs long-and-clear | Split-heavy | ✅ |
 | 9 | **Neon Run** | Everything, faster | All | ✅ |
-| 10 | *Finale* | A long run with no new ideas, just the hardest mix | All | ⬜ |
+| 10 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ⬜ |
+| 11 | **Metronome** | Gates in rhythm with jumps | Flat, round | ⬜ |
+| 12 | **Firing Order** | Target groups that must be shot in order | Round, oval | ⬜ |
+| 13 | **Gauntlet** | Block A's test: gates and order together, dense | All but flat | ⬜ |
+| 14 | **Speed Trap** | Speed-limit zones: stretches that cost a shield if taken fast | Round, box | ⬜ |
+| 15 | **Restraint** | Limits right after the straights that invite speed | Round, oval | ⬜ |
+| 16 | **Shoal** | Movers: blocks that slide around the tube as you close | Round | ⬜ |
+| 17 | **Undertow** | Block B's test: limits, gates and movers at once | All | ⬜ |
+| 18 | **Scarlands** | Hazard plates: wall you cannot break, shoot or ram | Box, flat | ⬜ |
+| 19 | **Crossfire** | Plates and movers with a shooting load that won't wait | Round, box | ⬜ |
+| 20 | **Keys** | Shoot-to-open gates: a target that unlocks the way ahead | Round, box | ⬜ |
+| 21 | **Attrition** | Block C's test, on thin resources | All | ⬜ |
+| 22 | **Roulette** | Forks where one branch hides a warp well | Split-heavy | ⬜ |
+| 23 | **Highwire** | Narrow tubes at speed, warps sitting on the fast line | Round, split | ⬜ |
+| 24 | **Blackout** | Visibility: twists that show you almost nothing | All | ⬜ |
+| 25 | **Long Odds** | Endurance: the longest level, and almost nothing given | All | ⬜ |
+| 26 | **Finale** | No new ideas, just the hardest mix | All | ⬜ |
 
-File names match these numbers. A level 10 is still missing, so level 9 ends the run.
+File names match these numbers. Level 9 ends the run until level 10 lands.
+
+## Levels 10-26: blocks of four
+
+Everything is taught by level 9, so the back half needs new ideas or it becomes one level played
+seventeen times. Seven arrive across 10-25, and 26 introduces nothing at all.
+
+They are grouped in **blocks of four**, and the two curves are deliberately out of phase:
+
+- **A block opens with a refill and a new mechanic.** Levels 10, 14, 18 and 22 each hand shields back
+  and then teach something, so a new idea is always learned with resources in hand.
+- **The rest of the block tests it while resources thin out.** By the fourth level of a block the
+  player is running on what they saved.
+
+That phasing is the whole point. Pickups getting rarer and mechanics arriving would otherwise stack,
+and learning a new hazard on a last shield is how a run dies to unfairness rather than difficulty.
+Each block's opening refill is also weaker than the last: full shields at 10, full at 14, a pair of
+shields at 18, a single one at 22.
+
+| Block | Levels | Opens with | New ideas |
+|---|---|---|---|
+| A | 10-13 | Full shields | Timed gates (10), ordered target groups (12) |
+| B | 14-17 | Full shields | Speed-limit zones (14), around-the-tube movers (16) |
+| C | 18-21 | Two shields | Hazard plates (18), shoot-to-open gates (20) |
+| D | 22-25 | One shield | Warps down one fork only (22) |
+| - | 26 | Nothing | None. The finale is a test, not a lesson. |
+
+**What each new mechanic is for**
+
+Everything here has to work *with* the throttle, not against it. The player already picks their own
+speed, from 0.5x to 1.75x of the track's, and holds it until they change it. That rules out a whole
+family of ideas that look obvious on paper: a boost pad is a throttle the player did not press, and a
+slow field is one they will simply press through. Neither is a decision. The mechanics below either
+ignore speed or make the player *spend* it.
+
+- **Timed gates** — obstacles solid for half a cycle and gone for the other half, turning a dodge into
+  a question of *when*. The best of the set for this game, because the throttle is the answer: hurry
+  or hold back to meet the gate open.
+- **Ordered target groups** — a cluster that only breaks in sequence, so shooting becomes aiming
+  rather than holding the trigger. The ring gun has to be gated out or it trivially skips the puzzle.
+- **Speed-limit zones** — a stretch that costs a shield if it is taken above a set speed. The exact
+  inverse of a boost: it makes the player give speed up, which on a timed run genuinely hurts. The one
+  mechanic that turns the throttle into a liability.
+- **Movers** — blocks that slide around the tube while you close on them, so the gap you aimed at is
+  not the gap you arrive at. Around the tube only; along the track breaks the collision sweep's sort.
+- **Hazard plates** — wall that costs a shield and cannot be shot, broken or rammed. Every other
+  obstacle has an out; this one only has avoidance, so unstoppable stops being a universal answer.
+- **Shoot-to-open gates** — a target that unlocks a gate further down the track. Shooting buys
+  passage instead of points, and missing it means arriving at a wall.
+- **Warps down one fork** — needs no new code. A fork where the quick branch might also throw you
+  back up the track turns a route choice into a gamble.
+
+**Deliberately not built:** tubes that roll or twist, and walls that close as you approach. Both need
+engine subsystems that do not exist — a roll channel through frame propagation, and chunk rebuilding
+for animated geometry — and neither is worth holding seventeen levels for.
 
 ## A run, not a level
 
@@ -138,7 +208,14 @@ line or down the meaner branch, so they cost something to take.
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
 | Forks | 7 | 8, three junctions where the short way is the tight one |
-| Warp zones | 8, in the run for home | later levels, sitting on the tempting line |
+| Warp zones | 8, in the run for home | 23, sitting on the tempting line |
+| Timed gates | 10, a single gate on a straight | 11, gates in rhythm with jumps |
+| Ordered target groups | 12, one group at a time | 13, groups mixed into a dense run |
+| Speed-limit zones | 14, one limit after a straight | 15, limits where the track invites speed |
+| Movers | 16, one block sliding on a straight | 17, movers with gates and limits |
+| Hazard plates | 18, a plate you cannot shoot | 19, plates narrowing the only line |
+| Shoot-to-open gates | 20, one target, one gate | 21, keys you must hit while dodging |
+| Warps down one fork | 22, a fork where one way is a gamble | 25, when there is nothing left to lose |
 
 ## Placeholder art to replace later
 

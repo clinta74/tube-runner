@@ -78,6 +78,16 @@ public class WarpTests
         Assert.Equal(120f, warp.Back);
     }
 
+    [Theory]
+    // A misspelled key, and an invented one. Both used to load fine and quietly do nothing, which is
+    // how a level ends up not being the level that was written.
+    [InlineData("""{ "sections": { "t": { "radius": 6 } }, "start": "t", "track": [ { "length": 100, "turnn": 40 } ] }""")]
+    [InlineData("""{ "sections": { "t": { "radius": 6 } }, "start": "t", "track": [ { "length": 100, "boost": 2 } ] }""")]
+    public void Loader_RejectsKeysItDoesNotKnow(string json)
+    {
+        Assert.Throws<LevelFormatException>(() => LevelLoader.Parse(json));
+    }
+
     [Fact]
     public void Warp_CarriesTheShipDownTheWellBeforeThrowingItBack()
     {

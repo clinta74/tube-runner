@@ -206,6 +206,70 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 Put a power-up in a calm stretch the first time a level uses it, then follow it with the obstacle it
 answers: a ring of targets after the ring gun, tough blocks after rapid fire.
 
+## Gates, movers, plates and ordered groups
+
+Four extras on an obstacle, all of them optional, and all of them usable together.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `period` | `0` | Seconds in an open/shut cycle. The obstacle is solid for the first half and gone for the second. 0 means always solid. |
+| `phase` | `0` | Where in that cycle it starts, 0 to 1. Stagger these across a row to make a rhythm. |
+| `sweep` | `0` | How far it slides to either side of its `x`, around the surface. 0 stands still. |
+| `sweepTime` | `2` | Seconds for one full sweep out and back. |
+| `group` | none | Names a group. Targets in one only break in `order`, lowest first. |
+| `order` | `0` | Place in the group's firing order. Needs a `group`. |
+| `lockedBy` | none | Stays solid until every obstacle in the named group is destroyed. |
+
+```json
+{ "at": 100, "period": 3, "phase": 0.5 },          // a gate, open when its neighbour is shut
+{ "at": 200, "sweep": 9, "sweepTime": 5 },         // a block sliding around the tube
+{ "at": 300, "kind": "plate", "width": 14 },       // wall that cannot be answered
+{ "at": 400, "kind": "target", "group": "k" },     // the key
+{ "at": 520, "lockedBy": "k", "width": 30 }        // the door it opens
+```
+
+**A `plate` cannot be shot, broken or rammed** — only flown around. Every other obstacle has a way
+out, including unstoppable, which turns any collision into a free scored break. A plate is the one
+thing that stays, so unstoppable stops being a universal answer. Introduce plates alone on a clear
+stretch: arriving at one with unstoppable running otherwise reads as a bug rather than a rule.
+
+**Gates work with the throttle rather than against it.** The player already sets their own speed, so
+a gate cycle asks them to hurry or hold back — which is the one thing a speed pickup could never do,
+since a pad only hands out speed the throttle already had.
+
+**The ring gun ignores ordered groups and plates**, or one sweep would answer a whole puzzle.
+
+**Order gates shooting, not ramming.** A target in a group still breaks and still costs a shield if
+the ship flies into it, whatever its turn. So put an ordered group **off the flight line** — out at an
+`angle`, or wide on an `x` — or the player will clear it by driving through it.
+
+**Shots leave at the ship's own position across the surface**, and travel straight down the track.
+There is no aiming, so the player lines a target up by steering onto it. That is what makes an
+ordered group a puzzle worth having: they must steer to each one in turn, in the order you set,
+rather than hold the trigger and sweep. It also means a group spread around the tube takes real
+travel to clear, while one stacked at a single `angle` takes almost none.
+
+## Speed limits
+
+A `speedLimits` list, on a piece or at the top level, marks a stretch that **costs a shield if it is
+flown too fast**. It is the inverse of a boost pad: handing a player speed decides nothing when they
+control the throttle, but making them give speed up on a timed run is a real price.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `at` | required | Distance of the zone's center from the start of its piece (or of the track). |
+| `length` | `120` | Extent along the track. |
+| `maxSpeed` | required | Fastest the ship may go through it without losing a shield. |
+| `branch` | none | Branch index, inside a split. |
+
+```json
+{ "length": 400, "speedLimits": [ { "at": 200, "length": 150, "maxSpeed": 95 } ] }
+```
+
+One pass costs at most one shield: the post-hit recovery window covers the rest of the zone. Put a
+limit **right after a straight that invites speed**, so the player has to read it and back off rather
+than discover it at full throttle.
+
 ## Warp zones
 
 A `warps` list, on a piece or at the top level, sinks a **well** into the tube wall: the wall itself
