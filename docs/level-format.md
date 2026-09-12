@@ -289,16 +289,21 @@ bends down into a throat that opens through it. Fly into one and the ship falls 
 before being thrown back up the track. It costs **time, never a shield**, and a well stays armed —
 fly into the same one again and it takes you again.
 
-A ring of six warning signs is placed automatically 75 units back up the track, each a yellow
-triangular plate carrying a black disc. Six is enough that one faces the player whichever way round
-the tube they are flying. Nothing needs declaring for them.
+A ring of six warning signs is placed automatically 75 units back up the track: a yellow triangular
+plate with a dark border, carrying a black disc, held off the wall on a post, and pulsing. Six is
+enough that one faces the player whichever way round the tube they are flying. Nothing needs
+declaring for them.
+
+Every part of that is there to stop a sign reading as an obstacle, which is worse than no sign at
+all — it gets dodged rather than heeded. Blocks sit flat on the wall and are solid, so the **post and
+the gap under it** are most of what separates them at a glance, and **nothing else on a wall pulses**.
 
 | Field | Default | Meaning |
 |---|---|---|
 | `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
 | `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
 | `width` | `14` | Opening across the surface. A little over a third of the way around a radius-6 tube. |
-| `length` | `32` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
+| `length` | `40` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
 | `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
 | `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
 

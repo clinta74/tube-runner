@@ -66,7 +66,7 @@ public partial class TrackRenderer : Node3D
         {
             var shape = _shapes.Get(track.SectionAt(w.S, w.Branch));
             _warpCuts.Add(new WarpCut(w.S, shape.Loop(w.Surface, w.X), shape.Perimeter,
-                w.Length / 2f, w.Width / 2f, 2.1f * (w.Width / 2f), w.Branch));
+                w.Length / 2f, w.Width / 2f, 2.5f * (w.Width / 2f), w.Branch));
         }
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a

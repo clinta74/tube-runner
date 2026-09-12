@@ -30,7 +30,7 @@ public sealed class Warp
     /// <see cref="Width"/> so the rest of the tube stays flyable, which leaves along the track as the
     /// only axis free to grow, and a mouth you meet end-on needs the length to read at all.
     /// </summary>
-    public float Length { get; init; } = 32f;
+    public float Length { get; init; } = 40f;
 
     /// <summary>How far back it throws the ship; 0 takes the session's default.</summary>
     public float Back { get; init; }

@@ -50,6 +50,8 @@ public partial class ObstacleRenderer : Node3D
     private StandardMaterial3D _plateMaterial = null!;
     private StandardMaterial3D _iconMaterial = null!;
     private Mesh _signMesh = null!;
+    private Mesh _signBorder = null!;
+    private Mesh _signPost = null!;
     private Mesh _wellIcon = null!;
     private StandardMaterial3D _blockMaterial = null!;
     private StandardMaterial3D _hazardMaterial = null!;
@@ -126,9 +128,14 @@ public partial class ObstacleRenderer : Node3D
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
         };
-        // A three-sided cylinder is a flat triangular plate; a many-sided one is the disc on it.
-        _signMesh = new CylinderMesh { TopRadius = 1.5f, BottomRadius = 1.5f, Height = 0.12f, RadialSegments = 3 };
-        _wellIcon = new CylinderMesh { TopRadius = 0.62f, BottomRadius = 0.62f, Height = 0.06f, RadialSegments = 24 };
+        // A three-sided cylinder is a flat triangular plate; a many-sided one is the disc on it. The
+        // border is a slightly wider, thinner triangle behind, so the yellow reads with a dark rim
+        // rather than as another lump on the wall - a sign that looks like a block is worse than no
+        // sign, because it is read as something to dodge instead of something to heed.
+        _signMesh = new CylinderMesh { TopRadius = 1.9f, BottomRadius = 1.9f, Height = 0.09f, RadialSegments = 3 };
+        _signBorder = new CylinderMesh { TopRadius = 2.25f, BottomRadius = 2.25f, Height = 0.05f, RadialSegments = 3 };
+        _signPost = new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.07f, Height = 1.4f, RadialSegments = 6 };
+        _wellIcon = new CylinderMesh { TopRadius = 0.8f, BottomRadius = 0.8f, Height = 0.06f, RadialSegments = 24 };
 
         _shotMesh = new CapsuleMesh { Radius = 0.12f, Height = 1.4f };
         _burstMesh = new SphereMesh { Radius = 0.15f, Height = 0.3f, RadialSegments = 6, Rings = 3 };
@@ -141,6 +148,10 @@ public partial class ObstacleRenderer : Node3D
     {
         _time += dt;
         double s = _session.Ship.Position.S;
+
+        // Warning signs pulse. Nothing else on a wall does, so movement is what separates a sign
+        // from an obstacle at the distance where it still matters which one you are looking at.
+        _plateMaterial.EmissionEnergyMultiplier = 1.7f + 0.9f * Mathf.Sin(_time * 5f);
 
         // A gate keeps its view the whole time and slides into the wall instead, so the eye can
         // follow it. The burst flag stays tied to being destroyed alone - otherwise every cycle
@@ -333,9 +344,28 @@ public partial class ObstacleRenderer : Node3D
             ? shape.Wrap(Surface.Floor, shape.Perimeter * sign.Index / SignsInRing)
             : (w.Surface, w.X + (sign.Index - (SignsInRing - 1) / 2f) * 9f);
 
-        var (center, forward, up) = Pose(s, w.Branch, surface, x, 1.4f);
-        // A cylinder's axis is Y and Place points that along the surface normal, so tipping the
-        // plate a quarter turn stands it up facing back at the oncoming ship, point upwards.
+        var (center, forward, up) = Pose(s, w.Branch, surface, x, 1.9f);
+        // A sign is built to look like signage rather than like something to dodge: a plate held off
+        // the wall on a post, with a dark border, standing clear of the surface. Blocks sit flat on
+        // the wall and are solid - the post and the gap under it are most of what tells them apart.
+        var root = new Node3D();
+
+        // Place points local +Y along the surface normal, so the post drops straight back to the wall.
+        root.AddChild(new MeshInstance3D
+        {
+            Mesh = _signPost,
+            MaterialOverride = _iconMaterial,
+            Position = new Vector3(0f, -0.95f, 0f),
+        });
+
+        // A cylinder's axis is Y, so tipping each disc a quarter turn stands it up facing back at
+        // the oncoming ship, point upwards.
+        root.AddChild(new MeshInstance3D
+        {
+            Mesh = _signBorder,
+            MaterialOverride = _iconMaterial,
+            RotationDegrees = new Vector3(90f, 0f, 0f),
+        });
         var plate = new MeshInstance3D
         {
             Mesh = _signMesh,
@@ -343,16 +373,18 @@ public partial class ObstacleRenderer : Node3D
             RotationDegrees = new Vector3(90f, 0f, 0f),
         };
         // The disc stands proud of both faces. Local Y is the plate's thickness once the quarter turn
-        // is applied, and the plate is only 0.12 thick, so a disc long enough to pass right through it
-        // shows whichever side the player sees - no guessing which face ends up pointing back.
+        // is applied, and the plate is thin, so a disc long enough to pass right through it shows
+        // whichever side the player sees - no guessing which face ends up pointing back.
         plate.AddChild(new MeshInstance3D
         {
             Mesh = _wellIcon,
             MaterialOverride = _iconMaterial,
             Scale = new Vector3(1f, 5f, 1f),
         });
-        AddChild(plate);
-        return new View(plate, center, forward, up, Spins: false, _plateMaterial);
+        root.AddChild(plate);
+
+        AddChild(root);
+        return new View(root, center, forward, up, Spins: false, _plateMaterial);
     }
 
     // Breakable blocks darken with each hit.
