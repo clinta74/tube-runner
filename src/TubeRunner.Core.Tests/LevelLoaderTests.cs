@@ -104,6 +104,32 @@ public class LevelLoaderTests
     }
 
     [Fact]
+    public void TheRunIsAChain_NotALoop()
+    {
+        // Checking that each 'next' file exists is not enough: a level pointing back at an earlier
+        // one passes that and sends the run round forever, which looks exactly like a player having
+        // hit retry. Walk it instead, and require it to end.
+        var dir = LevelsDirectory();
+        var seen = new List<string>();
+        string? name = "level_01.json";
+
+        while (name is not null)
+        {
+            Assert.DoesNotContain(name, seen);   // would run forever in play
+            seen.Add(name);
+            name = LevelLoader.Parse(File.ReadAllText(Path.Combine(dir, name))).Next;
+        }
+
+        // Every level in the folder should be on the chain, or it is unreachable in a real run.
+        // level_00 is the standalone warp test bench and is deliberately off it.
+        var onDisk = Directory.GetFiles(dir, "level_*.json")
+            .Select(Path.GetFileName)
+            .Where(f => f != "level_00.json")
+            .ToList();
+        Assert.Equal(onDisk.OrderBy(f => f), seen.OrderBy(f => f));
+    }
+
+    [Fact]
     public void Obstacles_RepeatAndConvertAngles()
     {
         var level = LevelLoader.Parse(Level("""{ "length": 500 }""", """
