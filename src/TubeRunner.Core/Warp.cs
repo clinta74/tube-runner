@@ -19,10 +19,13 @@ public sealed class Warp
     public float X { get; init; }
 
     /// <summary>Extent across the surface.</summary>
-    public float Width { get; init; } = 6f;
+    public float Width { get; init; } = 7f;
 
-    /// <summary>Extent along the track.</summary>
-    public float Length { get; init; } = 6f;
+    /// <summary>
+    /// Extent along the track. Long by default: seen from inside a tube a mouth is edge-on, so a
+    /// short one is barely a mark on the wall.
+    /// </summary>
+    public float Length { get; init; } = 18f;
 
     /// <summary>How far back it throws the ship; 0 takes the session's default.</summary>
     public float Back { get; init; }

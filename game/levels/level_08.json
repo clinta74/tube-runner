@@ -155,9 +155,11 @@
       { "at": 80, "angle": -90, "count": 3, "angleStep": 60 },
       { "at": 200, "angle": 0 }
     ] },
-    // A last sting: a mouth in the floor, sitting on the natural line and signed well in advance.
+    // A last sting, signed well in advance. It sits up on the ceiling, where the tube curves away
+    // from a ship on the floor: that patch of wall faces back at you on the approach, so the black
+    // reads from a long way out and only goes edge-on once you are under it.
     { "length": 250, "warps": [                                     // 4100 - 4350
-      { "at": 100 }
+      { "at": 100, "angle": 180, "length": 30 }
     ] }
   ]
 }

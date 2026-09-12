@@ -44,9 +44,11 @@ public partial class ObstacleRenderer : Node3D
     private Func<Warp, View> _createWarp = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
     private StandardMaterial3D _voidMaterial = null!;
+    private StandardMaterial3D _throatMaterial = null!;
     private StandardMaterial3D _rimMaterial = null!;
     private StandardMaterial3D _signMaterial = null!;
     private Mesh _mouthMesh = null!;
+    private Mesh _throatMesh = null!;
     private Mesh _rimMesh = null!;
     private Mesh _signMesh = null!;
     private StandardMaterial3D _blockMaterial = null!;
@@ -109,10 +111,19 @@ public partial class ObstacleRenderer : Node3D
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
         };
+        // The throat is lit, unlike the void behind it: catching the headlight is what shows the
+        // wall turning inwards, so the black reads as depth rather than a decal.
+        _throatMaterial = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.2f, 0.21f, 0.25f),
+            Roughness = 0.6f,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
         _rimMaterial = Glowing(new Color(1f, 0.5f, 0.08f), 2.5f);
         _signMaterial = Glowing(new Color(1f, 0.72f, 0.1f), 2f);
         _mouthMesh = new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 1f, RadialSegments = 24 };
-        _rimMesh = new TorusMesh { InnerRadius = 0.86f, OuterRadius = 1f, Rings = 32, RingSegments = 8 };
+        _throatMesh = new CylinderMesh { TopRadius = 1f, BottomRadius = 0.72f, Height = 1f, RadialSegments = 24 };
+        _rimMesh = new TorusMesh { InnerRadius = 0.74f, OuterRadius = 1f, Rings = 32, RingSegments = 8 };
         _signMesh = new BoxMesh { Size = new Vector3(2.1f, 1.3f, 0.12f) };
 
         _shotMesh = new CapsuleMesh { Radius = 0.12f, Height = 1.4f };
@@ -125,6 +136,9 @@ public partial class ObstacleRenderer : Node3D
     public void UpdateView(Vector3d origin, float dt)
     {
         _time += dt;
+        // From the cockpit a warp is only ever seen edge-on, so its lit rim is the whole read.
+        // Pulsing it is what makes the gash catch the eye at speed.
+        _rimMaterial.EmissionEnergyMultiplier = 3.4f + 1.8f * MathF.Sin(_time * 4f);
         double s = _session.Ship.Position.S;
 
         foreach (var o in _session.Obstacles) Sync(_views, o, !o.Destroyed && InView(o.S, s), o.Destroyed, _createObstacle, origin);
@@ -215,25 +229,40 @@ public partial class ObstacleRenderer : Node3D
     // the wall so it reads as a hole, and a lit rim keeps it from looking like a shadow.
     private View CreateWarpView(Warp w)
     {
-        float radius = w.Width / 2f;
         var (center, forward, up) = Pose(w.S, w.Branch, w.Surface, w.X, 0f);
         var node = new Node3D();
 
-        // Place points the node's +Y along the surface normal, and the cylinder's axis is Y, so
-        // shifting it down sinks the bore into the wall instead of standing it on top.
+        // Place points the node's +Y along the surface normal and -Z down the track, so X is the
+        // opening across the surface, Z is its extent along the track, and Y is depth into the
+        // wall. Everything below y = 0 sits inside the wall rather than standing on it.
+        float halfWidth = w.Width / 2f;
+        float halfLength = w.Length / 2f;
+        const float inset = 1.1f;
+        const float depth = 2.5f;
+
+        // A lit throat turns in from the rim before the black starts, which is all the depth that
+        // survives being seen from inside the tube.
+        node.AddChild(new MeshInstance3D
+        {
+            Mesh = _throatMesh,
+            MaterialOverride = _throatMaterial,
+            Scale = new Vector3(halfWidth, inset, halfLength),
+            Position = new Vector3(0f, -inset / 2f, 0f),
+        });
         node.AddChild(new MeshInstance3D
         {
             Mesh = _mouthMesh,
             MaterialOverride = _voidMaterial,
-            Scale = new Vector3(radius, w.Length, radius),
-            Position = new Vector3(0f, -w.Length / 2f, 0f),
+            Scale = new Vector3(halfWidth * 0.78f, depth, halfLength * 0.93f),
+            Position = new Vector3(0f, -inset - depth / 2f, 0f),
         });
-        // A torus lies in its XZ plane with its hole along Y, which is already the wall's normal.
+        // A torus lies in its XZ plane with its hole along Y, already the wall's normal; stretching
+        // X and Z separately makes the ring match an elongated slot instead of a circle.
         node.AddChild(new MeshInstance3D
         {
             Mesh = _rimMesh,
             MaterialOverride = _rimMaterial,
-            Scale = new Vector3(radius, radius, radius),
+            Scale = new Vector3(halfWidth, MathF.Min(halfWidth, 1.6f), halfLength),
         });
 
         AddChild(node);

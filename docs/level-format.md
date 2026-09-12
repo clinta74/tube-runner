@@ -214,8 +214,8 @@ mouth, so the hazard is always telegraphed. Nothing needs declaring for them.
 |---|---|---|
 | `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
 | `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
-| `width` | `6` | Opening across the surface. |
-| `length` | `6` | Opening along the track. |
+| `width` | `7` | Opening across the surface. |
+| `length` | `18` | Opening along the track. Long by default, see below. |
 | `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
 | `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
 
@@ -225,6 +225,18 @@ mouth, so the hazard is always telegraphed. Nothing needs declaring for them.
   { "at": 300, "x": -8, "back": 400 }       // wider of the mark, and a longer way back
 ] }
 ```
+
+**Put a warp on a surface that curves away from the player's line.** This matters more than any
+other choice about it. On the surface the ship is riding, the camera sits about 2 units up, so a
+mouth ahead is seen at roughly 4 degrees and smears into the floor right under the nose — you get
+almost no warning. Put the same mouth on the ceiling, or high on the far side of the tube, and the
+curve of the wall turns that patch back towards the ship: it stands out as a clear shape from a
+long way out and only goes edge-on once you are on top of it, which is exactly the right order for
+a hazard.
+
+Either way it reads as a **glowing slot in the wall**, not a hole into blackness. The lit rim is
+what the player actually sees, which is why it pulses and why mouths are long along the track
+rather than round; the dark bore behind it only really shows from outside the tube.
 
 A warp is worth more than an obstacle in a time trial, because a block costs a shield and about
 0.4 s while a warp costs whatever the ship takes to fly that ground again — at 120 u/s a default
