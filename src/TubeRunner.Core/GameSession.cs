@@ -23,7 +23,8 @@ public enum SessionEvent
     Rammed,
     WarpEntered,
     Warped,
-    SpeedTripped,
+    ThrustLimited,
+    ThrustReleased,
     ShieldRestored,
     ShieldsRefilled,
     ShieldSlotAdded,
@@ -138,7 +139,8 @@ public sealed class GameSession
     private readonly List<Obstacle> _obstacles;
     private readonly List<Pickup> _pickups;
     private readonly List<Warp> _warps;
-    private readonly List<SpeedLimit> _speedLimits;
+    private readonly List<ThrustZone> _thrustZones;
+    private ThrustZone? _inZone;
     private readonly List<Shot> _shots = new();
     private readonly List<RingShot> _rings = new();
     private readonly List<SessionEvent> _events = new();
@@ -150,14 +152,14 @@ public sealed class GameSession
     /// <param name="carry">State from earlier levels of the same run; null starts fresh.</param>
     public GameSession(Track track, IEnumerable<Obstacle> obstacles, SessionSettings settings, TrackPosition start,
         IEnumerable<Pickup>? pickups = null, RunState? carry = null, IEnumerable<Warp>? warps = null,
-        IEnumerable<SpeedLimit>? speedLimits = null)
+        IEnumerable<ThrustZone>? thrustZones = null)
     {
         Track = track;
         _settings = settings;
         _obstacles = obstacles.OrderBy(o => o.S).ToList();
         _pickups = (pickups ?? []).OrderBy(p => p.S).ToList();
         _warps = (warps ?? []).OrderBy(w => w.S).ToList();
-        _speedLimits = (speedLimits ?? []).OrderBy(z => z.S).ToList();
+        _thrustZones = (thrustZones ?? []).OrderBy(z => z.S).ToList();
         Ship = new ShipSim(settings.Ship, track, start);
         Shields = MaxShields = settings.Shields;
 
@@ -179,7 +181,10 @@ public sealed class GameSession
     public IReadOnlyList<Obstacle> Obstacles => _obstacles;
     public IReadOnlyList<Pickup> Pickups => _pickups;
     public IReadOnlyList<Warp> Warps => _warps;
-    public IReadOnlyList<SpeedLimit> SpeedLimits => _speedLimits;
+    public IReadOnlyList<ThrustZone> ThrustZones => _thrustZones;
+
+    /// <summary>The thrust zone the ship is inside, if any. The HUD shows what it is doing.</summary>
+    public ThrustZone? InThrustZone => _inZone;
     public IReadOnlyList<Shot> Shots => _shots;
     public IReadOnlyList<RingShot> Rings => _rings;
 
@@ -242,6 +247,7 @@ public sealed class GameSession
 
         float recovered = 1f - RecoveryLeft / _settings.RecoveryTime;
         Ship.SpeedScale = _settings.HitSlowdown + (1f - _settings.HitSlowdown) * recovered;
+        ApplyThrustZones();
 
         double before = Ship.Position.S;
         bool wasJumping = Ship.IsJumping;
@@ -251,7 +257,6 @@ public sealed class GameSession
         CheckShipHits(before, Ship.Position.S);
         CollectPickups(before, Ship.Position.S);
         CheckWarps(before, Ship.Position.S);
-        CheckSpeedLimits();
         MoveShots(dt);
         MoveRings(dt);
 
@@ -299,28 +304,31 @@ public sealed class GameSession
         }
     }
 
-    // Speed-limit zones: a stretch that costs a shield if it is flown too fast. The recovery window
-    // means one pass costs one shield, so it reads as a price for speed rather than a grinder.
-    private void CheckSpeedLimits()
+    // Thrust zones narrow the throttle range while the ship is inside one. Nothing is taken away
+    // for flying wrong: the cost is control, and the HUD shows the range closing as it happens, so
+    // it is a thing to fly around rather than a hit out of nowhere.
+    private void ApplyThrustZones()
     {
         var pos = Ship.Position;
-        foreach (var z in _speedLimits)
+        ThrustZone? found = null;
+        foreach (var z in _thrustZones)
         {
-            // Outside it, the zone re-arms: fly through it fast again and it costs again.
-            if (pos.S < z.S - z.Length / 2f || pos.S > z.S + z.Length / 2f)
-            {
-                z.BitThisPass = false;
-                continue;
-            }
-            if (z.Branch != pos.Branch || z.BitThisPass || Ship.ForwardSpeed <= z.MaxSpeed) continue;
-
-            // One pass costs one shield. Recovery alone will not do it: a zone outlasts the recovery
-            // window, so without the per-pass latch a single zone empties the whole bar.
-            z.BitThisPass = true;
-            z.Tripped = true;
-            _events.Add(SessionEvent.SpeedTripped);
-            if (!TakeHit()) return;
+            if (z.Branch != pos.Branch || !z.Contains(pos.S)) continue;
+            found = z;
+            z.Entered = true;
+            break;
         }
+
+        if (found != _inZone)
+        {
+            _events.Add(found is null ? SessionEvent.ThrustReleased : SessionEvent.ThrustLimited);
+            _inZone = found;
+        }
+
+        Ship.ThrottleFloor = Math.Max(_settings.Ship.MinThrottle, found?.MinThrottle ?? 0f);
+        Ship.ThrottleCeiling = Math.Min(_settings.Ship.MaxThrottle, found?.MaxThrottle ?? float.MaxValue);
+        // A zone that asks for more than the ship can give would otherwise invert the range.
+        Ship.ThrottleCeiling = Math.Max(Ship.ThrottleCeiling, Ship.ThrottleFloor);
     }
 
     /// <returns>False if that was the last shield and the run is over.</returns>

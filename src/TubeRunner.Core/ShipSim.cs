@@ -26,12 +26,17 @@ public sealed class ShipSim
     private readonly Track _track;
     private readonly ProfileShapeCache _shapes = new();
 
+    /// <summary>The movement settings this ship was built with; the HUD reads its throttle range.</summary>
+    public ShipSettings Settings => _settings;
+
     public ShipSim(ShipSettings settings, Track track, TrackPosition start)
     {
         _settings = settings;
         _track = track;
         Shape = _shapes.Get(track.SectionAt(start.S, start.Branch));
         Position = start;
+        ThrottleFloor = settings.MinThrottle;
+        ThrottleCeiling = settings.MaxThrottle;
     }
 
     /// <summary>Position on the surface the ship is on, or is jumping away from.</summary>
@@ -52,6 +57,15 @@ public sealed class ShipSim
     public float SpeedScale { get; set; } = 1f;
 
     /// <summary>
+    /// Lowest throttle the player may hold right now. Normally the ship's own floor; a thrust zone
+    /// can raise it, which forces speed on them rather than taking it away.
+    /// </summary>
+    public float ThrottleFloor { get; set; }
+
+    /// <summary>Highest throttle the player may hold right now; a thrust zone can lower it.</summary>
+    public float ThrottleCeiling { get; set; }
+
+    /// <summary>
     /// Current forward speed in units per second: the track's speed here, times <see cref="Throttle"/>
     /// and <see cref="SpeedScale"/>.
     /// </summary>
@@ -64,10 +78,13 @@ public sealed class ShipSim
     public void Step(float dt, float steer, bool jump = false, float throttle = 0f)
     {
         steer = Math.Clamp(steer, -1f, 1f);
+        // Clamped to whatever range is in force, not the ship's own: inside a thrust zone the range
+        // narrows, and a throttle already outside the new range is dragged into it. That drag is the
+        // whole mechanic - a raised floor makes the ship speed up whether the player wants it or not.
         Throttle = Math.Clamp(
             Throttle + Math.Clamp(throttle, -1f, 1f) * _settings.ThrottleRate * dt,
-            _settings.MinThrottle,
-            _settings.MaxThrottle);
+            ThrottleFloor,
+            ThrottleCeiling);
         if (jump && !IsJumping && Shape.Unroll >= 1f)
         {
             IsJumping = true;

@@ -261,26 +261,35 @@ ordered group a puzzle worth having: they must steer to each one in turn, in the
 rather than hold the trigger and sweep. It also means a group spread around the tube takes real
 travel to clear, while one stacked at a single `angle` takes almost none.
 
-## Speed limits
+## Thrust zones
 
-A `speedLimits` list, on a piece or at the top level, marks a stretch that **costs a shield if it is
-flown too fast**. It is the inverse of a boost pad: handing a player speed decides nothing when they
-control the throttle, but making them give speed up on a timed run is a real price.
+A `thrustZones` list, on a piece or at the top level, marks a stretch that **narrows the throttle
+range**. Nothing is taken away for flying wrong: the cost is control, and the thrust bar on the HUD
+shows the range closing as it happens.
 
 | Field | Default | Meaning |
 |---|---|---|
 | `at` | required | Distance of the zone's center from the start of its piece (or of the track). |
 | `length` | `120` | Extent along the track. |
-| `maxSpeed` | required | Fastest the ship may go through it without losing a shield. |
+| `min` | none | Throttle floor inside, as a multiple of the track's speed. Raising it forces speed on the player. |
+| `max` | none | Throttle ceiling inside. Lowering it takes away the option to hurry. |
 | `branch` | none | Branch index, inside a split. |
 
+At least one of `min` and `max` is required — a zone that changes neither does nothing. The ship's
+own range is 0.5 to 1.75, and a zone only ever narrows it.
+
 ```json
-{ "length": 400, "speedLimits": [ { "at": 200, "length": 150, "maxSpeed": 95 } ] }
+{ "length": 400, "thrustZones": [ { "at": 200, "length": 150, "min": 1.3 } ] }
 ```
 
-One pass costs at most one shield: the post-hit recovery window covers the rest of the zone. Put a
-limit **right after a straight that invites speed**, so the player has to read it and back off rather
-than discover it at full throttle.
+**Raising `min` is the sharper edge.** Being made to carry speed through something tight is a real
+price; being made to slow down is mostly just slower. A throttle already below the new floor is
+dragged up to it, so the ship speeds up whether the player wants it to or not.
+
+This replaced a zone that took a shield for being flown too fast, which was wrong twice over: it
+punished the one thing the rest of the game rewards, and it did it with no warning a player could act
+on — nothing on screen said how close to the limit they were, so the first they knew of it was the
+hit. A cost you can watch arrive is a mechanic; one you can't is a gotcha.
 
 ## Warp zones
 

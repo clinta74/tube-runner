@@ -27,6 +27,6 @@ public sealed class Level
     /// <summary>Warp zones. Like obstacles, they hold per-run state.</summary>
     public IReadOnlyList<Warp> Warps { get; init; } = [];
 
-    /// <summary>Speed-limit zones. Like obstacles, they hold per-run state.</summary>
-    public IReadOnlyList<SpeedLimit> SpeedLimits { get; init; } = [];
+    /// <summary>Thrust zones, which narrow the throttle range while the ship is inside one.</summary>
+    public IReadOnlyList<ThrustZone> ThrustZones { get; init; } = [];
 }

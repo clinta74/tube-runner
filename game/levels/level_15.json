@@ -39,8 +39,8 @@
     { "length": 400, "section": "wide", "speed": 155 },             //  200 -  600
 
     // And the limit lands the moment it closes. This is the shape the whole level repeats.
-    { "length": 300, "section": "narrow", "speedLimits": [          //  600 -  900
-      { "at": 150, "length": 220, "maxSpeed": 105 }
+    { "length": 300, "section": "narrow", "thrustZones": [          //  600 -  900
+      { "at": 150, "length": 220, "max": 0.85 }
     ], "obstacles": [
       { "at": 100, "angle": 90,  "width": 7 },
       { "at": 200, "angle": -90, "width": 7 }
@@ -55,16 +55,16 @@
     { "length": 340, "speed": 150, "turn": -40, "obstacles": [      // 1160 - 1500
       { "at": 60, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 }
     ] },
-    { "length": 300, "section": "narrow", "turn": -30, "speedLimits": [  // 1500 - 1800
-      { "at": 150, "length": 230, "maxSpeed": 100 }
+    { "length": 300, "section": "narrow", "turn": -30, "thrustZones": [  // 1500 - 1800
+      { "at": 150, "length": 230, "max": 0.85 }
     ] },
 
     // Gates inside a limit. The gate wants the throttle used as timing; the limit caps how much of
     // it there is to use. Hurrying into an open gate can cost a shield to the zone instead.
     { "length": 360, "section": "tube", "speed": 145, "pickups": [  // 1800 - 2160
       { "at": 70, "kind": "rapid-fire" }
-    ], "speedLimits": [
-      { "at": 200, "length": 260, "maxSpeed": 115 }
+    ], "thrustZones": [
+      { "at": 200, "length": 260, "max": 0.85 }
     ], "obstacles": [
       { "at": 140, "period": 2.4, "angle": 0,   "width": 20, "height": 3 },
       { "at": 250, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
@@ -80,8 +80,8 @@
     { "length": 460, "section": "tube", "speed": 165 },             // 2400 - 2860
     // A well inside a limit: held slow, so there is time to see it and no speed to steer with. The
     // narrow bore is what makes it bite - a mouth takes a third of the wall whatever the tube.
-    { "length": 340, "section": "narrow", "turn": 65, "speedLimits": [   // 2860 - 3200
-      { "at": 170, "length": 260, "maxSpeed": 95 }
+    { "length": 340, "section": "narrow", "turn": 65, "thrustZones": [   // 2860 - 3200
+      { "at": 170, "length": 260, "max": 0.85 }
     ], "warps": [
       { "at": 240, "angle": 90 }
     ], "obstacles": [

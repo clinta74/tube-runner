@@ -13,8 +13,6 @@ namespace TubeRunner.Game;
 public partial class Main : Node3D
 {
     private const string BestTimesPath = "user://best_times.json";
-    // Best-times key for a whole run; level keys are file names, so it can't collide.
-    private const string RunTimeKey = "run.total";
 
     [Export] public ShaderMaterial WallMaterial { get; set; } = null!;
     [Export(PropertyHint.File, "*.json")] public string LevelPath { get; set; } = "res://levels/level_01.json";
@@ -67,6 +65,14 @@ public partial class Main : Node3D
     private float _snap;
 
     private string LevelId => LevelPath.GetFile();
+
+    /// <summary>
+    /// Best-times key for a whole run, keyed by the level it started from. Level keys are file
+    /// names, so this cannot collide with one. A run from level 1 and a run from level 16 are not
+    /// the same race, and holding both under one key had the finish screen offering a best of 24
+    /// seconds against a total of 640.
+    /// </summary>
+    private string RunKey => $"run.{_runStart.GetFile()}";
 
     private float SplitTotal
     {
@@ -157,7 +163,7 @@ public partial class Main : Node3D
         _levelStart = startS ?? CameraBehind + 10.0;
         var start = new TrackPosition(_levelStart, Surface.Floor, 0f);
         _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry, level.Warps,
-            level.SpeedLimits);
+            level.ThrustZones);
 
         ThemeView.Apply(level.Theme, WallMaterial);
         _ship.ApplyTheme(level.Theme);
@@ -322,9 +328,11 @@ public partial class Main : Node3D
                     _hud.Callout("WARPED BACK");
                     _shake = 1f;
                     break;
-                case SessionEvent.SpeedTripped:
-                    // The Hit event that follows does the flash and the shake; this only says why.
-                    _hud.Callout("TOO FAST");
+                case SessionEvent.ThrustLimited:
+                    _hud.Callout("THRUST LIMITED");
+                    break;
+                case SessionEvent.ThrustReleased:
+                    _hud.Callout("THRUST CLEAR");
                     break;
                 case SessionEvent.Hit:
                     _hud.Flash();
@@ -369,7 +377,7 @@ public partial class Main : Node3D
 
         if (_level.Next is null)
         {
-            if (!_practice) _bestTimes.Record(RunTimeKey, SplitTotal);
+            if (!_practice) _bestTimes.Record(RunKey, SplitTotal);
             if (!_practice) SaveBestTimes();
             _hud.ShowMessage($"RUN COMPLETE\n{Summary()}\nSpace to run it again");
             return false;
@@ -386,7 +394,7 @@ public partial class Main : Node3D
     {
         var lines = new List<string>();
         foreach (var (level, time) in _splits) lines.Add($"{level}   {time:0.00}s");
-        string bestRun = _bestTimes.Get(RunTimeKey) is float best ? $"   (best {best:0.00}s)" : "";
+        string bestRun = _bestTimes.Get(RunKey) is float best ? $"   (best {best:0.00}s)" : "";
         lines.Add($"TOTAL   {SplitTotal:0.00}s{bestRun}");
         return string.Join("\n", lines);
     }

@@ -47,8 +47,8 @@
 
     // The level's own idea: a limit holding the ship slow through a shoal. Slow means more sweeps
     // pass before arrival, so the pattern that would have been threaded at speed has moved on.
-    { "length": 420, "section": "narrow", "speedLimits": [          //  560 -  980
-      { "at": 210, "length": 320, "maxSpeed": 100 }
+    { "length": 420, "section": "narrow", "thrustZones": [          //  560 -  980
+      { "at": 210, "length": 320, "min": 1.3 }
     ], "obstacles": [
       { "at": 110, "sweep": 7, "sweepTime": 3.0, "width": 6, "angle": 0 },
       { "at": 230, "sweep": 7, "sweepTime": 3.0, "width": 6, "angle": 120 },
@@ -79,8 +79,8 @@
 
     // Ordered group inside a limit: held slow, with targets to clear in sequence and a mover
     // crossing the line each shot has to take.
-    { "length": 420, "section": "narrow", "turn": -40, "speedLimits": [  // 2080 - 2500
-      { "at": 210, "length": 320, "maxSpeed": 105 }
+    { "length": 420, "section": "narrow", "turn": -40, "thrustZones": [  // 2080 - 2500
+      { "at": 210, "length": 320, "min": 1.3 }
     ], "obstacles": [
       { "at": 120, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
       { "at": 220, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
@@ -116,8 +116,8 @@
 
     // Fast straight into a blind limited bend, the trap from 14 and 15, with a mover waiting in it.
     { "length": 380, "section": "tube", "speed": 165 },             // 2740 - 3120
-    { "length": 320, "section": "narrow", "turn": 70, "speedLimits": [   // 3120 - 3440
-      { "at": 160, "length": 240, "maxSpeed": 100 }
+    { "length": 320, "section": "narrow", "turn": 70, "thrustZones": [   // 3120 - 3440
+      { "at": 160, "length": 240, "min": 1.3 }
     ], "obstacles": [
       { "at": 200, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 180 }
     ] },

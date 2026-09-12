@@ -213,39 +213,53 @@ public class MechanicTests
     }
 
     [Fact]
-    public void SpeedLimit_CostsAShieldWhenItIsTakenTooFast()
+    public void ThrustZone_RaisesTheFloorAndDragsTheThrottleUpToIt()
     {
-        var zone = new SpeedLimit { S = 400, Length = 120f, MaxSpeed = 30f };   // track runs at 50
+        var zone = new ThrustZone { S = 400, Length = 200f, MinThrottle = 1.3f };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
 
-        Fly(game, to: 500);
+        // Held all the way down on the way in, so the throttle is at the ship's own floor.
+        Fly(game, to: 250, new ShipInput(Throttle: -1f));
+        Assert.Equal(Settings.Ship.MinThrottle, game.Ship.Throttle, precision: 2);
 
-        Assert.True(zone.Tripped);
-        Assert.Equal(2, game.Shields);
+        // Inside, the floor rises and the ship is carried up to it whether it likes it or not.
+        Fly(game, to: 420, new ShipInput(Throttle: -1f));
+        Assert.True(zone.Entered);
+        Assert.Equal(1.3f, game.Ship.ThrottleFloor, precision: 2);
+        Assert.Equal(1.3f, game.Ship.Throttle, precision: 2);
+        Assert.Equal(3, game.Shields);   // it costs control, never a shield
     }
 
     [Fact]
-    public void SpeedLimit_LetsAShipUnderTheLimitThrough()
+    public void ThrustZone_LowersTheCeilingAndHoldsTheThrottleDown()
     {
-        var zone = new SpeedLimit { S = 400, Length = 120f, MaxSpeed = 80f };
+        var zone = new ThrustZone { S = 400, Length = 200f, MaxThrottle = 0.8f };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
 
-        Fly(game, to: 500);
+        // Wide open the whole way, so the throttle is pinned at the ship's ceiling before the zone.
+        Fly(game, to: 250, new ShipInput(Throttle: 1f));
+        Assert.True(game.Ship.Throttle > 1f);
 
-        Assert.False(zone.Tripped);
+        Fly(game, to: 420, new ShipInput(Throttle: 1f));
+        Assert.Equal(0.8f, game.Ship.ThrottleCeiling, precision: 2);
+        Assert.Equal(0.8f, game.Ship.Throttle, precision: 2);
         Assert.Equal(3, game.Shields);
     }
 
     [Fact]
-    public void SpeedLimit_CostsOneShieldPerPass_NotOnePerFrame()
+    public void ThrustZone_GivesTheRangeBackOnTheWayOut()
     {
-        var zone = new SpeedLimit { S = 400, Length = 200f, MaxSpeed = 10f };
+        var zone = new ThrustZone { S = 300, Length = 120f, MinThrottle = 1.4f };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
 
-        Fly(game, to: 600);
+        Fly(game, to: 320);
+        Assert.NotNull(game.InThrustZone);
 
-        // A long zone flown far too fast still only bites while recovery is down.
-        Assert.True(game.Shields >= 1, $"the zone took {3 - game.Shields} shields in one pass");
+        Fly(game, to: 600, new ShipInput(Throttle: -1f));
+
+        Assert.Null(game.InThrustZone);
+        Assert.Equal(Settings.Ship.MinThrottle, game.Ship.ThrottleFloor, precision: 2);
+        Assert.True(game.Ship.Throttle < 1.4f, "the throttle should be free to come down again");
     }
 
     [Fact]
@@ -264,7 +278,7 @@ public class MechanicTests
                     { "at": 400, "kind": "target", "group": "a", "order": 2 },
                     { "at": 500, "lockedBy": "a" }
                   ],
-                  "speedLimits": [ { "at": 550, "length": 80, "maxSpeed": 90 } ]
+                  "thrustZones": [ { "at": 550, "length": 80, "min": 1.2, "max": 1.6 } ]
                 }
               ]
             }
@@ -278,9 +292,24 @@ public class MechanicTests
         Assert.Equal("a", level.Obstacles[3].Group);
         Assert.Equal(2, level.Obstacles[3].Order);
         Assert.Equal("a", level.Obstacles[4].LockedBy);
-        var zone = Assert.Single(level.SpeedLimits);
+        var zone = Assert.Single(level.ThrustZones);
         Assert.Equal(550.0, zone.S);
-        Assert.Equal(90f, zone.MaxSpeed);
+        Assert.Equal(1.2f, zone.MinThrottle);
+        Assert.Equal(1.6f, zone.MaxThrottle);
+    }
+
+    [Fact]
+    public void Loader_RejectsAThrustZoneThatChangesNothing()
+    {
+        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse("""
+            {
+              "sections": { "tube": { "radius": 6 } },
+              "start": "tube",
+              "track": [ { "length": 300, "thrustZones": [ { "at": 100 } ] } ]
+            }
+            """));
+
+        Assert.Contains("does nothing", e.Message);
     }
 
     [Fact]

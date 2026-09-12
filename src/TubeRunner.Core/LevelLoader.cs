@@ -78,13 +78,13 @@ public static class LevelLoader
         var obstacles = ToObstacles(data.Obstacles, track, 0, "Obstacle");
         var pickups = ToPickups(data.Pickups, track, 0, "Pickup");
         var warps = ToWarps(data.Warps, track, 0, "Warp");
-        var speedLimits = ToSpeedLimits(data.SpeedLimits, track, 0, "Speed limit");
+        var thrustZones = ToThrustZones(data.ThrustZones, track, 0, "Thrust zone");
         for (int i = 0; i < data.Track.Count; i++)
         {
             obstacles.AddRange(ToObstacles(data.Track[i].Obstacles, track, pieceStarts[i], $"Track piece {i}, obstacle"));
             pickups.AddRange(ToPickups(data.Track[i].Pickups, track, pieceStarts[i], $"Track piece {i}, pickup"));
             warps.AddRange(ToWarps(data.Track[i].Warps, track, pieceStarts[i], $"Track piece {i}, warp"));
-            speedLimits.AddRange(ToSpeedLimits(data.Track[i].SpeedLimits, track, pieceStarts[i], $"Track piece {i}, speed limit"));
+            thrustZones.AddRange(ToThrustZones(data.Track[i].ThrustZones, track, pieceStarts[i], $"Track piece {i}, thrust zone"));
         }
 
         return new Level
@@ -98,7 +98,7 @@ public static class LevelLoader
             Obstacles = obstacles,
             Pickups = pickups,
             Warps = warps,
-            SpeedLimits = speedLimits,
+            ThrustZones = thrustZones,
         };
     }
 
@@ -243,19 +243,34 @@ public static class LevelLoader
         return warps;
     }
 
-    private static List<SpeedLimit> ToSpeedLimits(List<SpeedLimitData> list, Track track, double offset, string label)
+    private static List<ThrustZone> ToThrustZones(List<ThrustZoneData> list, Track track, double offset, string label)
     {
-        var zones = new List<SpeedLimit>();
+        var zones = new List<ThrustZone>();
         for (int i = 0; i < list.Count; i++)
         {
             var z = list[i];
             string where = $"{label} {i}";
-            if (z.MaxSpeed <= 0f) throw new LevelFormatException($"{where}: 'maxSpeed' must be positive.");
             if (z.Length <= 0f) throw new LevelFormatException($"{where}: 'length' must be positive.");
+            if (z.Min is null && z.Max is null)
+            {
+                throw new LevelFormatException($"{where}: set 'min', 'max', or both - a zone that changes neither does nothing.");
+            }
+            if (z.Min is <= 0f || z.Max is <= 0f) throw new LevelFormatException($"{where}: 'min' and 'max' must be positive.");
+            if (z.Min is float lo && z.Max is float hi && lo > hi)
+            {
+                throw new LevelFormatException($"{where}: 'min' {lo} is above 'max' {hi}.");
+            }
 
             foreach (var (s, branch, _, _) in Place(z, track, offset, where))
             {
-                zones.Add(new SpeedLimit { S = s, Branch = branch, Length = z.Length, MaxSpeed = z.MaxSpeed });
+                zones.Add(new ThrustZone
+                {
+                    S = s,
+                    Branch = branch,
+                    Length = z.Length,
+                    MinThrottle = z.Min,
+                    MaxThrottle = z.Max,
+                });
             }
         }
         return zones;
@@ -385,7 +400,7 @@ public static class LevelLoader
         public List<ObstacleData> Obstacles { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
         public List<WarpData> Warps { get; set; } = new();
-        public List<SpeedLimitData> SpeedLimits { get; set; } = new();
+        public List<ThrustZoneData> ThrustZones { get; set; } = new();
     }
 
     private sealed class SectionData
@@ -408,13 +423,18 @@ public static class LevelLoader
         public List<ObstacleData> Obstacles { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
         public List<WarpData> Warps { get; set; } = new();
-        public List<SpeedLimitData> SpeedLimits { get; set; } = new();
+        public List<ThrustZoneData> ThrustZones { get; set; } = new();
     }
 
-    private sealed class SpeedLimitData : PlacementData
+    private sealed class ThrustZoneData : PlacementData
     {
         public float Length { get; set; } = 120f;
-        public float MaxSpeed { get; set; }
+
+        /// <summary>Throttle floor inside the zone, as a multiple of the track's speed.</summary>
+        public float? Min { get; set; }
+
+        /// <summary>Throttle ceiling inside the zone.</summary>
+        public float? Max { get; set; }
     }
 
     private sealed class SplitData
