@@ -39,7 +39,7 @@ public partial class Main : Node3D
     private Hud _hud = null!;
     private SpeedFx _fx = null!;
     private EngineAudio _audio = null!;
-    private MeshInstance3D _ship = null!;
+    private ShipView _ship = null!;
     private Camera3D _camera = null!;
 
     // The level the run starts from, and the state the current level began with (for a retry).
@@ -65,8 +65,6 @@ public partial class Main : Node3D
 
     private string LevelId => LevelPath.GetFile();
 
-    private StandardMaterial3D ShipMaterial => (StandardMaterial3D)_ship.MaterialOverride;
-
     private float SplitTotal
     {
         get
@@ -80,7 +78,7 @@ public partial class Main : Node3D
     public override void _Ready()
     {
         InputSetup.Register();
-        _ship = GetNode<MeshInstance3D>("Ship");
+        _ship = GetNode<ShipView>("Ship");
         _camera = GetNode<Camera3D>("Camera3D");
         _track = GetNode<TrackRenderer>("TrackRenderer");
         _obstacles = GetNode<ObstacleRenderer>("ObstacleRenderer");
@@ -155,7 +153,8 @@ public partial class Main : Node3D
         var start = new TrackPosition(_levelStart, Surface.Floor, 0f);
         _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry);
 
-        ThemeView.Apply(level.Theme, WallMaterial, ShipMaterial);
+        ThemeView.Apply(level.Theme, WallMaterial);
+        _ship.ApplyTheme(level.Theme);
         WallMaterial.SetShaderParameter("segment_length", level.SegmentLength);
         _track.Reset();
         _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme);
@@ -242,13 +241,11 @@ public partial class Main : Node3D
         var snapOffset = _snapOffset * ease;
         up = up.Lerp(_snapUp, ease).Normalized();
 
-        // Bank into sideways movement, blink while recovering, and burn bright while unstoppable.
+        // Bank into sideways movement; the ship itself handles blinking, engines, and the hot hull.
         _bank = Mathf.Lerp(_bank, steer, 1f - Mathf.Exp(-8f * dt));
         var shipPos = shipWorld.RelativeTo(origin).ToGodot() + snapOffset;
         _ship.LookAtFromPosition(shipPos, shipPos + forward, up.Rotated(forward, -0.4f * _bank));
-        _ship.Visible = _session.RecoveryLeft <= 0f || Mathf.PosMod(_session.RecoveryLeft * 12f, 2f) < 1f;
-        ShipMaterial.EmissionEnabled = _session.RamLeft > 0f || _level.Theme.Glow > 0f;
-        ShipMaterial.EmissionEnergyMultiplier = _session.RamLeft > 0f ? 3f : _level.Theme.Glow;
+        _ship.UpdateState(dt, _bank, _session.Ship.Throttle, _fx.Intensity, _session.RamLeft, _session.RecoveryLeft);
 
         // The camera follows the ship's section-space pose along its path, so it stays level on
         // open planes and rolls with the ship around tubes and through jumps.
@@ -272,6 +269,9 @@ public partial class Main : Node3D
             _audio.OnEvent(e);
             switch (e)
             {
+                case SessionEvent.Fired:
+                    _ship.Fire();
+                    break;
                 case SessionEvent.Hit:
                     _hud.Flash();
                     _shake = 1f;

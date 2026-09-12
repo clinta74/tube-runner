@@ -125,7 +125,9 @@ line or down the meaner branch, so they cost something to take.
 
 The gameplay shapes are settled; these all need a real look:
 
-- **Ship:** a flat-shaded prism.
+- **Ship:** built from primitives (wedge fuselage, swept wings, tail fins, twin engines) with parts
+  that move with throttle, bank and state. Wants a real model eventually, but it is no longer a
+  placeholder shape.
 - **Blocks:** plain boxes. Breakable ones are steel blue and just darken as they take hits; they want
   cracks or chunks flying off.
 - **Targets:** four-sided diamonds.

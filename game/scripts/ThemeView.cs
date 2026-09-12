@@ -5,10 +5,10 @@ using Theme = TubeRunner.Core.Theme;
 
 namespace TubeRunner.Game;
 
-/// <summary>Applies a level's <see cref="Theme"/> to the wall shader and the ship.</summary>
+/// <summary>Applies a level's <see cref="Theme"/> to the wall shader. The ship colors itself.</summary>
 public static class ThemeView
 {
-    public static void Apply(Theme theme, ShaderMaterial wall, StandardMaterial3D ship)
+    public static void Apply(Theme theme, ShaderMaterial wall)
     {
         wall.SetShaderParameter("darks", Palette(theme.Darks));
         wall.SetShaderParameter("dark_count", theme.Darks.Count);
@@ -20,11 +20,6 @@ public static class ThemeView
         wall.SetShaderParameter("fade_start", theme.FadeStart);
         wall.SetShaderParameter("fade_end", theme.FadeEnd);
         wall.SetShaderParameter("glow", theme.Glow);
-
-        ship.AlbedoColor = theme.Ship.ToColor();
-        ship.EmissionEnabled = theme.Glow > 0f;
-        ship.Emission = theme.Ship.ToColor();
-        ship.EmissionEnergyMultiplier = theme.Glow;
     }
 
     // The shader's palette arrays are fixed-size; unused slots are never picked.
