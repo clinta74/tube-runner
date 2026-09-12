@@ -37,6 +37,7 @@ public partial class TrackRenderer : Node3D
     private ShaderMaterial _capMaterial = null!;
     private Vector3 _capColor;
     private Vector3 _endWallColor;
+    private Vector3 _endRimColor;
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
@@ -83,12 +84,18 @@ public partial class TrackRenderer : Node3D
             _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
             _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
         }
-        if (endsTheRun && track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
+        if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
 
-        // Fork and merge walls sit in shadow around their openings; the wall at the end of the level
-        // is the thing you fly at, so it takes a color you can actually see.
+        // Fork and merge walls sit in shadow around their openings. The wall closing the end of the
+        // track is different: on the last level it is the thing you fly at, so it takes a color you
+        // can see, but everywhere else the run carries straight on into another level and the end
+        // should not read as an end at all. Painting it the distance color, rim included, leaves the
+        // tube receding into the same haze everything far away fades into. Leaving it out entirely
+        // was worse than the white wall it replaced - it opened onto empty space, so the level
+        // finished in a black hole.
         _capColor = theme.SeamDark.ToVector3();
-        _endWallColor = theme.Block.ToVector3();
+        _endWallColor = endsTheRun ? theme.Block.ToVector3() : theme.Far.ToVector3();
+        _endRimColor = endsTheRun ? theme.SeamLight.ToVector3() : theme.Far.ToVector3();
 
         _capMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/track_cap.gdshader") };
         _capMaterial.SetShaderParameter("cap_color", _capColor);
@@ -292,6 +299,9 @@ public partial class TrackRenderer : Node3D
         }
         var material = (ShaderMaterial)_capMaterial.Duplicate();
         material.SetShaderParameter("cap_color", split is null ? _endWallColor : _capColor);
+        // The rim is a bright ring round a fork opening, which is right there and wrong at the end of
+        // a level that carries on: it draws a hard edge exactly where there should be no edge.
+        if (split is null) material.SetShaderParameter("rim_color", _endRimColor);
         material.SetShaderParameter("holes", holes);
         material.SetShaderParameter("hole_count", split?.BranchCount ?? 0);
         // The shader cuts every hole with one exponent, so branches that differ in squareness all

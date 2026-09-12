@@ -17,7 +17,7 @@ background_mode = 1
 background_color = Color(0, 0, 0, 1)
 glow_enabled = true
 glow_intensity = 1.2
-glow_hdr_threshold = 1.0
+glow_hdr_threshold = 1.3
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -39,7 +39,7 @@ script = ExtResource("8_ship")
 fov = 75.0
 
 [node name="HeadLight" type="DirectionalLight3D" parent="Camera3D"]
-light_energy = 1.4
+light_energy = 1.1
 
 [node name="SpeedFx" type="CanvasLayer" parent="."]
 script = ExtResource("6_fx")

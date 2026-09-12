@@ -65,7 +65,12 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 /// <param name="PickupRadius">How close the ship has to pass to a pickup to collect it.</param>
 /// <param name="ShipHalfWidth">Collision half-size across the surface.</param>
 /// <param name="ShipHalfLength">Collision half-size along the track.</param>
-/// <param name="FinishRunOut">Distance before the end of the track where the level counts as finished.</param>
+/// <param name="FinishRunOut">
+/// Distance before the end of the track where the level counts as finished. Well clear of the end,
+/// because levels hand over to one another with no pause: the wall closing the track should still be
+/// deep in the distance fade when the next level takes over, so the tube reads as carrying on rather
+/// than as something the run stopped at. Every level's last piece is empty run-out for this.
+/// </param>
 /// <param name="WarpBack">How far a warp zone throws the ship back up the track.</param>
 /// <param name="WarpDive">Seconds the ship spends falling down a warp mouth before it is thrown back.</param>
 public sealed record SessionSettings(
@@ -86,7 +91,7 @@ public sealed record SessionSettings(
     float PickupRadius = 1.5f,
     float ShipHalfWidth = 0.6f,
     float ShipHalfLength = 0.8f,
-    float FinishRunOut = 40f,
+    float FinishRunOut = 260f,
     float WarpBack = 250f,
     float WarpDive = 0.55f);
 

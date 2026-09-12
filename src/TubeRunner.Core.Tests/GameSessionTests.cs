@@ -123,12 +123,16 @@ public class GameSessionTests
         Assert.Contains(SessionEvent.ShotBlocked, events);
     }
 
+    // A level finishes well before its track runs out - the last stretch is empty run-out, so the
+    // wall closing it is still deep in the distance fade when the next level takes over. These
+    // tracks have to be long enough to have something in front of that, or the level is over before
+    // it has begun.
     [Fact]
     public void ReachingTheEnd_FinishesTheLevel()
     {
-        var game = Session(Circle, [], length: 300f);
+        var game = Session(Circle, [], length: 560f);
 
-        var events = Run(game, 7f);
+        var events = Run(game, 9f);
 
         Assert.Equal(SessionState.Finished, game.State);
         Assert.Contains(SessionEvent.Finished, events);
@@ -137,12 +141,13 @@ public class GameSessionTests
     [Fact]
     public void Elapsed_StopsAtTheFinish()
     {
-        var game = Session(Circle, [], length: 300f);
+        var game = Session(Circle, [], length: 560f);
 
-        Run(game, 7f);
+        Run(game, 9f);
 
         Assert.Equal(SessionState.Finished, game.State);
-        Assert.InRange(game.Elapsed, 5f, 5.5f);   // 260 units at 50 u/s, then the clock stops
+        // 560 of track less 260 of run-out is 300 units, at 50 u/s, and then the clock stops.
+        Assert.InRange(game.Elapsed, 6f, 6.5f);
     }
 
     [Fact]
