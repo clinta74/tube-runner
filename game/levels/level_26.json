@@ -1,0 +1,169 @@
+{
+  "name": "Finale",
+  "speed": 160,
+  "segmentLength": 60,
+
+  // The end of the run. No new ideas - that is the rule for this level. Everything here has been
+  // taught, tested and paid for somewhere in the twenty-five levels before it, and the only thing
+  // that is new is how much of it arrives at once.
+  // It gives nothing. There is no refill anywhere in it: whatever the run still has when it starts
+  // is what it finishes on, which is the whole point of a run being a run rather than a level.
+  // The one mercy is that it is honest. Every hazard here is a kind the player knows, placed the way
+  // that kind has always been placed - wells where the wall curves away, limits after a straight
+  // that invites speed, plates alone rather than mixed into a wall of breakables. It is hard because
+  // it is relentless, not because it lies.
+  "theme": {
+    "darks": ["#14121c", "#100e17", "#1b1826"],
+    "lights": ["#8a7fb5", "#766a9e", "#9d92c8"],
+    "seamDark": "#090811",
+    "seamLight": "#ffffff",
+    "far": "#000000",
+    "ship": "#ffffff",
+    "block": "#efe9ff",
+    "target": "#ff3a6a",
+    "breakable": "#6bffc4",
+    "fadeStart": 30,
+    "fadeEnd": 320,
+    "glow": 0.45
+  },
+
+  "sections": {
+    "tube":         { "radius": 6 },
+    "narrow":       { "radius": 4.8 },
+    "flat":         { "radius": 6, "opening": 1 },
+    "oval":         { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":          { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 },
+    "wide":         { "radius": 7.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    // The shortest run-in of any level. There is nothing to learn.
+    { "length": 160 },                                              //    0 -  160
+
+    // 1. Gates, from level 10. Straight into the rhythm, no free look, three in staggered phase.
+    { "length": 420, "turn": 40, "obstacles": [                     //  160 -  580
+      { "at": 90,  "period": 2.0, "phase": 0,    "angle": 0,   "width": 20, "height": 3 },
+      { "at": 220, "period": 2.0, "phase": 0.33, "angle": 120, "width": 20, "height": 3 },
+      { "at": 340, "period": 2.0, "phase": 0.66, "angle": 240, "width": 20, "height": 3 }
+    ] },
+
+    // 2. An ordered group, from 12, spread right round the wall so clearing it costs travel.
+    { "length": 400, "section": "wide", "speed": 165, "obstacles": [    //  580 -  980
+      { "at": 110, "kind": "target", "angle": 180, "group": "a", "order": 0 },
+      { "at": 200, "kind": "target", "angle": 60,  "group": "a", "order": 1 },
+      { "at": 290, "kind": "target", "angle": -60, "group": "a", "order": 2 }
+    ] },
+
+    // 3. A limit with a shoal in it, from 17. Held slow, so more sweeps pass before arrival.
+    { "length": 440, "section": "narrow", "speedLimits": [          //  980 - 1420
+      { "at": 210, "length": 320, "maxSpeed": 110 }
+    ], "obstacles": [
+      { "at": 110, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 },
+      { "at": 230, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 120 },
+      { "at": 350, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 240 }
+    ] },
+
+    // The only tool in the level, and it is a tool rather than a gift: it answers the next stretch
+    // and nothing else.
+    { "length": 220, "section": "tube", "speed": 170, "pickups": [  // 1420 - 1640
+      { "at": 110, "kind": "rapid-fire" }
+    ] },
+
+    // 4. Plates seeded through a wall of breakables, from 18 and 19. Shooting opens most of it.
+    { "length": 420, "obstacles": [                                 // 1640 - 2060
+      { "at": 120, "hits": 2, "angle": 0,   "width": 9 },
+      { "at": 120, "kind": "plate", "angle": 90, "width": 11, "height": 3 },
+      { "at": 120, "hits": 2, "angle": 180, "width": 9 },
+      { "at": 270, "hits": 3, "angle": 270, "width": 9 },
+      { "at": 270, "kind": "plate", "angle": 45, "width": 11, "height": 3 }
+    ] },
+
+    // 5. Flat, with the jump rhythm from 11 and plates that cannot be shot, from 18.
+    { "length": 120, "section": "flat", "speed": 165 },             // 2060 - 2180
+    { "length": 460, "obstacles": [                                 // 2180 - 2640
+      { "at": 90,  "period": 2.0, "width": 80, "height": 2.5 },
+      { "at": 90,  "period": 2.0, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 220, "kind": "plate", "x": -14, "width": 26, "height": 2.5 },
+      { "at": 220, "kind": "plate", "x": 16,  "width": 22, "height": 2.5 },
+      { "at": 350, "width": 80, "height": 2.5 },
+      { "at": 430, "kind": "plate", "surface": "ceiling", "x": -10, "width": 24, "height": 2.5 }
+    ] },
+
+    // 6. A key and its door, from 20, with the door round a bend and out of sight when the shot has
+    // to be taken.
+    { "length": 240, "section": "tube", "speed": 170, "obstacles": [    // 2640 - 2880
+      { "at": 120, "kind": "target", "angle": 180, "group": "k1" }
+    ] },
+    { "length": 300, "turn": 70, "obstacles": [                     // 2880 - 3180
+      { "at": 180, "lockedBy": "k1", "angle": 0, "width": 24, "height": 3 }
+    ] },
+
+    // 7. The three-way from 22: the middle road is the centreline and carries nothing, the quick
+    // road is tightest and carries the well. The prize sits down the meanest route.
+    { "length": 140, "section": "chamber", "speed": 175 },          // 3180 - 3320
+    { "length": 460, "turn": 95, "split": {                         // 3320 - 3780
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [155, -34, 0], [300, -34, 0], [460, -8, 0]] },
+          { "offsets": [[0, 8, 0], [155, 34, 0], [300, 34, 0], [460, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "warps": [
+        { "at": 300, "branch": 1, "angle": 90 }
+      ],
+      "obstacles": [
+        { "at": 230, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
+      ]
+    },
+    { "length": 160, "section": "tube" },                           // 3780 - 3940
+
+    // 8. Wells on the fast line in a narrow bore, from 23.
+    { "length": 420, "section": "narrow", "speed": 180, "turn": -70, "warps": [   // 3940 - 4360
+      { "at": 140, "angle": 90 },
+      { "at": 320, "angle": -90 }
+    ] },
+
+    // 9. The box, dense, at the highest speed in the game.
+    { "length": 420, "section": "box", "speed": 190, "obstacles": [ // 4360 - 4780
+      { "at": 90,  "kind": "plate", "angle": 0, "width": 13, "height": 3 },
+      { "at": 190, "period": 1.9, "angle": 180, "width": 18, "height": 3 },
+      { "at": 290, "sweep": 12, "sweepTime": 2.4, "width": 8, "angle": 90 },
+      { "at": 380, "angle": 270, "width": 10 }
+    ] },
+
+    // 10. A last limit, exactly where a player would push for the line. It is the cruellest placing
+    // in the game and it is the one the whole of block B taught.
+    { "length": 400, "section": "narrow", "turn": 60, "speedLimits": [   // 4780 - 5180
+      { "at": 200, "length": 300, "maxSpeed": 115 }
+    ], "obstacles": [
+      { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
+      { "at": 290, "sweep": 7, "sweepTime": 2.4, "width": 6, "angle": 0 }
+    ] },
+
+    // Run for home. The longest twist in the game, one thing per bend, at full speed, in the dark.
+    { "length": 190, "section": "tube", "speed": 195, "turn": 80, "obstacles": [   // 5180 - 5370
+      { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
+    ] },
+    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 5370 - 5560
+      { "at": 95, "period": 1.9, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 5560 - 5750
+      { "at": 95, "sweep": 10, "sweepTime": 2.2, "width": 8, "angle": 90 }
+    ] },
+    { "length": 190, "turn": -80, "climb": 12, "warps": [           // 5750 - 5940
+      { "at": 110, "angle": 0 }
+    ] },
+    { "length": 190, "turn": 85, "climb": -14, "obstacles": [       // 5940 - 6130
+      { "at": 95, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
+    ] },
+
+    // The last stretch is clear and straight. After twenty-six levels, the finish should be a thing
+    // you can see coming.
+    { "length": 320 }                                               // 6130 - 6450
+  ]
+}

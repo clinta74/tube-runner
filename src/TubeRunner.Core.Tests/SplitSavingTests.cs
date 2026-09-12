@@ -22,6 +22,10 @@ public class SplitSavingTests(ITestOutputHelper output)
     [InlineData("level_07.json")]
     [InlineData("level_08.json")]
     [InlineData("level_09.json")]
+    [InlineData("level_22.json")]
+    [InlineData("level_23.json")]
+    [InlineData("level_25.json")]
+    [InlineData("level_26.json")]
     public void EverySplitIsWorthTaking(string name)
     {
         var level = LevelLoader.Parse(File.ReadAllText(LevelPath(name)));

@@ -41,13 +41,13 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 19 | **Crossfire** | Plates and movers with a shooting load that won't wait | Round, box | ✅ |
 | 20 | **Keys** | Shoot-to-open gates: a target that unlocks the way ahead | Round, box | ✅ |
 | 21 | **Attrition** | Block C's test, on thin resources | All | ✅ |
-| 22 | **Roulette** | Forks where one branch hides a warp well | Split-heavy | ⬜ |
-| 23 | **Highwire** | Narrow tubes at speed, warps sitting on the fast line | Round, split | ⬜ |
-| 24 | **Blackout** | Visibility: twists that show you almost nothing | All | ⬜ |
-| 25 | **Long Odds** | Endurance: the longest level, and almost nothing given | All | ⬜ |
-| 26 | **Finale** | No new ideas, just the hardest mix | All | ⬜ |
+| 22 | **Roulette** | Forks where one branch hides a warp well | Split-heavy | ✅ |
+| 23 | **Highwire** | Narrow tubes at speed, warps sitting on the fast line | Round, split | ✅ |
+| 24 | **Blackout** | Visibility: twists that show you almost nothing | All | ✅ |
+| 25 | **Long Odds** | Endurance: the longest level, and almost nothing given | All | ✅ |
+| 26 | **Finale** | No new ideas, just the hardest mix | All | ✅ |
 
-File names match these numbers. Level 9 ends the run until level 10 lands.
+File names match these numbers, and the run goes all the way through to the finale.
 
 ## Levels 10-26: blocks of four
 

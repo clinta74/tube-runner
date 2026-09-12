@@ -1,5 +1,6 @@
 {
   "name": "Attrition",
+  "next": "level_22.json",
   "speed": 145,
   "segmentLength": 60,
 
