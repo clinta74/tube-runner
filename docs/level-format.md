@@ -217,6 +217,20 @@ hands out can be replaced later, and this cannot.
 Put a power-up in a calm stretch the first time a level uses it, then follow it with the obstacle it
 answers: a ring of targets after the ring gun, tough blocks after rapid fire.
 
+## The run-out at the end of a level
+
+**Leave the last 260 units of a level empty.** A level counts as finished that far before its track
+actually ends, so the wall closing it is still deep in the distance fade when the next level takes
+over and the tube reads as carrying on rather than as something the run stopped at.
+
+That makes the final stretch unreachable. Anything authored in it is drawn, flown towards, and then
+taken away as the level hands over — the player sees a block or a pickup ahead and the level simply
+ends. Finish every level with an empty piece long enough to cover it.
+
+`RunOutTests` checks every shipped level and names anything stranded, so this cannot ship by
+accident. It is worth a test because it is invisible while authoring: the level looks complete, and
+the fault only shows up in the two seconds before a handover.
+
 ## Gates, movers, plates and ordered groups
 
 Four extras on an obstacle, all of them optional, and all of them usable together.

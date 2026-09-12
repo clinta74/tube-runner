@@ -60,6 +60,7 @@
       { "at": 110, "angle": 0, "count": 4, "spacing": 35, "angleStep": 60 }
     ] },
 
-    { "length": 200 }                                               // 1900 - 2100
+    // Empty run-out; see level 4. Nothing may be authored in the last 260 units.
+    { "length": 400 }                                               // 1900 - 2300
   ]
 }

@@ -69,6 +69,10 @@
 
     { "length": 200, "obstacles": [                                 // 2550 - 2750
       { "at": 80, "kind": "target", "angle": 180 }
-    ] }
+    ] },
+
+    // Empty run-out; see level 4. This level's last target sits at 2630, inside what used to be the
+    // final piece, so the run-out has to be a piece of its own rather than a longer tail.
+    { "length": 300 }                                               // 2750 - 3050
   ]
 }

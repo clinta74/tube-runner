@@ -64,6 +64,9 @@
       { "at": 160, "kind": "target", "angle": 0, "count": 8, "angleStep": 45 }
     ] },
 
-    { "length": 200 }                                               // 1900 - 2100
+    // Empty run-out. A level finishes 260 units before its track ends, so the wall closing it is
+    // still deep in the fade when the next level takes over - which means anything left in here is
+    // shown to the player and then snatched away. It has to stay clear.
+    { "length": 400 }                                               // 1900 - 2300
   ]
 }
