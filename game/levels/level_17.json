@@ -1,5 +1,6 @@
 {
   "name": "Undertow",
+  "next": "level_18.json",
   "speed": 135,
   "segmentLength": 60,
 
