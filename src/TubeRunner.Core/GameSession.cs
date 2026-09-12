@@ -107,6 +107,12 @@ public sealed class RingShot
     public TrackPosition Position { get; internal set; }
 
     internal double End { get; init; }
+
+    /// <summary>
+    /// Ordered groups this sweep has already taken a member from. A ring overlaps an obstacle for
+    /// several frames, so without this it would clear a whole group one member per frame.
+    /// </summary>
+    internal HashSet<string>? TakenGroups { get; set; }
 }
 
 /// <summary>
@@ -528,19 +534,33 @@ public sealed class GameSession
         {
             var ring = _rings[i];
             double from = ring.Position.S;
+            int branchFrom = ring.Position.Branch;
             ring.Position = Track.MoveTo(ring.Position, from + step);
             double to = ring.Position.S;
+            int branchTo = ring.Position.Branch;
 
             foreach (var o in Nearby(_obstacles, o => o.S, from, to))
             {
-                if (o.Destroyed || o.Branch != ring.Position.Branch) continue;
+                // Match either branch the ring was on this step. A ring crossing a fork or merge
+                // changes branch mid-step, and testing only where it ended made it pass straight
+                // through everything it had just swept on the branch it left.
+                if (o.Destroyed || (o.Branch != branchFrom && o.Branch != branchTo)) continue;
                 if (to < o.S - o.Length / 2f || from > o.S + o.Length / 2f) continue;
                 // On open planes the ring reaches a fixed distance to either side, on floor and ceiling.
                 if (!ShapeAt(o.S, o.Branch).IsClosed && MathF.Abs(o.XAt(Elapsed)) > _settings.RingReach) continue;
-                // A ring sweeps everything at once, so it ignores ordered groups entirely. Testing
-                // the order instead is not enough: the ring overlaps an obstacle for several frames,
-                // so it would take the group one member per frame and the puzzle would be no puzzle.
-                if (o.Kind == ObstacleKind.Plate || o.Group is not null) continue;
+                if (o.Kind == ObstacleKind.Plate) continue;
+
+                // A ring takes at most one member of an ordered group: the one whose turn it is, and
+                // then it is spent on that group. Skipping groups outright made the ring pass through
+                // targets that were ready to break, which reads as the shot simply not working; just
+                // testing the order is not enough either, because a ring overlaps an obstacle for
+                // several frames and would clear the whole group a member at a time.
+                if (o.Group is not null)
+                {
+                    if (!CanBreak(o)) continue;
+                    ring.TakenGroups ??= [];
+                    if (!ring.TakenGroups.Add(o.Group)) continue;
+                }
 
                 if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
                 else if (o.Hits > 0) Break(o, Points(o), SessionEvent.BlockDestroyed);

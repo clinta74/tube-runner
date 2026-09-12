@@ -245,7 +245,11 @@ or not the gate is standing in it, so a stretch of gates is readable on the appr
 window is therefore slightly **shorter** than the stated half-cycle — budget for that when spacing a
 run of them, because a gate you can just scrape past is doing what it should.
 
-**The ring gun ignores ordered groups and plates**, or one sweep would answer a whole puzzle.
+**The ring gun takes one member of an ordered group per shot** — the one whose turn it is — and is
+then spent on that group. It ignores plates entirely. Making it skip groups altogether was worse: a
+ring passing through a target that was ready to break just reads as the gun not firing. Testing the
+order alone is not enough either, because a ring overlaps an obstacle for several frames and would
+clear the whole group a member at a time.
 
 **Order gates shooting, not ramming.** A target in a group still breaks and still costs a shield if
 the ship flies into it, whatever its turn. So put an ordered group **off the flight line** — out at an

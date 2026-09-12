@@ -163,19 +163,24 @@ public class MechanicTests
     }
 
     [Fact]
-    public void RingGun_DoesNotSkipAnOrderedGroup()
+    public void RingGun_TakesOneMemberOfAnOrderedGroup_NotTheWholeThing()
     {
         var second = new Obstacle { Kind = ObstacleKind.Target, S = 300, Width = 40f, Group = "gate", Order = 1 };
         var first = new Obstacle { Kind = ObstacleKind.Target, S = 300, Width = 40f, Group = "gate", Order = 0 };
         var pickup = new Pickup { Kind = PickupKind.RingGun, S = 100 };
         var game = new GameSession(Track(), [second, first], Settings, Start, [pickup]);
 
-        Fly(game, to: 280, new ShipInput(Special: true));
+        // Collect the charge, then fire exactly one ring - holding the button would spend all three
+        // and take the group a member at a time, which is the sweep working rather than failing.
+        Fly(game, to: 150);
+        game.Step(1f / 60f, new ShipInput(Special: true));
+        Fly(game, to: 280);
 
-        // A ring passes an ordered group by entirely. Letting it take them in turn is not enough:
-        // it overlaps for several frames, so it would clear the whole group one member per frame.
-        Assert.False(first.Destroyed);
-        Assert.False(second.Destroyed);
+        // The one whose turn it is goes; the rest of the group is left for the next shot. A ring
+        // that skipped the group entirely would pass through a target that was ready to break,
+        // which just reads as the gun not working.
+        Assert.True(first.Destroyed, "the ring should take the one whose turn it is");
+        Assert.False(second.Destroyed, "one ring should not clear a whole group");
     }
 
     [Fact]
