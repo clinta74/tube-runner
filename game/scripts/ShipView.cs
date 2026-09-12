@@ -105,7 +105,7 @@ public partial class ShipView : Node3D
             float width = 0.5f + 0.2f * intensity;
             _plumes[i].Visible = intensity > 0.02f;
             _plumes[i].Scale = new Vector3(width, length, width);
-            _plumes[i].Position = new Vector3(Side(i) * 0.23f, -0.01f, 1.03f + 0.35f * length);
+            _plumes[i].Position = new Vector3(Side(i) * 0.28f, -0.01f, 1.14f + 0.35f * length);
         }
         // Kept near the glow's HDR threshold of 1.0: any hotter and the two nozzles bloom into one
         // white mass that swallows the back of the ship.
@@ -156,52 +156,53 @@ public partial class ShipView : Node3D
         };
 
         // Fuselage: a wedge, tipped with a four-sided nose so it stays faceted.
-        Part(new PrismMesh { Size = new Vector3(0.42f, 0.3f, 1.5f) }, _hullMaterial, new Vector3(0f, 0f, 0.1f), Vector3.Zero);
-        Part(new CylinderMesh { TopRadius = 0f, BottomRadius = 0.2f, Height = 0.6f, RadialSegments = 4 },
-            _hullMaterial, new Vector3(0f, 0.02f, -0.95f), new Vector3(-90f, 0f, 0f));
+        Part(new PrismMesh { Size = new Vector3(0.58f, 0.4f, 1.8f) }, _hullMaterial, new Vector3(0f, 0f, 0.1f), Vector3.Zero);
+        Part(new CylinderMesh { TopRadius = 0f, BottomRadius = 0.27f, Height = 0.7f, RadialSegments = 4 },
+            _hullMaterial, new Vector3(0f, 0.02f, -1.15f), new Vector3(-90f, 0f, 0f));
 
         // Swept wings, each with a glowing leading edge and an aileron on the trailing edge.
         for (int i = 0; i < 2; i++)
         {
             float side = Side(i);
-            var wing = Part(new BoxMesh { Size = new Vector3(0.8f, 0.06f, 0.5f) }, _hullMaterial,
-                new Vector3(side * 0.52f, -0.02f, 0.35f), new Vector3(0f, side * -20f, side * 12f));
+            // Hard sweep and a deep chord: from behind the pair reads as one A-frame delta.
+            var wing = Part(new BoxMesh { Size = new Vector3(1.0f, 0.08f, 0.85f) }, _hullMaterial,
+                new Vector3(side * 0.62f, -0.02f, 0.3f), new Vector3(0f, side * -38f, side * 12f));
 
-            Part(new BoxMesh { Size = new Vector3(0.8f, 0.035f, 0.1f) }, _accentMaterial,
-                new Vector3(0f, 0.02f, -0.2f), Vector3.Zero, wing);
+            Part(new BoxMesh { Size = new Vector3(1.0f, 0.04f, 0.12f) }, _accentMaterial,
+                new Vector3(0f, 0.025f, -0.37f), Vector3.Zero, wing);
 
-            _ailerons.Add(Part(new BoxMesh { Size = new Vector3(0.34f, 0.05f, 0.16f) }, _darkMaterial,
-                new Vector3(side * 0.2f, 0f, 0.32f), Vector3.Zero, wing));
+            _ailerons.Add(Part(new BoxMesh { Size = new Vector3(0.42f, 0.06f, 0.18f) }, _darkMaterial,
+                new Vector3(side * 0.25f, 0f, 0.5f), Vector3.Zero, wing));
         }
 
         // Canted tail fins.
         for (int i = 0; i < 2; i++)
         {
-            _fins.Add(Part(new BoxMesh { Size = new Vector3(0.05f, 0.34f, 0.32f) }, _hullMaterial,
-                new Vector3(Side(i) * 0.17f, 0.16f, 0.62f), new Vector3(0f, 0f, Side(i) * -22f)));
+            _fins.Add(Part(new BoxMesh { Size = new Vector3(0.06f, 0.42f, 0.38f) }, _hullMaterial,
+                new Vector3(Side(i) * 0.2f, 0.2f, 0.72f), new Vector3(0f, 0f, Side(i) * -22f)));
         }
 
         // Twin engines: a dark nacelle, a bright nozzle, and the plume it throws.
         for (int i = 0; i < 2; i++)
         {
             float side = Side(i);
-            Part(new CylinderMesh { TopRadius = 0.11f, BottomRadius = 0.11f, Height = 0.72f, RadialSegments = 8 },
-                _darkMaterial, new Vector3(side * 0.23f, -0.01f, 0.42f), new Vector3(-90f, 0f, 0f));
+            Part(new CylinderMesh { TopRadius = 0.14f, BottomRadius = 0.14f, Height = 0.8f, RadialSegments = 8 },
+                _darkMaterial, new Vector3(side * 0.28f, -0.01f, 0.48f), new Vector3(-90f, 0f, 0f));
 
-            _nozzles.Add(Part(new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.11f, Height = 0.26f, RadialSegments = 8 },
-                _nozzleMaterial, new Vector3(side * 0.23f, -0.01f, 0.9f), new Vector3(-90f, 0f, 0f)));
+            _nozzles.Add(Part(new CylinderMesh { TopRadius = 0.075f, BottomRadius = 0.135f, Height = 0.28f, RadialSegments = 8 },
+                _nozzleMaterial, new Vector3(side * 0.28f, -0.01f, 1.0f), new Vector3(-90f, 0f, 0f)));
 
-            _plumes.Add(Part(new CylinderMesh { TopRadius = 0.08f, BottomRadius = 0.012f, Height = 0.7f, RadialSegments = 8 },
-                _nozzleMaterial, new Vector3(side * 0.23f, -0.01f, 1.35f), new Vector3(-90f, 0f, 0f)));
+            _plumes.Add(Part(new CylinderMesh { TopRadius = 0.1f, BottomRadius = 0.014f, Height = 0.7f, RadialSegments = 8 },
+                _nozzleMaterial, new Vector3(side * 0.28f, -0.01f, 1.45f), new Vector3(-90f, 0f, 0f)));
         }
 
-        _flash = Part(new SphereMesh { Radius = 0.16f, Height = 0.32f, RadialSegments = 6, Rings = 3 },
-            _accentMaterial, new Vector3(0f, 0.02f, -1.3f), Vector3.Zero);
+        _flash = Part(new SphereMesh { Radius = 0.18f, Height = 0.36f, RadialSegments = 6, Rings = 3 },
+            _accentMaterial, new Vector3(0f, 0.02f, -1.55f), Vector3.Zero);
         _flash.Visible = false;
 
         _shell = Part(new SphereMesh { Radius = 1f, Height = 2f, RadialSegments = 14, Rings = 7 },
             _shellMaterial, new Vector3(0f, 0f, 0.1f), Vector3.Zero);
-        _shell.Scale = new Vector3(0.95f, 0.5f, 1.25f);
+        _shell.Scale = new Vector3(1.15f, 0.62f, 1.45f);
         _shell.Visible = false;
     }
 
