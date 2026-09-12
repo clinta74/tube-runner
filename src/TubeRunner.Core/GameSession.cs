@@ -38,7 +38,7 @@ public enum SessionEvent
 /// <summary>What a run carries from one level into the next: no pause, nothing reset.</summary>
 public sealed record RunState(
     int Shields,
-    int MaxShields,
+    int ExtraShields,
     float RapidFireLeft,
     int RingCharges,
     float RamLeft,
@@ -51,7 +51,7 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 
 /// <param name="Ship">Movement settings.</param>
 /// <param name="Shields">Shields at the start; the run ends when they run out.</param>
-/// <param name="MaxShieldSlots">Most shield slots extra-slot pickups can build up to.</param>
+/// <param name="MaxExtraShields">Most extra shields that can be held at once, on top of the normal ones.</param>
 /// <param name="RecoveryTime">Seconds of invulnerability and slow-down after a hit.</param>
 /// <param name="HitSlowdown">Speed multiplier right after a hit, easing back to 1 over the recovery.</param>
 /// <param name="ShotSpeed">Shot speed on top of the ship's own; ring shots too.</param>
@@ -77,7 +77,7 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
-    int MaxShieldSlots = 6,
+    int MaxExtraShields = 3,
     float RecoveryTime = 1.5f,
     float HitSlowdown = 0.45f,
     float ShotSpeed = 220f,
@@ -161,12 +161,13 @@ public sealed class GameSession
         _warps = (warps ?? []).OrderBy(w => w.S).ToList();
         _thrustZones = (thrustZones ?? []).OrderBy(z => z.S).ToList();
         Ship = new ShipSim(settings.Ship, track, start);
-        Shields = MaxShields = settings.Shields;
+        MaxShields = settings.Shields;
+        Shields = settings.Shields;
 
         if (carry is not null)
         {
             Shields = carry.Shields;
-            MaxShields = carry.MaxShields;
+            ExtraShields = carry.ExtraShields;
             RapidFireLeft = carry.RapidFireLeft;
             RingCharges = carry.RingCharges;
             RamLeft = carry.RamLeft;
@@ -194,8 +195,18 @@ public sealed class GameSession
     public SessionState State { get; private set; } = SessionState.Playing;
     public int Shields { get; private set; }
 
-    /// <summary>Shield slots; extra-slot pickups raise it.</summary>
-    public int MaxShields { get; private set; }
+    /// <summary>Normal shield slots. Fixed: extra shields are a separate pool, not a bigger bar.</summary>
+    public int MaxShields { get; }
+
+    /// <summary>
+    /// Extra shields held, on top of the normal ones. They are spent first, and neither a shield
+    /// pickup nor a full refill touches them - once an extra is gone it takes another extra-shield
+    /// pickup to get one back. That is what makes them worth going off the fast line for.
+    /// </summary>
+    public int ExtraShields { get; private set; }
+
+    /// <summary>Shields of any kind left. The run ends when this reaches zero.</summary>
+    public int TotalShields => Shields + ExtraShields;
 
     /// <summary>Seconds left of rapid fire.</summary>
     public float RapidFireLeft { get; private set; }
@@ -224,7 +235,7 @@ public sealed class GameSession
     public int Score => _carriedScore + _bonus + (int)(Ship.Position.S / 10.0);
 
     /// <summary>State to carry into the next level of the run.</summary>
-    public RunState Carry => new(Shields, MaxShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score);
+    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score);
 
     public void Step(float dt, ShipInput input)
     {
@@ -334,10 +345,15 @@ public sealed class GameSession
     /// <returns>False if that was the last shield and the run is over.</returns>
     private bool TakeHit()
     {
-        Shields--;
+        // Extras go first. They sit past the normal shields on the bar, so that is the one the eye
+        // expects to lose - and holding them back would mean they were almost never spent, which
+        // would make "an extra cannot be refilled" a rule that never came up.
+        if (ExtraShields > 0) ExtraShields--;
+        else Shields--;
+
         RecoveryLeft = _settings.RecoveryTime;
         _events.Add(SessionEvent.Hit);
-        if (Shields > 0) return true;
+        if (TotalShields > 0) return true;
 
         State = SessionState.GameOver;
         _events.Add(SessionEvent.GameOver);
@@ -439,6 +455,7 @@ public sealed class GameSession
     {
         switch (kind)
         {
+            // Both of these fill normal shields only. An extra is never handed back this way.
             case PickupKind.Shield:
                 Shields = Math.Min(MaxShields, Shields + 1);
                 _events.Add(SessionEvent.ShieldRestored);
@@ -448,8 +465,9 @@ public sealed class GameSession
                 _events.Add(SessionEvent.ShieldsRefilled);
                 break;
             case PickupKind.ShieldSlot:
-                MaxShields = Math.Min(_settings.MaxShieldSlots, MaxShields + 1);
-                Shields = Math.Min(MaxShields, Shields + 1);
+                // Purely an extra: with 2 of 3 normal shields this gives a fourth point, and leaves
+                // the empty third still empty.
+                ExtraShields = Math.Min(_settings.MaxExtraShields, ExtraShields + 1);
                 _events.Add(SessionEvent.ShieldSlotAdded);
                 break;
             case PickupKind.RapidFire:

@@ -113,7 +113,7 @@ four levels unused** — a mechanic the game stops using reads as a mechanic the
 
 ## A run, not a level
 
-Levels play back to back with no pause. Shields, shield slots, rapid fire, ring charges, unstoppable
+Levels play back to back with no pause. Shields, extra shields, rapid fire, ring charges, unstoppable
 time, throttle and score all carry across, and each level's time is kept as a split; the end screen
 lists them with the run's total. Losing every shield ends the *run*, so a level's difficulty is really
 "how much does this cost me for the rest of the run" — a level that takes two shields off you is much
@@ -198,7 +198,7 @@ how obstacles are arranged.
 | 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4920 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
-they answer. Their rarer prizes — the extra shield slot, and shields inside a split — sit off the fast
+they answer. Their rarer prizes — the extra shield, and shields inside a split — sit off the fast
 line or down the meaner branch, so they cost something to take.
 
 ## Where each mechanic is introduced
@@ -209,7 +209,7 @@ line or down the meaner branch, so they cost something to take.
 | Shooting targets | 1, targets on the wall | 2, rings of targets |
 | Breakable blocks (`hits`) | 2, a single 1-hit block | 2, a full ring to shoot through |
 | Shield / full shields | 1 shield, 2 full | placed after hard stretches |
-| Extra shield slot | 2, on the ceiling | going off-line to reach it |
+| Extra shield | 2, on the ceiling | going off-line to reach it; it is spent first and never refilled |
 | Rapid fire | 2, before tough blocks | 2, 4-hit blocks |
 | Ring gun | 2, before a ring of targets | 2, second ring at an offset angle |
 | Unstoppable | 6, before the breakable rows | 7 at the box, 9 before the twisting finish |

@@ -173,7 +173,8 @@ public partial class Main : Node3D
         _obstacles.Reset();
         _obstacles.Init(_session, level.Theme);
         _fx.SetStreakColor(level.Theme.SeamLight.ToColor());
-        _hud.Init(level.Name, _session.MaxShields, level.Theme.SeamLight.ToColor(), _bestTimes.Get(LevelId));
+        _hud.Init(level.Name, _session.MaxShields, _session.ExtraShields, level.Theme.SeamLight.ToColor(),
+            _bestTimes.Get(LevelId));
     }
 
     public override void _Process(double delta)

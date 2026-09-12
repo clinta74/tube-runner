@@ -8,7 +8,11 @@ public enum PickupKind
     /// <summary>Restores every shield.</summary>
     FullShields,
 
-    /// <summary>Adds a shield slot, already filled.</summary>
+    /// <summary>
+    /// Adds one extra shield, on top of the normal three. Extras are their own pool: they are spent
+    /// before the normal shields, nothing else refills them, and once spent an extra is gone until
+    /// another of these is found.
+    /// </summary>
     ShieldSlot,
 
     /// <summary>Fires much faster for a while.</summary>

@@ -191,7 +191,7 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 |---|---|
 | `shield` | Restores one shield. |
 | `full-shields` | Restores every shield. |
-| `shield-slot` | Adds a shield slot, already filled, up to 6. |
+| `shield-slot` | Adds one **extra** shield, up to 3, on top of the normal three. |
 | `rapid-fire` | Fires about three times as fast for 8 seconds. |
 | `ring-gun` | 3 ring-gun shots. Each sweeps the whole tube, breaking every target and breakable block it passes; solid blocks survive. |
 | `unstoppable` | For 6 seconds the ship smashes through anything it touches — solid blocks included — scoring each one and losing no shields. |
@@ -200,6 +200,17 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 { "length": 250, "pickups": [
   { "at": 20, "kind": "ring-gun" },
   { "at": 80, "kind": "shield-slot", "angle": 180 }   // up on the ceiling
+```
+
+An **extra shield is its own pool**, not a longer bar. It is spent before the normal shields, and
+neither `shield` nor `full-shields` ever gives one back — once an extra is gone it takes another
+`shield-slot` to hold one again. With 2 of 3 normal shields, picking one up gives a fourth point and
+leaves the empty third still empty.
+
+That is what makes it the rarest prize worth going off the fast line for: everything else the level
+hands out can be replaced later, and this cannot.
+
+```json
 ] }
 ```
 

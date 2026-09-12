@@ -24,7 +24,10 @@ public partial class Hud : CanvasLayer
     private ColorRect _thrustBlockedLow = null!;
     private ColorRect _thrustBlockedHigh = null!;
     private HBoxContainer _shieldBar = null!;
+    private static readonly Color ExtraShieldColor = new(1f, 0.82f, 0.25f);
+
     private Color _accent = Colors.White;
+    private int _normalPips;
     private float _titleLeft;
     private float _flashLeft;
     private float? _best;
@@ -56,7 +59,7 @@ public partial class Hud : CanvasLayer
     }
 
     /// <param name="best">The player's best time on this level, if they've finished it before.</param>
-    public void Init(string levelName, int shields, Color accent, float? best)
+    public void Init(string levelName, int shields, int extras, Color accent, float? best)
     {
         _accent = accent;
         _best = best;
@@ -64,7 +67,7 @@ public partial class Hud : CanvasLayer
         _message.Text = "";
         _title.Text = levelName.ToUpperInvariant();
         _titleLeft = TitleSeconds;
-        BuildPips(shields);
+        BuildPips(shields, extras);
     }
 
     /// <summary>Briefly shows a line of text at the top of the screen, e.g. for a power-up.</summary>
@@ -74,17 +77,19 @@ public partial class Hud : CanvasLayer
         _titleLeft = 1.5f;
     }
 
-    // One pip per shield slot.
-    private void BuildPips(int slots)
+    // One pip per normal shield slot, then one more for each extra being carried. An extra has no
+    // empty slot of its own: it is not a slot, it is a shield, so when it is spent it just goes.
+    private void BuildPips(int slots, int extras)
     {
         foreach (var pip in _pips) pip.QueueFree();
         _pips.Clear();
-        for (int i = 0; i < slots; i++)
+        for (int i = 0; i < slots + extras; i++)
         {
             var pip = new ColorRect { CustomMinimumSize = new Vector2(34, 14), Color = _accent };
             _shieldBar.AddChild(pip);
             _pips.Add(pip);
         }
+        _normalPips = slots;
     }
 
     // Width of the thrust bar, and how tall its blocked ends are drawn.
@@ -174,10 +179,17 @@ public partial class Hud : CanvasLayer
         status.Add($"{session.Ship.ForwardSpeed:0} u/s");
         _speed.Text = string.Join("\n", status);
 
-        if (_pips.Count != session.MaxShields) BuildPips(session.MaxShields);
+        if (_pips.Count != session.MaxShields + session.ExtraShields || _normalPips != session.MaxShields)
+        {
+            BuildPips(session.MaxShields, session.ExtraShields);
+        }
         for (int i = 0; i < _pips.Count; i++)
         {
-            _pips[i].Color = i < session.Shields ? _accent : new Color(_accent, 0.15f);
+            // Extras are drawn past the normal slots, in their own colour, and are always full -
+            // an extra that has been spent has already been taken off the bar.
+            _pips[i].Color = i >= _normalPips ? ExtraShieldColor
+                : i < session.Shields ? _accent
+                : new Color(_accent, 0.15f);
         }
 
         _titleLeft = Mathf.Max(0f, _titleLeft - dt);

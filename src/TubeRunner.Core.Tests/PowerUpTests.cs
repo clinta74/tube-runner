@@ -42,14 +42,49 @@ public class PowerUpTests
     }
 
     [Fact]
-    public void ShieldSlot_AddsAFilledSlotUpToTheCap()
+    public void ShieldSlot_AddsAnExtraUpToTheCap()
     {
         var game = Session([], [.. Enumerable.Range(1, 5).Select(i => Power(PickupKind.ShieldSlot, i * 50))]);
 
         Run(game, 6f);
 
-        Assert.Equal(6, game.MaxShields);
-        Assert.Equal(6, game.Shields);
+        // Extras are their own pool, and the normal three are untouched by them.
+        Assert.Equal(3, game.MaxShields);
+        Assert.Equal(3, game.Shields);
+        Assert.Equal(3, game.ExtraShields);
+        Assert.Equal(6, game.TotalShields);
+    }
+
+    [Fact]
+    public void ExtraShield_IsSpentBeforeTheNormalOnes_AndCannotBeRefilled()
+    {
+        // 50 u/s, so 4 seconds carries the ship past the extra at 50 and into the block at 150.
+        var game = Session([Block(150)], [Power(PickupKind.ShieldSlot, 50), Power(PickupKind.FullShields, 300)]);
+
+        Run(game, 4f);
+
+        // The extra is what the hit took; the normal three are untouched.
+        Assert.Equal(3, game.Shields);
+        Assert.Equal(0, game.ExtraShields);
+
+        // On past the full refill: it fills normal shields only, and does not hand the extra back.
+        Run(game, 4f);
+        Assert.Equal(3, game.Shields);
+        Assert.Equal(0, game.ExtraShields);
+    }
+
+    [Fact]
+    public void ExtraShield_SitsOnTopOfAGapInTheNormalShields()
+    {
+        // The block comes first this time, so the extra lands on a bar that already has a gap in it.
+        var game = Session([Block(100)], [Power(PickupKind.ShieldSlot, 250)]);
+
+        Run(game, 7f);
+
+        // Hit first, then the extra: 2 of 3 normal, plus a fourth point that did not fill the third.
+        Assert.Equal(2, game.Shields);
+        Assert.Equal(1, game.ExtraShields);
+        Assert.Equal(3, game.TotalShields);
     }
 
     [Fact]
@@ -160,8 +195,9 @@ public class PowerUpTests
         track.Append(new TrackPiece(2000f, Circle));
         var second = new GameSession(track, [], Settings, new TrackPosition(0, Surface.Floor, 0f), null, carried);
 
-        Assert.Equal(carried.MaxShields, second.MaxShields);
-        Assert.Equal(4, second.MaxShields);
+        Assert.Equal(carried.ExtraShields, second.ExtraShields);
+        Assert.Equal(1, second.ExtraShields);
+        Assert.Equal(4, second.TotalShields);
         Assert.Equal(carried.RingCharges, second.RingCharges);
         Assert.Equal(3, second.RingCharges);
         Assert.True(second.Score >= carried.Score);
