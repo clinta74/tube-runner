@@ -87,9 +87,16 @@ public sealed class Obstacle
 
     public bool Destroyed { get; internal set; }
 
-    /// <summary>Whether a gate is solid at <paramref name="time"/>. Always true for anything else.</summary>
+    /// <summary>How far out a gate has to be before it can hurt anything.</summary>
+    private const float SolidExtension = 0.85f;
+
+    /// <summary>
+    /// Whether a gate is solid at <paramref name="time"/>. Always true for anything else.
+    /// It has to be nearly all the way out to count: a gate that is still rising out of the wall
+    /// does not look like a wall, and being hit by one reads as being hit after passing it.
+    /// </summary>
     public bool IsSolidAt(float time) =>
-        Period <= 0f || (time / Period + Phase) % 1f < 0.5f;
+        Period <= 0f || ExtensionAt(time) >= SolidExtension;
 
     /// <summary>
     /// How far a gate stands out of the wall at <paramref name="time"/>, from 0 fully withdrawn to 1

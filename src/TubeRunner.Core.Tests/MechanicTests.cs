@@ -16,11 +16,16 @@ public class MechanicTests
     {
         var gate = new Obstacle { Kind = ObstacleKind.Block, S = 400, Period = 2f };
 
-        Assert.True(gate.IsSolidAt(0f));
-        Assert.True(gate.IsSolidAt(0.9f));
-        Assert.False(gate.IsSolidAt(1.1f));
-        Assert.False(gate.IsSolidAt(1.9f));
-        Assert.True(gate.IsSolidAt(2.1f));   // round again
+        Assert.True(gate.IsSolidAt(0.3f));
+        Assert.True(gate.IsSolidAt(0.7f));
+        Assert.False(gate.IsSolidAt(1.3f));
+        Assert.False(gate.IsSolidAt(1.7f));
+        Assert.True(gate.IsSolidAt(2.3f));   // round again
+
+        // Mid-slide it cannot hurt anything, at either end of the cycle. A gate on its way out does
+        // not look like a wall yet, and one on its way in has stopped looking like one.
+        Assert.False(gate.IsSolidAt(0f));
+        Assert.False(gate.IsSolidAt(1f));
     }
 
     [Fact]
@@ -29,8 +34,9 @@ public class MechanicTests
         var early = new Obstacle { Kind = ObstacleKind.Block, S = 400, Period = 2f };
         var late = new Obstacle { Kind = ObstacleKind.Block, S = 400, Period = 2f, Phase = 0.5f };
 
-        Assert.True(early.IsSolidAt(0f));
-        Assert.False(late.IsSolidAt(0f));
+        // Sampled clear of the slides, where one is fully out and the other fully withdrawn.
+        Assert.True(early.IsSolidAt(0.3f));
+        Assert.False(late.IsSolidAt(0.3f));
     }
 
     [Fact]

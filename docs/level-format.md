@@ -212,7 +212,7 @@ Four extras on an obstacle, all of them optional, and all of them usable togethe
 
 | Field | Default | Meaning |
 |---|---|---|
-| `period` | `0` | Seconds in an open/shut cycle. The obstacle is solid for the first half and gone for the second. 0 means always solid. |
+| `period` | `0` | Seconds in an open/shut cycle: out for the first half, withdrawn for the second, sliding between. 0 means always there. |
 | `phase` | `0` | Where in that cycle it starts, 0 to 1. Stagger these across a row to make a rhythm. |
 | `sweep` | `0` | How far it slides to either side of its `x`, around the surface. 0 stands still. |
 | `sweepTime` | `2` | Seconds for one full sweep out and back. |
@@ -236,6 +236,14 @@ stretch: arriving at one with unstoppable running otherwise reads as a bug rathe
 **Gates work with the throttle rather than against it.** The player already sets their own speed, so
 a gate cycle asks them to hurry or hold back — which is the one thing a speed pickup could never do,
 since a pad only hands out speed the throttle already had.
+
+**A gate slides out of a socket in the wall, and only hurts while it is nearly all the way out.**
+Both halves of that matter. Blinking in and out gives the eye nothing to track, so the cycle can only
+be counted, never watched; and a gate that kills while it is still rising does not look like a wall
+yet, so the hit reads as landing *after* the ship went past. The socket is left on the wall whether
+or not the gate is standing in it, so a stretch of gates is readable on the approach. The lethal
+window is therefore slightly **shorter** than the stated half-cycle — budget for that when spacing a
+run of them, because a gate you can just scrape past is doing what it should.
 
 **The ring gun ignores ordered groups and plates**, or one sweep would answer a whole puzzle.
 
