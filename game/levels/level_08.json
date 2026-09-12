@@ -1,0 +1,160 @@
+{
+  "name": "Crossroads",
+  "next": "level_09.json",
+  "speed": 95,
+  "segmentLength": 60,
+
+  // Forks as a real choice. Every junction turns hard enough that the inside line is genuinely
+  // shorter, and the short way is always the tighter tube with the obstacles in it.
+  "theme": {
+    "darks": ["#12161f", "#0f1a24", "#171426"],
+    "lights": ["#5c7a99", "#3f8fa6", "#7a6fa8"],
+    "seamDark": "#080a0f",
+    "seamLight": "#9fe8ff",
+    "far": "#05070b",
+    "ship": "#9fe8ff",
+    "block": "#e8eef5",
+    "target": "#ff5a7a",
+    "breakable": "#7cffd0",
+    "fadeStart": 30,
+    "fadeEnd": 330,
+    "glow": 0.2
+  },
+
+  "sections": {
+    "tube":          { "radius": 6 },
+    "oval":          { "halfWidth": 9, "halfHeight": 4.5 },
+    "chamber":       { "halfWidth": 14, "halfHeight": 7, "squareness": 0.5 },
+    "tall-chamber":  { "halfWidth": 7.5, "halfHeight": 13, "squareness": 0.5 },
+    "wide-chamber":  { "halfWidth": 22, "halfHeight": 7.5, "squareness": 0.5 },
+    "branch":        { "radius": 4.8 },
+    "branch-mid":    { "radius": 4.2 },
+    "branch-tight":  { "radius": 3.8 }
+  },
+
+  // Obstacle "at" values are measured from the start of their piece.
+  // The distances in the comments are for `play.ps1 -Start`.
+  "start": "tube",
+  "track": [
+    { "length": 200 },                                              //    0 -  200
+
+    // Warm-up: nothing clever, just get moving and shoot a little.
+    { "length": 200, "turn": 30, "obstacles": [                     //  200 -  400
+      { "at": 70, "kind": "target" },
+      { "at": 120, "kind": "target", "angle": 60 },
+      { "at": 165, "angle": 180 }
+    ] },
+    { "length": 150, "turn": -40, "climb": 10, "obstacles": [       //  400 -  550
+      { "at": 80, "angle": 0, "count": 2, "spacing": 45, "angleStep": 90 }
+    ] },
+
+    // First junction: a 70 degree right-hander. The right branch runs the inside and saves real
+    // ground, but it is the narrow tube and it has all the blocks. Left is long, wide and empty.
+    { "length": 120, "section": "chamber", "speed": 105, "pickups": [   //  550 -  670
+      { "at": 60, "kind": "shield" }
+    ] },
+    { "length": 400, "turn": 70, "split": {                         //  670 - 1070
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [140, -28, 0], [260, -28, 0], [400, -8, 0]] },
+          { "offsets": [[0, 8, 0], [140, 28, 0], [260, 28, 0], [400, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        // The long way: one target to pick off in passing.
+        { "at": 200, "branch": 0, "kind": "target" },
+        // The short way: a spiral to thread in a tube barely wider than the ship.
+        { "at": 120, "branch": 1, "angle": 0, "count": 4, "spacing": 50, "angleStep": 90 },
+        { "at": 330, "branch": 1, "angle": 180 }
+      ]
+    },
+    { "length": 150, "section": "tube" },                           // 1070 - 1220
+
+    { "length": 200, "turn": -35, "obstacles": [                    // 1220 - 1420
+      { "at": 60, "kind": "target", "angle": 90, "count": 2, "angleStep": 180 },
+      { "at": 140, "angle": 0, "count": 2, "spacing": 40, "angleStep": 120 }
+    ] },
+
+    // Second junction: the track dives, so the low road is the inside line. Rapid fire first,
+    // because the low road is a shooting gallery.
+    { "length": 120, "section": "tall-chamber", "speed": 115, "pickups": [   // 1420 - 1540
+      { "at": 60, "kind": "rapid-fire" }
+    ] },
+    { "length": 400, "climb": -80, "split": {                       // 1540 - 1940
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, 0, -7], [140, 0, -30], [260, 0, -30], [400, 0, -7]], "section": "branch-tight" },
+          { "offsets": [[0, 0, 7], [140, 0, 30], [260, 0, 30], [400, 0, 7]] }
+        ]
+      },
+      "pickups": [
+        // The high road is slower, so it keeps the shield as its consolation.
+        { "at": 220, "branch": 1, "kind": "shield" }
+      ],
+      "obstacles": [
+        // Low road: breakable blocks to shoot through, which is what the rapid fire was for.
+        { "at": 110, "branch": 0, "hits": 2, "angle": 0, "count": 3, "spacing": 55, "angleStep": 100 },
+        { "at": 300, "branch": 0, "angle": 90, "count": 2, "spacing": 40, "angleStep": 180 },
+        // High road: a couple of targets, nothing that will cost a shield.
+        { "at": 150, "branch": 1, "kind": "target", "angle": 0, "count": 3, "spacing": 60, "angleStep": 72 }
+      ]
+    },
+    { "length": 150, "section": "tube" },                           // 1940 - 2090
+
+    // Breather with the ring gun, then a twist where the bends hide what is coming.
+    { "length": 200, "turn": 60, "pickups": [                       // 2090 - 2290
+      { "at": 40, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 120, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
+    ] },
+    { "length": 180, "turn": -70, "climb": -12, "obstacles": [      // 2290 - 2470
+      { "at": 90, "angle": 45, "count": 2, "spacing": 45, "angleStep": 120 }
+    ] },
+    { "length": 180, "turn": 65, "climb": 14, "obstacles": [        // 2470 - 2650
+      { "at": 80, "angle": 180 },
+      { "at": 130, "kind": "target", "angle": 0 }
+    ] },
+
+    // Third junction: three ways through a 100 degree turn. Right is the inside and much the
+    // shortest, in the tightest tube with the worst of it; middle is the centre line and merely
+    // awkward; left is the long way round, roomy and nearly clear.
+    { "length": 150, "section": "wide-chamber", "speed": 130 },     // 2650 - 2800
+    { "length": 450, "turn": 100, "split": {                        // 2800 - 3250
+        "section": "branch-mid",
+        "branches": [
+          { "offsets": [[0, -15, 0], [150, -42, 0], [300, -42, 0], [450, -15, 0]], "section": "branch" },
+          { "offsets": [[0, 0, 0], [150, 0, 0], [300, 0, 0], [450, 0, 0]] },
+          { "offsets": [[0, 15, 0], [150, 42, 0], [300, 42, 0], [450, 15, 0]], "section": "branch-tight" }
+        ]
+      },
+      "pickups": [
+        // The prize sits down the meanest route.
+        { "at": 260, "branch": 2, "kind": "full-shields" }
+      ],
+      "obstacles": [
+        { "at": 220, "branch": 0, "kind": "target" },
+        { "at": 140, "branch": 1, "angle": 0, "count": 3, "spacing": 70, "angleStep": 120 },
+        { "at": 320, "branch": 1, "kind": "target", "angle": 180 },
+        { "at": 100, "branch": 2, "angle": 90, "count": 5, "spacing": 45, "angleStep": -72 },
+        { "at": 350, "branch": 2, "hits": 2, "angle": 0, "count": 2, "spacing": 40, "angleStep": 180 }
+      ]
+    },
+    { "length": 150, "section": "tube" },                           // 3250 - 3400
+
+    // Run for home: unstoppable, then a twisting finish at full speed.
+    { "length": 200, "turn": -50, "speed": 138, "pickups": [        // 3400 - 3600
+      { "at": 50, "kind": "unstoppable" }
+    ], "obstacles": [
+      { "at": 130, "angle": 0, "count": 2, "spacing": 45, "angleStep": 90 }
+    ] },
+    { "length": 250, "turn": 70, "climb": -15, "obstacles": [       // 3600 - 3850
+      { "at": 70, "angle": 180, "count": 2, "spacing": 50, "angleStep": 60 },
+      { "at": 180, "kind": "target", "angle": 0 }
+    ] },
+    { "length": 250, "turn": -75, "climb": 15, "obstacles": [       // 3850 - 4100
+      { "at": 80, "angle": -90, "count": 3, "angleStep": 60 },
+      { "at": 200, "angle": 0 }
+    ] },
+    { "length": 250 }                                               // 4100 - 4350
+  ]
+}

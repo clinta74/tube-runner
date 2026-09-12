@@ -27,12 +27,11 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 5 | **Flatlands** | Flat planes: strafing, the jump between floor and ceiling | Round → flat | ✅ |
 | 6 | **Over and Under** | Flat sections under pressure: walls that force jump after jump | Flat, round | ✅ |
 | 7 | **Earthworks** | Boxy sections, a long flat run, a fork | Box, flat, split | ✅ |
-| 8 | *Crossroads* | Forks as a real choice: safe-but-slow vs fast-but-mean branches | Split-heavy | ⬜ |
+| 8 | **Crossroads** | Forks as a real choice: short-and-mean vs long-and-clear | Split-heavy | ✅ |
 | 9 | **Neon Run** | Everything, faster | All | ✅ |
 | 10 | *Finale* | A long run with no new ideas, just the hardest mix | All | ⬜ |
 
-File names match these numbers, so `level_08.json` is missing until Crossroads exists and level 7
-points straight at level 9. The same goes for a level 10.
+File names match these numbers. A level 10 is still missing, so level 9 ends the run.
 
 ## A run, not a level
 
@@ -112,6 +111,7 @@ how obstacles are arranged.
 | 5 | Flatlands | 90 → 100 | Wide gaps | Low: strafing | Round → flat | 2, unhurried | Light | Shield, full shields | 2100 |
 | 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 2750 |
 | 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4200 |
+| 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4350 |
 | 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4320 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
