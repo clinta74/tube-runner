@@ -92,17 +92,37 @@ public class TrackSplitTests
     }
 
     [Fact]
-    public void Branches_CanRunAtDifferentSpeeds()
+    public void Branches_ThatCutTheCorner_CrossTheSplitSooner()
     {
+        var track = new Track(Chamber, startSpeed: 50f);
+        track.Append(new TrackPiece(100f, Chamber));
+        // Turning right through 60 degrees, so the right-hand branch runs round the inside.
+        var split = track.AppendSplit(new TrackPiece(400f, Chamber, YawRate: -MathF.PI / 3f / 400f), Tube,
+        [
+            Keys((0, -7.5f), (120, -22f), (280, -22f), (400, -7.5f)),
+            Keys((0, 7.5f), (120, 22f), (280, 22f), (400, 7.5f)),
+        ]);
+
+        Assert.True(split.PathLength(1) < split.PathLength(0),
+            $"inside {split.PathLength(1)} should be shorter than outside {split.PathLength(0)}");
+        Assert.True(split.PathScale(1) < 1f, $"inside scale was {split.PathScale(1)}");
+        // Same speed through space, so the shorter way round covers the span sooner.
+        Assert.True(track.SpeedAt(300, 1) > track.SpeedAt(300, 0));
+        Assert.Equal(50f, track.SpeedAt(300, -1), precision: 3);   // the centerline itself
+    }
+
+    [Fact]
+    public void Branches_CanHaveTheirOwnSection()
+    {
+        var narrow = CrossSection.Circle(4f);
         var track = new Track(Chamber, startSpeed: 50f);
         track.Append(new TrackPiece(100f, Chamber));
         track.AppendSplit(new TrackPiece(400f, Chamber), Tube,
             [Keys((0, -7.5f), (400, -7.5f)), Keys((0, 7.5f), (400, 7.5f))],
-            [1f, 1.2f]);
+            [Tube, narrow]);
 
-        Assert.Equal(50f, track.SpeedAt(300, 0), precision: 3);
-        Assert.Equal(60f, track.SpeedAt(300, 1), precision: 3);
-        Assert.Equal(50f, track.SpeedAt(300, -1), precision: 3);   // the centerline itself
+        Assert.Equal(Tube, track.SectionAt(300, 0));
+        Assert.Equal(narrow, track.SectionAt(300, 1));
     }
 
     [Theory]
@@ -134,8 +154,8 @@ public class TrackSplitTests
 
         var split = Assert.Single(level.Track.Splits);
         Assert.Equal(100.0, split.StartS);
-        Assert.Equal(1f, split.SpeedFactor(0));
-        Assert.Equal(1.25f, split.SpeedFactor(1));
+        Assert.Equal(6f, split.Section(0).HalfWidth);
+        Assert.Equal(4f, split.Section(1).HalfWidth);
         var obstacle = Assert.Single(level.Obstacles);
         Assert.Equal(1, obstacle.Branch);
         Assert.Equal(Surface.Ceiling, obstacle.Surface);
@@ -175,7 +195,8 @@ public class TrackSplitTests
         {
           "sections": {
             "chamber": { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-            "tube": { "radius": 6 }
+            "tube": { "radius": 6 },
+            "narrow": { "radius": 4 }
           },
           "start": "chamber",
           "track": [
@@ -184,7 +205,7 @@ public class TrackSplitTests
                 "section": "tube",
                 "branches": [
                   { "offsets": [[0, -7.5, 0], [400, -7.5, 0]] },
-                  { "offsets": [[0, 7.5, 0], [400, 7.5, 0]], "speed": 1.25 }
+                  { "offsets": [[0, 7.5, 0], [400, 7.5, 0]], "section": "narrow" }
                 ]
             } },
             { "length": 100 }

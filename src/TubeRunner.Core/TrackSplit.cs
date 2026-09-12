@@ -11,36 +11,50 @@ public readonly record struct OffsetKey(float Along, Vector2 Offset);
 /// A stretch where the track forks into branch tubes that merge again at the end. The centerline
 /// continues through the split, and each branch follows it at an offset that blends between keys.
 /// The track's own cross-section there is the chamber the branches fork out of and merge into.
+///
+/// Branches differ in two ways. Each has its own cross-section, so one can be the tighter tube. And
+/// each covers its own real distance between the fork and the merge: a branch that cuts the inside
+/// of a turn travels less ground and so arrives sooner, at the same speed through space. That, and
+/// not a speed bonus, is what makes one route the quick way round.
 /// </summary>
 public sealed class TrackSplit
 {
-    private readonly IReadOnlyList<IReadOnlyList<OffsetKey>> _branches;
-    private readonly IReadOnlyList<float> _speeds;
+    // Enough samples that a branch's measured length settles well inside a unit.
+    private const int MeasureSamples = 256;
 
-    internal TrackSplit(double startS, float length, CrossSection section,
-        IReadOnlyList<IReadOnlyList<OffsetKey>> branches, IReadOnlyList<float> speeds)
+    private readonly IReadOnlyList<IReadOnlyList<OffsetKey>> _branches;
+    private readonly IReadOnlyList<CrossSection> _sections;
+    private readonly float[] _pathLengths;
+
+    internal TrackSplit(double startS, float length, IReadOnlyList<CrossSection> sections,
+        IReadOnlyList<IReadOnlyList<OffsetKey>> branches)
     {
         StartS = startS;
         Length = length;
-        Section = section;
+        _sections = sections;
         _branches = branches;
-        _speeds = speeds;
+        // Until measured, every branch is assumed to run the length of the split.
+        _pathLengths = new float[branches.Count];
+        Array.Fill(_pathLengths, length);
     }
 
     public double StartS { get; }
     public float Length { get; }
     public double EndS => StartS + Length;
 
-    /// <summary>Cross-section of every branch tube.</summary>
-    public CrossSection Section { get; }
-
     public int BranchCount => _branches.Count;
 
+    /// <summary>Cross-section of one branch's tube; branches need not match.</summary>
+    public CrossSection Section(int branch) => _sections[branch];
+
+    /// <summary>How far a branch really travels between the fork and the merge.</summary>
+    public float PathLength(int branch) => _pathLengths[branch];
+
     /// <summary>
-    /// How fast a branch runs compared to the track's speed: 1 is the same, 1.2 is a fifth faster.
-    /// A quicker branch is how a split offers a risky shortcut against a calmer route.
+    /// A branch's real path length as a fraction of the split's span. Below 1 means it cuts the
+    /// corner, so it crosses the split in less time without flying any faster through space.
     /// </summary>
-    public float SpeedFactor(int branch) => _speeds[branch];
+    public float PathScale(int branch) => _pathLengths[branch] / Length;
 
     public bool Contains(double s) => s >= StartS && s < EndS;
 
@@ -75,6 +89,26 @@ public sealed class TrackSplit
         var right = Vector3.Normalize(Vector3.Cross(forward, track.FrameAt(s).Up));
         var up = Vector3.Cross(right, forward);
         return new TrackFrame(center, forward, up, right);
+    }
+
+    /// <summary>
+    /// Measures each branch's real path. Called once the split's piece has been appended, since a
+    /// branch follows centerline frames that do not exist until then.
+    /// </summary>
+    internal void Measure(Track track)
+    {
+        for (int b = 0; b < BranchCount; b++)
+        {
+            double total = 0;
+            var previous = BranchPoint(track, StartS, b);
+            for (int i = 1; i <= MeasureSamples; i++)
+            {
+                var point = BranchPoint(track, StartS + Length * ((double)i / MeasureSamples), b);
+                total += (point - previous).ToVector3().Length();
+                previous = point;
+            }
+            _pathLengths[b] = (float)total;
+        }
     }
 
     private Vector3d BranchPoint(Track track, double s, int branch) =>

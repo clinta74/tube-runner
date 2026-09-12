@@ -84,9 +84,22 @@ how obstacles are arranged.
 12. **Cost of a mistake** — a hit already costs a shield, a slow-down and about 0.4 s. Against a best
     time that compounds, so a level that's a fair clear can still be a hard *time*.
 13. **Length** — more chances to lose the last shield; endurance rather than spikes.
-14. **Branch risk/reward** — a split's branches can set their own `speed`, so one route runs faster.
-    Load the quick one with obstacles and leave the slow one clear, and the fork becomes a real bet:
-    time against shields. Put splits well before the finish so the choice still has to be paid for.
+14. **Branch risk/reward** — a split's branches differ in *path length*: the quick branch cuts the
+    corner of the turn and so covers less ground before the merge, which is why it saves time. Its
+    price is navigation, not speed — it gets its own tighter cross-section and the obstacles, while
+    the long way round is roomy and clear. The fork is then a real bet: time against shields. Put
+    splits well before the finish so the choice still has to be paid for.
+
+    A branch only shortens by cutting a corner, and the ground saved is roughly
+    `offset x turn-in-radians`. Measured on the splits as built, Earthworks (20° turn) and Neon Run
+    (18° climb) save under 3% — about a tenth of a second each, which is nothing. Both want
+    re-cutting. A fork worth betting on needs both levers pushed hard: 40 units of offset through a
+    90° bend saves around 60 units, or half a second at 100 u/s. Anything gentler is decoration.
+
+15. **Warp zones** — a black spot in the tube that throws the ship back up the track if hit, costing
+    time rather than a shield. Warning signs hang from the walls on the approach, so it reads as a
+    hazard to be dodged rather than a gotcha. Score is left to refund itself; the cost that matters
+    is the clock.
 
 ## How each level advances
 

@@ -23,7 +23,8 @@
     "oval": { "halfWidth": 9, "halfHeight": 4.5 },
     "box":  { "halfWidth": 10, "halfHeight": 4.2, "squareness": 1 },
     "flat": { "radius": 6, "opening": 1 },
-    "chamber": { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 }
+    "chamber": { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   // Obstacle "at" values are measured from the start of their piece.
@@ -122,9 +123,10 @@
     { "length": 400, "turn": 20, "split": {                         // 3500 - 3900
         "section": "tube",
         "branches": [
-          // Left: slower, just targets. Right: a fifth faster, but packed with blocks.
+          // The piece turns right, so the right branch runs round the inside: a shorter way to the
+          // merge, in a tighter tube and packed with blocks. Left is the long way, roomy and clear.
           { "offsets": [[0, -7.5, 0], [120, -22, 0], [280, -22, 0], [400, -7.5, 0]] },
-          { "offsets": [[0, 7.5, 0], [120, 22, 5], [280, 22, 5], [400, 7.5, 0]], "speed": 1.2 }
+          { "offsets": [[0, 7.5, 0], [120, 22, 5], [280, 22, 5], [400, 7.5, 0]], "section": "branch-tight" }
         ]
       },
       "pickups": [

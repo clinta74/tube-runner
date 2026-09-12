@@ -92,10 +92,11 @@ public sealed class Track
     /// Appends a piece where the track forks into branch tubes that merge again at its end. The piece
     /// keeps the current section, which is the chamber the branches open out of and back into.
     /// </summary>
+    /// <param name="branchSection">Cross-section for every branch that doesn't give its own.</param>
     /// <param name="branches">Per branch, its offsets from the centerline, from 0 to the piece length.</param>
-    /// <param name="branchSpeeds">Per branch, its speed as a multiple of the track's; defaults to 1 each.</param>
+    /// <param name="branchSections">Per branch, its own cross-section; defaults to <paramref name="branchSection"/>.</param>
     public TrackSplit AppendSplit(TrackPiece piece, CrossSection branchSection,
-        IReadOnlyList<IReadOnlyList<OffsetKey>> branches, IReadOnlyList<float>? branchSpeeds = null)
+        IReadOnlyList<IReadOnlyList<OffsetKey>> branches, IReadOnlyList<CrossSection>? branchSections = null)
     {
         var chamber = _endSection;
         if (piece.EndSection != chamber)
@@ -121,18 +122,20 @@ public sealed class Track
                 if (keys[i].Along <= keys[i - 1].Along) throw new ArgumentException("Branch offsets must increase along the split.");
             }
         }
-        var speeds = branchSpeeds ?? Enumerable.Repeat(1f, branches.Count).ToArray();
-        if (speeds.Count != branches.Count) throw new ArgumentException("A split needs one speed per branch.");
-        foreach (float speed in speeds)
+        IReadOnlyList<CrossSection> sections = branchSections ?? Enumerable.Repeat(branchSection, branches.Count).ToArray();
+        if (sections.Count != branches.Count) throw new ArgumentException("A split needs one section per branch.");
+        for (int b = 0; b < sections.Count; b++)
         {
-            if (speed <= 0f) throw new ArgumentException("Branch speeds must be positive.");
+            if (!sections[b].IsClosed) throw new ArgumentException($"Branch {b} must be a closed tube, not flat planes.");
         }
 
-        CheckOpenings(chamber, branchSection, branches.Select(k => k[0].Offset).ToList(), "fork");
-        CheckOpenings(chamber, branchSection, branches.Select(k => k[^1].Offset).ToList(), "merge");
+        CheckOpenings(chamber, sections, branches.Select(k => k[0].Offset).ToList(), "fork");
+        CheckOpenings(chamber, sections, branches.Select(k => k[^1].Offset).ToList(), "merge");
 
-        var split = new TrackSplit(Length, piece.Length, branchSection, branches, speeds);
+        var split = new TrackSplit(Length, piece.Length, sections, branches);
         Append(piece);
+        // The branches follow centerline frames, so they can only be measured once the piece is in.
+        split.Measure(this);
         _splits.Add(split);
         return split;
     }
@@ -164,13 +167,17 @@ public sealed class Track
     public TrackFrame FrameAt(double s, int branch) =>
         branch >= 0 && SplitAt(s) is { } split ? split.BranchFrame(this, s, branch) : FrameAt(s);
 
-    /// <summary>Forward speed at <paramref name="s"/> on a branch; branches can run faster than the track.</summary>
+    /// <summary>
+    /// Forward speed at <paramref name="s"/> on a branch. The ship flies at the same speed through
+    /// space whichever branch it takes, but a branch that cuts the corner has less ground to cover,
+    /// so it crosses the split's span sooner. That is what makes a branch the quick way round.
+    /// </summary>
     public float SpeedAt(double s, int branch) =>
-        SpeedAt(s) * (branch >= 0 && SplitAt(s) is { } split ? split.SpeedFactor(branch) : 1f);
+        SpeedAt(s) / (branch >= 0 && SplitAt(s) is { } split ? split.PathScale(branch) : 1f);
 
     /// <summary>Cross-section at <paramref name="s"/> on a branch inside a split, or on the main track.</summary>
     public CrossSection SectionAt(double s, int branch) =>
-        branch >= 0 && SplitAt(s) is { } split ? split.Section : SectionAt(s);
+        branch >= 0 && SplitAt(s) is { } split ? split.Section(branch) : SectionAt(s);
 
     /// <summary>Centerline frame at distance <paramref name="s"/>, clamped to the track.</summary>
     public TrackFrame FrameAt(double s)
@@ -262,24 +269,24 @@ public sealed class Track
         {
             if (Vector2.Distance(point, split.OffsetAt(b, 0f)) < Vector2.Distance(point, split.OffsetAt(best, 0f))) best = b;
         }
-        var (surface, x) = new ProfileShape(split.Section).Nearest(point - split.OffsetAt(best, 0f));
+        var (surface, x) = new ProfileShape(split.Section(best)).Nearest(point - split.OffsetAt(best, 0f));
         return new TrackPosition(p.S, surface, x, best);
     }
 
     private TrackPosition Merge(TrackPosition p, TrackSplit split)
     {
-        var point = new ProfileShape(split.Section).PointAt(p.Surface, p.X) + split.OffsetAt(p.Branch, split.Length);
+        var point = new ProfileShape(split.Section(p.Branch)).PointAt(p.Surface, p.X) + split.OffsetAt(p.Branch, split.Length);
         var (surface, x) = new ProfileShape(SectionAt(split.EndS)).Nearest(point);
         return new TrackPosition(p.S, surface, x);
     }
 
     // Branch openings must fit inside the chamber without overlapping each other.
-    private static void CheckOpenings(CrossSection chamber, CrossSection branch, List<Vector2> centers, string where)
+    private static void CheckOpenings(CrossSection chamber, IReadOnlyList<CrossSection> sections, List<Vector2> centers, string where)
     {
         const int samples = 64;
-        var outline = new ProfileShape(branch);
         for (int i = 0; i < centers.Count; i++)
         {
+            var outline = new ProfileShape(sections[i]);
             for (int k = 0; k < samples; k++)
             {
                 var p = outline.PointAt(Surface.Floor, outline.Perimeter * k / samples) + centers[i];
@@ -289,7 +296,7 @@ public sealed class Track
                 }
                 for (int j = 0; j < centers.Count; j++)
                 {
-                    if (j != i && branch.Contains(p - centers[j], tolerance: -1e-3f))
+                    if (j != i && sections[j].Contains(p - centers[j], tolerance: -1e-3f))
                     {
                         throw new ArgumentException($"Branch openings at the {where} overlap.");
                     }

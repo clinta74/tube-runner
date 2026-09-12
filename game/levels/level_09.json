@@ -24,7 +24,8 @@
     "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
     "flat":     { "radius": 5.5, "opening": 1 },
     "box-flat": { "halfWidth": 9, "halfHeight": 4, "squareness": 1, "opening": 1 },
-    "tall-chamber": { "halfWidth": 6.5, "halfHeight": 13, "squareness": 0.6 }
+    "tall-chamber": { "halfWidth": 6.5, "halfHeight": 13, "squareness": 0.6 },
+    "branch-tight": { "radius": 4 }
   },
 
   // Obstacle "at" values are measured from the start of their piece.
@@ -101,11 +102,12 @@
     ], "obstacles": [
       { "at": 60, "angle": 180 }
     ] },
-    { "length": 400, "split": {                                     // 3620 - 4020
+    { "length": 400, "climb": -18, "split": {                       // 3620 - 4020
         "section": "tube",
         "branches": [
-          // Below: a fifth faster, and full of blocks. Above: slower, with targets to pick off.
-          { "offsets": [[0, 0, -7], [120, 0, -20], [280, 0, -20], [400, 0, -7]], "speed": 1.2 },
+          // The chamber dives, so the lower branch is the inside line: shorter and tighter, and
+          // full of blocks. The high road is longer and roomier, with targets to pick off.
+          { "offsets": [[0, 0, -7], [120, 0, -20], [280, 0, -20], [400, 0, -7]], "section": "branch-tight" },
           { "offsets": [[0, 0, 7], [120, -6, 20], [280, 6, 20], [400, 0, 7]] }
         ]
       },

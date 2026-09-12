@@ -60,7 +60,7 @@ public static class LevelLoader
                         throw new LevelFormatException($"Track piece {i}: a split keeps the current section; change it before or after.");
                     }
                     track.AppendSplit(piece, Lookup(sections, p.Split.Section, $"track piece {i} split"),
-                        ToBranches(p.Split, i), p.Split.Branches.Select(b => b.Speed).ToList());
+                        ToBranches(p.Split, i), ToBranchSections(p.Split, sections, i));
                 }
             }
             catch (ArgumentException e)
@@ -106,6 +106,20 @@ public static class LevelLoader
             branches.Add(keys);
         }
         return branches;
+    }
+
+    // A branch can name its own section, so the quick way round can be the tighter tube; the rest
+    // take the split's.
+    private static List<CrossSection> ToBranchSections(SplitData split, Dictionary<string, CrossSection> sections, int piece)
+    {
+        var result = new List<CrossSection>();
+        foreach (var branch in split.Branches)
+        {
+            result.Add(branch.Section is null
+                ? Lookup(sections, split.Section, $"track piece {piece} split")
+                : Lookup(sections, branch.Section, $"track piece {piece} branch"));
+        }
+        return result;
     }
 
     // Obstacles whose "at" is measured from `offset` along the track; `label` prefixes error messages.
@@ -332,7 +346,7 @@ public static class LevelLoader
     private sealed class BranchData
     {
         public List<float[]> Offsets { get; set; } = new();
-        public float Speed { get; set; } = 1f;
+        public string? Section { get; set; }
     }
 
     // Where something sits on the track, with optional repeats.

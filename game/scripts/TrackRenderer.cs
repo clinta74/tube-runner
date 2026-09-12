@@ -157,7 +157,7 @@ public partial class TrackRenderer : Node3D
                 double s = from + (to - from) * r / rings;
                 // Use the split directly so the branch's last ring, at the merge, stays on the branch.
                 var frame = split is null ? _track.FrameAt(s) : split.BranchFrame(_track, s, branch);
-                var shape = _shapes.Get(split is null ? _track.SectionAt(s) : split.Section);
+                var shape = _shapes.Get(split is null ? _track.SectionAt(s) : split.Section(branch));
                 FillStrip(shape);
                 foreach (float x in _xs)
                 {
@@ -219,13 +219,16 @@ public partial class TrackRenderer : Node3D
         for (int b = 0; b < (split?.BranchCount ?? 0); b++)
         {
             var c = split!.OffsetAt(b, spec.Along);
-            holes[b] = new Vector4(c.X, c.Y, split.Section.HalfWidth, split.Section.HalfHeight);
+            var section = split.Section(b);
+            holes[b] = new Vector4(c.X, c.Y, section.HalfWidth, section.HalfHeight);
         }
         var material = (ShaderMaterial)_capMaterial.Duplicate();
         material.SetShaderParameter("cap_color", split is null ? _endWallColor : _capColor);
         material.SetShaderParameter("holes", holes);
         material.SetShaderParameter("hole_count", split?.BranchCount ?? 0);
-        material.SetShaderParameter("hole_exponent", split?.Section.Exponent ?? 2f);
+        // The shader cuts every hole with one exponent, so branches that differ in squareness all
+        // take the first branch's outline. Sizes are still per branch.
+        material.SetShaderParameter("hole_exponent", split?.Section(0).Exponent ?? 2f);
 
         var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
         AddChild(node);

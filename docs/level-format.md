@@ -109,9 +109,19 @@ steering toward an opening.
   `turn`, `climb`, and change `speed`.
 - Each branch lists `[along, x, y]` offsets from the track's center: `along` runs from 0 to the piece
   length, `x` is right, `y` is up. The branch blends smoothly between them.
-- A branch can also set `"speed"`, a multiple of the track's speed (default 1). Both branches cover the
-  same distance, so this is what makes one route genuinely quicker — pair a faster branch with more
-  obstacles and leave the slower one clearer, and the choice is worth making.
+- A branch can set its own `"section"`, overriding the split's. That is how the quick way round can
+  also be the tight one.
+- Branches have **no** speed setting. The ship flies at the same speed through space whichever way it
+  goes; what differs is how far it travels. A branch running round the inside of a turn covers less
+  ground and reaches the merge sooner, and the engine measures each branch's real path to work that
+  out. Bulging sideways on a *straight* buys almost nothing — under 1% over a 400-unit piece — so a
+  split has to genuinely **turn** before a shortcut is worth taking.
+
+  The ground saved is roughly `offset x turn-in-radians`. That makes small bends worthless: 22 units
+  of offset through a 20° bend saves about 10 units, which at 100 u/s is a tenth of a second and no
+  player will notice it. A fork worth betting on needs both levers pushed — 40 units of offset
+  through a 90° bend saves about 60 units, or half a second. Price the short way with a tighter
+  `section` and more obstacles, and the choice becomes real: time against shields.
 - At the fork and the merge, every branch's opening must fit inside the chamber without overlapping
   another; the level won't load otherwise, and the error says which.
 - 2 to 4 branches. The chamber and branches must be closed tubes.
