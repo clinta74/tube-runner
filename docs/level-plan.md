@@ -33,10 +33,10 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 11 | **Metronome** | Gates in rhythm with jumps | Flat, round | ✅ |
 | 12 | **Firing Order** | Target groups that must be shot in order | Round, oval | ✅ |
 | 13 | **Gauntlet** | Block A's test: gates and order together, dense | All, incl. flat and box | ✅ |
-| 14 | **Speed Trap** | Speed-limit zones: stretches that cost a shield if taken fast | Round, box | ⬜ |
-| 15 | **Restraint** | Limits right after the straights that invite speed | Round, oval | ⬜ |
-| 16 | **Shoal** | Movers: blocks that slide around the tube as you close | Round | ⬜ |
-| 17 | **Undertow** | Block B's test: limits, gates and movers at once | All | ⬜ |
+| 14 | **Speed Trap** | Speed-limit zones: stretches that cost a shield if taken fast | Round, narrow | ✅ |
+| 15 | **Restraint** | Limits right after the straights that invite speed | Round, oval | ✅ |
+| 16 | **Shoal** | Movers: blocks that slide around the tube as you close | Round, wide | ✅ |
+| 17 | **Undertow** | Block B's test: limits, gates and movers at once | All | ✅ |
 | 18 | **Scarlands** | Hazard plates: wall you cannot break, shoot or ram | Box, flat | ⬜ |
 | 19 | **Crossfire** | Plates and movers with a shooting load that won't wait | Round, box | ⬜ |
 | 20 | **Keys** | Shoot-to-open gates: a target that unlocks the way ahead | Round, box | ⬜ |

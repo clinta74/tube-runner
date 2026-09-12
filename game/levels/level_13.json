@@ -1,5 +1,6 @@
 {
   "name": "Gauntlet",
+  "next": "level_14.json",
   "speed": 120,
   "segmentLength": 60,
 

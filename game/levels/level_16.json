@@ -1,0 +1,104 @@
+{
+  "name": "Shoal",
+  "next": "level_17.json",
+  "speed": 130,
+  "segmentLength": 60,
+
+  // Movers - blocks that slide around the tube while the ship closes on them, so the gap aimed at is
+  // not the gap arrived at. They sweep around the surface only: moving along the track would break
+  // the collision sweep's ordering, and a hazard that tunnels at speed is worse than no hazard.
+  // A mover's sweep time against the closing speed is the whole design lever. Slow sweeps can be
+  // read and beaten; fast ones have to be guessed, so they are used sparingly and never in packs.
+  "theme": {
+    "darks": ["#152430", "#111d28", "#1b2b38"],
+    "lights": ["#6d94ad", "#5c8099", "#7fa3ba"],
+    "seamDark": "#081219",
+    "seamLight": "#8fe0ff",
+    "far": "#04090e",
+    "ship": "#8fe0ff",
+    "block": "#dceaf5",
+    "target": "#ff5f8a",
+    "breakable": "#7cffd4",
+    "fadeStart": 35,
+    "fadeEnd": 345,
+    "glow": 0.3
+  },
+
+  "sections": {
+    "tube": { "radius": 6 },
+    "wide": { "radius": 7.5 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 220 },                                              //    0 -  220
+
+    // FREE LOOK. One block, sliding slowly, in a wide bore with room to go round either side. Long
+    // sweep time so its rhythm can be watched rather than guessed.
+    { "length": 300, "section": "wide", "obstacles": [              //  220 -  520
+      { "at": 160, "sweep": 11, "sweepTime": 4.5, "width": 8 }
+    ] },
+
+    // Two sliding in opposite directions, crossing in the middle. Where they cross is a wall; where
+    // they part is a door. Same sweep time, so the pattern is readable.
+    { "length": 340, "section": "tube", "obstacles": [              //  520 -  860
+      { "at": 150, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 0 },
+      { "at": 150, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 180 },
+      { "at": 270, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 90 }
+    ] },
+
+    { "length": 260, "speed": 140, "pickups": [                     //  860 - 1120
+      { "at": 130, "kind": "rapid-fire" }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": 90 }
+    ] },
+
+    // Movers and fixed blocks together. The fixed ones make the gap look safe from a distance; the
+    // movers are what close it by the time the ship arrives.
+    { "length": 400, "turn": 40, "obstacles": [                     // 1120 - 1520
+      { "at": 90,  "angle": 0,   "width": 9 },
+      { "at": 170, "sweep": 10, "sweepTime": 3.5, "width": 7, "angle": 120 },
+      { "at": 260, "angle": 240, "width": 9 },
+      { "at": 340, "sweep": 10, "sweepTime": 3.5, "width": 7, "angle": 60 }
+    ] },
+
+    { "length": 240, "section": "oval", "speed": 145, "pickups": [  // 1520 - 1760
+      { "at": 120, "kind": "shield", "angle": 180 }
+    ] },
+
+    // Movers to shoot past rather than dodge: targets riding the same sweep, so the aim has to lead
+    // them. Shots fly straight from wherever the ship sits, so this is steering, not aiming.
+    { "length": 380, "section": "tube", "turn": -45, "pickups": [   // 1760 - 2140
+      { "at": 60, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 150, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 0 },
+      { "at": 250, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 180 },
+      { "at": 330, "sweep": 9, "sweepTime": 3.0, "width": 8, "angle": 90 }
+    ] },
+
+    // A shoal: four movers on one sweep, in step, so the whole wall breathes side to side. Reading
+    // the phase once solves all of them - and reading it wrong costs the lot.
+    { "length": 440, "speed": 150, "obstacles": [                   // 2140 - 2580
+      { "at": 80, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 0, "count": 4, "spacing": 95, "angleStep": 90 }
+    ] },
+
+    { "length": 260, "section": "wide", "pickups": [                // 2580 - 2840
+      { "at": 130, "kind": "shield", "angle": 90 }
+    ] },
+
+    // Movers on a twist, where the bend hides them until they are close and the sweep cannot be read
+    // in advance. Fast sweeps, but only one at a time: guessing should cost one shield, not three.
+    { "length": 200, "section": "tube", "speed": 155, "turn": 70, "obstacles": [   // 2840 - 3040
+      { "at": 110, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 0 }
+    ] },
+    { "length": 200, "turn": -75, "climb": 12, "obstacles": [       // 3040 - 3240
+      { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 180 }
+    ] },
+    { "length": 200, "turn": 65, "climb": -14, "obstacles": [       // 3240 - 3440
+      { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 90 }
+    ] },
+
+    { "length": 260 }                                               // 3440 - 3700
+  ]
+}

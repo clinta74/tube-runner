@@ -1,0 +1,108 @@
+{
+  "name": "Speed Trap",
+  "next": "level_15.json",
+  "speed": 120,
+  "segmentLength": 60,
+
+  // Block B opens here: full shields in, then one new idea on its own.
+  // Speed-limit zones - a stretch that costs a shield if it is taken too fast. The inverse of a
+  // boost: the player has set their own throttle since level 3, so handing them speed decides
+  // nothing, while making them give it up on a timed run is a real price.
+  // Every limit here has a visible reason - each one sits where the track is about to do something
+  // that deserves caution - and each follows a straight that invites speed, so easing off is a read
+  // rather than a surprise. A limit that punishes speed for no reason is just arbitrary.
+  "theme": {
+    "darks": ["#20281c", "#1a2117", "#283021"],
+    "lights": ["#8fa878", "#7b9366", "#9db487"],
+    "seamDark": "#0f130c",
+    "seamLight": "#d4ff9f",
+    "far": "#070a06",
+    "ship": "#d4ff9f",
+    "block": "#eef5e4",
+    "target": "#ff7a3a",
+    "breakable": "#ffe36b",
+    "fadeStart": 35,
+    "fadeEnd": 340,
+    "glow": 0.25
+  },
+
+  "sections": {
+    "tube":   { "radius": 6 },
+    "narrow": { "radius": 4.5 },
+    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
+    "wide":   { "radius": 7 }
+  },
+
+  "start": "tube",
+  "track": [
+    // The block's refill.
+    { "length": 220, "pickups": [                                   //    0 -  220
+      { "at": 120, "kind": "full-shields" }
+    ] },
+
+    // A long clear straight. Nothing to do but wind the throttle up - which is the setup.
+    { "length": 380, "speed": 140 },                                //  220 -  600
+
+    // FREE LOOK. The tube pinches to a narrow bore, and the limit sits on it. The reason is visible
+    // from a long way out: the walls are closing in, so backing off reads as sense, not as a rule.
+    { "length": 260, "section": "narrow", "speedLimits": [          //  600 -  860
+      { "at": 130, "length": 180, "maxSpeed": 105 }
+    ] },
+
+    { "length": 260, "section": "tube", "speed": 130, "pickups": [  //  860 - 1120
+      { "at": 130, "kind": "rapid-fire" }
+    ] },
+
+    // Second limit, now with something to do inside it: blocks to thread while held slow. Going
+    // through fast costs a shield; going through slow costs time. Both are real.
+    { "length": 340, "section": "narrow", "turn": 35, "speedLimits": [   // 1120 - 1460
+      { "at": 170, "length": 240, "maxSpeed": 100 }
+    ], "obstacles": [
+      { "at": 90,  "angle": 0,   "width": 7 },
+      { "at": 180, "angle": 120, "width": 7 },
+      { "at": 270, "angle": 240, "width": 7 }
+    ] },
+
+    // Breathe and open out, with a shield for what the last stretch probably cost.
+    { "length": 280, "section": "wide", "speed": 140, "pickups": [  // 1460 - 1740
+      { "at": 140, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 210, "kind": "target", "angle": 90 }
+    ] },
+
+    // The trap this level is named for. A long fast straight, then a blind bend with a limit on it.
+    // Read the sign in the geometry - the tube narrows before the corner - or arrive too fast.
+    { "length": 420, "section": "tube", "speed": 155 },             // 1740 - 2160
+    { "length": 300, "section": "narrow", "turn": 70, "speedLimits": [   // 2160 - 2460
+      { "at": 150, "length": 220, "maxSpeed": 110 }
+    ], "obstacles": [
+      { "at": 200, "angle": 180, "width": 7 }
+    ] },
+
+    { "length": 260, "section": "oval", "speed": 145, "pickups": [  // 2460 - 2720
+      { "at": 120, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 190, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    ] },
+
+    // Two limits back to back with a gap between them. The gap is long enough to be worth speeding
+    // through, which is the decision: take the free stretch fast and risk overrunning into the next
+    // limit, or hold one speed across both and lose the time.
+    { "length": 280, "section": "narrow", "speedLimits": [          // 2720 - 3000
+      { "at": 140, "length": 200, "maxSpeed": 100 }
+    ] },
+    { "length": 220, "section": "tube", "speed": 155 },             // 3000 - 3220
+    { "length": 280, "section": "narrow", "speedLimits": [          // 3220 - 3500
+      { "at": 140, "length": 200, "maxSpeed": 100 }
+    ] },
+
+    // Run for home, wide open and no limits: the level gives the speed back at the end.
+    { "length": 200, "section": "tube", "speed": 160, "turn": -55, "obstacles": [   // 3500 - 3700
+      { "at": 110, "angle": 90, "width": 9 }
+    ] },
+    { "length": 200, "turn": 60, "climb": 12, "obstacles": [        // 3700 - 3900
+      { "at": 100, "kind": "target", "angle": 180 }
+    ] },
+    { "length": 260 }                                               // 3900 - 4160
+  ]
+}
