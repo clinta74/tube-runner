@@ -53,7 +53,14 @@ public partial class TrackRenderer : Node3D
     }
 
     /// <param name="warps">Warp mouths, whose openings are cut out of the wall as it is built.</param>
-    public void Init(Track track, Material material, float chunkLength, Theme theme, IReadOnlyList<Warp>? warps = null)
+    /// <param name="endsTheRun">
+    /// Whether this is the last level. Only then is the end of the track walled off. Levels run
+    /// into one another with no pause, so a wall across the finish of every one of them contradicts
+    /// that: the tube should look like it carries straight on into the next stretch, which is what
+    /// the run actually does.
+    /// </param>
+    public void Init(Track track, Material material, float chunkLength, Theme theme,
+        IReadOnlyList<Warp>? warps = null, bool endsTheRun = true)
     {
         _track = track;
         _material = material;
@@ -76,7 +83,7 @@ public partial class TrackRenderer : Node3D
             _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
             _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
         }
-        if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
+        if (endsTheRun && track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
 
         // Fork and merge walls sit in shadow around their openings; the wall at the end of the level
         // is the thing you fly at, so it takes a color you can actually see.

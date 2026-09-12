@@ -12,7 +12,7 @@
     "seamLight": "#d8ffb0",
     "far": "#05070a",
     "ship": "#d8ffb0",
-    "block": "#f5f5f5",
+    "block": "#cccccc",
     "target": "#ff4d4d",
     "breakable": "#7fd0ff",
     "fadeStart": 30,

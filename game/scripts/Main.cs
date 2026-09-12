@@ -163,7 +163,7 @@ public partial class Main : Node3D
         _ship.ApplyTheme(level.Theme);
         WallMaterial.SetShaderParameter("segment_length", level.SegmentLength);
         _track.Reset();
-        _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps);
+        _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps, level.Next is null);
         _obstacles.Reset();
         _obstacles.Init(_session, level.Theme);
         _fx.SetStreakColor(level.Theme.SeamLight.ToColor());
