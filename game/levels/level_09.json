@@ -24,7 +24,7 @@
     "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
     "flat":     { "radius": 5.5, "opening": 1 },
     "box-flat": { "halfWidth": 9, "halfHeight": 4, "squareness": 1, "opening": 1 },
-    "tall-chamber": { "halfWidth": 6.5, "halfHeight": 13, "squareness": 0.6 },
+    "chamber": { "halfWidth": 14, "halfHeight": 6, "squareness": 0.6 },
     "branch-tight": { "radius": 4 }
   },
 
@@ -96,47 +96,52 @@
       { "at": 60, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 }
     ] },
 
-    // Stretch tall, fork over/under, merge, and narrow back down.
-    { "length": 100, "section": "tall-chamber", "speed": 160, "pickups": [    // 3520 - 3620
+    // Widen out, fork left/right, merge, and narrow back down.
+    { "length": 100, "section": "chamber", "speed": 160, "pickups": [    // 3520 - 3620
       { "at": 30, "kind": "shield-slot", "angle": 90 }
     ], "obstacles": [
       { "at": 60, "angle": 180 }
     ] },
-    { "length": 400, "climb": -18, "split": {                       // 3620 - 4020
+    // This was a 400-unit dive with the branches forked over and under it - offsets in the same
+    // plane as the bend, which is the one direction that saves nothing, so the short way came out
+    // 0.8% shorter. It is a hard right now, with the fork across the turn. The piece is longer
+    // because a corner this tight at 160 u/s needs the room, and because the saving is a fraction
+    // of the span, a longer piece needs a harder bend to pay the same.
+    { "length": 550, "turn": 110, "split": {                        // 3620 - 4170
         "section": "tube",
         "branches": [
-          // The chamber dives, so the lower branch is the inside line: shorter and tighter, and
-          // full of blocks. The high road is longer and roomier, with targets to pick off.
-          { "offsets": [[0, 0, -7], [120, 0, -20], [280, 0, -20], [400, 0, -7]], "section": "branch-tight" },
-          { "offsets": [[0, 0, 7], [120, -6, 20], [280, 6, 20], [400, 0, 7]] }
+          // The right branch runs round the inside: shorter and tighter, and full of blocks. The
+          // long way round is roomier, with targets to pick off.
+          { "offsets": [[0, 7.5, 0], [180, 40, 0], [370, 40, 0], [550, 7.5, 0]], "section": "branch-tight" },
+          { "offsets": [[0, -7.5, 0], [180, -40, 0], [370, -40, 0], [550, -7.5, 0]] }
         ]
       },
       "pickups": [
-        // The lower branch has the spiral to thread, so it keeps a shield.
-        { "at": 250, "branch": 0, "kind": "shield" }
+        // The short branch has the spiral to thread, so it keeps a shield.
+        { "at": 340, "branch": 0, "kind": "shield" }
       ],
       "obstacles": [
-        // A spiral of blocks below, targets above.
-        { "at": 110, "branch": 0, "angle": 0, "count": 5, "spacing": 45, "angleStep": 72 },
-        { "at": 340, "branch": 0, "angle": 90, "count": 2, "spacing": 40, "angleStep": 180 },
-        { "at": 130, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 50 }
+        // A spiral of blocks the short way, targets the long way.
+        { "at": 150, "branch": 0, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 },
+        { "at": 470, "branch": 0, "angle": 90, "count": 2, "spacing": 40, "angleStep": 180 },
+        { "at": 180, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 65 }
       ]
     },
-    { "length": 100, "section": "tube", "pickups": [                // 4020 - 4120
+    { "length": 100, "section": "tube", "pickups": [                // 4170 - 4270
       { "at": 50, "kind": "unstoppable" }
     ] },
 
     // Twisting finish, at full speed: the bends give you almost no warning.
-    { "length": 150, "turn": -80, "obstacles": [                    // 4120 - 4270
+    { "length": 150, "turn": -80, "obstacles": [                    // 4270 - 4420
       { "at": 90, "angle": 0, "count": 2, "spacing": 40, "angleStep": 120 }
     ] },
-    { "length": 150, "turn": 80, "climb": -14, "obstacles": [       // 4270 - 4420
+    { "length": 150, "turn": 80, "climb": -14, "obstacles": [       // 4420 - 4570
       { "at": 70, "angle": 180 },
       { "at": 115, "kind": "target", "angle": 0 }
     ] },
-    { "length": 150, "turn": -70, "climb": 16, "obstacles": [       // 4420 - 4570
+    { "length": 150, "turn": -70, "climb": 16, "obstacles": [       // 4570 - 4720
       { "at": 80, "angle": 90, "count": 3, "angleStep": 60 }
     ] },
-    { "length": 200 }                                               // 4570 - 4770
+    { "length": 200 }                                               // 4720 - 4920
   ]
 }

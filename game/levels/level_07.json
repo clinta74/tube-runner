@@ -120,13 +120,17 @@
     ], "obstacles": [
       { "at": 40, "kind": "target" }
     ] },
-    { "length": 400, "turn": 20, "split": {                         // 3500 - 3900
+    // The bend has to be hard for the inside line to be worth anything: the ground a branch saves is
+    // roughly its offset times the turn in radians, so a gentle piece saves nothing whatever the
+    // offsets. This was a 20 degree turn and the short way came out 0.9% shorter - a tenth of a
+    // second, which no one would ever take a tighter tube for.
+    { "length": 400, "turn": 75, "split": {                         // 3500 - 3900
         "section": "tube",
         "branches": [
           // The piece turns right, so the right branch runs round the inside: a shorter way to the
           // merge, in a tighter tube and packed with blocks. Left is the long way, roomy and clear.
-          { "offsets": [[0, -7.5, 0], [120, -22, 0], [280, -22, 0], [400, -7.5, 0]] },
-          { "offsets": [[0, 7.5, 0], [120, 22, 5], [280, 22, 5], [400, 7.5, 0]], "section": "branch-tight" }
+          { "offsets": [[0, -7.5, 0], [120, -30, 0], [280, -30, 0], [400, -7.5, 0]] },
+          { "offsets": [[0, 7.5, 0], [120, 30, 0], [280, 30, 0], [400, 7.5, 0]], "section": "branch-tight" }
         ]
       },
       "pickups": [

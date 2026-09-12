@@ -90,10 +90,15 @@ how obstacles are arranged.
     splits well before the finish so the choice still has to be paid for.
 
     A branch only shortens by cutting a corner, and the ground saved is roughly
-    `offset x turn-in-radians`. Measured on the splits as built, Earthworks (20° turn) and Neon Run
-    (18° climb) save under 3% — about a tenth of a second each, which is nothing. Both want
-    re-cutting. A fork worth betting on needs both levers pushed hard: 40 units of offset through a
-    90° bend saves around 60 units, or half a second at 100 u/s. Anything gentler is decoration.
+    `offset x turn-in-radians` times about two thirds — the blend out and back costs distance the
+    formula ignores. Earthworks (20° turn) and Neon Run (18° climb, with the fork in the plane of
+    the climb, which saves nothing at all) measured 0.9% and 0.8%, and were re-cut to 6.3% and 8.9%
+    by turning both pieces hard and forking across the bend. Crossroads runs 5.5–11.4%.
+
+    The number a player actually feels is the **spread between routes**, not either against the
+    centerline: Crossroads' best fork is 11.4% one way and −14.0% the other, so the two roads differ
+    by a quarter. `SplitSavingTests` holds every shipped split to 4% on the quick branch and 10%
+    between branches. Anything gentler is decoration.
 
 15. **Warp zones** — a black spot in the tube that throws the ship back up the track if hit, costing
     time rather than a shield. Warning signs hang from the walls on the approach, so it reads as a
@@ -110,9 +115,9 @@ how obstacles are arranged.
 | 4 | Ovals | 95 → 125 | Half-blocked by shape | High: sides, then floor/ceiling | Wide and tall ovals | – | Required | Shield, rapid, ring | 2100 |
 | 5 | Flatlands | 90 → 100 | Wide gaps | Low: strafing | Round → flat | 2, unhurried | Light | Shield, full shields | 2100 |
 | 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 2750 |
-| 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4200 |
+| 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4650 |
 | 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4350 |
-| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4320 |
+| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4920 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
 they answer. Their rarer prizes — the extra shield slot, and shields inside a split — sit off the fast

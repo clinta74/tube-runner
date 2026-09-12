@@ -117,11 +117,17 @@ steering toward an opening.
   out. Bulging sideways on a *straight* buys almost nothing — under 1% over a 400-unit piece — so a
   split has to genuinely **turn** before a shortcut is worth taking.
 
-  The ground saved is roughly `offset x turn-in-radians`. That makes small bends worthless: 22 units
-  of offset through a 20° bend saves about 10 units, which at 100 u/s is a tenth of a second and no
-  player will notice it. A fork worth betting on needs both levers pushed — 40 units of offset
-  through a 90° bend saves about 60 units, or half a second. Price the short way with a tighter
-  `section` and more obstacles, and the choice becomes real: time against shields.
+  The ground saved is roughly `offset x turn-in-radians`, **times about two thirds** — blending out
+  to the offset and back costs real distance the formula ignores, so treat it as an upper bound.
+  Measured, 30 units of offset through a 75° bend over 400 units saves 6.3%, where the formula
+  promises 9.8%. Small bends are therefore worthless: 22 units through a 20° bend measures 0.9%, a
+  tenth of a second at 100 u/s, and no player will trade a tighter tube for that.
+
+  Aim for the **quickest branch saving 4% or more**, and for **10%+ between the quickest and the
+  slowest**. That second number is the one a player feels: a fork reads as a real choice because the
+  long way round is genuinely long, not only because the short way is short. `SplitSavingTests`
+  measures every shipped split against both and fails if one goes flat. Price the short way with a
+  tighter `section` and more obstacles, and the choice becomes real: time against shields.
 - At the fork and the merge, every branch's opening must fit inside the chamber without overlapping
   another; the level won't load otherwise, and the error says which.
 - 2 to 4 branches. The chamber and branches must be closed tubes.
