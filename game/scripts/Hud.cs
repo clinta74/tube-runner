@@ -99,10 +99,16 @@ public partial class Hud : CanvasLayer
     {
         _thrustBar = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_thrustBar);
-        _thrustBar.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, Margin);
-        _thrustBar.CustomMinimumSize = new Vector2(ThrustWidth, ThrustHeight);
-        _thrustBar.Size = new Vector2(ThrustWidth, ThrustHeight);
-        _thrustBar.Position = new Vector2(-ThrustWidth / 2f, _thrustBar.Position.Y);
+        // Anchored by hand rather than with a preset. Setting a preset and then overwriting Position
+        // fights the anchors, and the bar ends up somewhere off screen.
+        _thrustBar.AnchorLeft = 0.5f;
+        _thrustBar.AnchorRight = 0.5f;
+        _thrustBar.AnchorTop = 1f;
+        _thrustBar.AnchorBottom = 1f;
+        _thrustBar.OffsetLeft = -ThrustWidth / 2f;
+        _thrustBar.OffsetRight = ThrustWidth / 2f;
+        _thrustBar.OffsetTop = -(Margin + ThrustHeight);
+        _thrustBar.OffsetBottom = -Margin;
 
         _thrustTrack = AddRect(new Color(1f, 1f, 1f, 0.16f));
         _thrustFill = AddRect(Colors.White);
@@ -131,13 +137,17 @@ public partial class Hud : CanvasLayer
         _thrustFill.Position = new Vector2(0f, 3f);
         _thrustFill.Size = new Vector2(At(session.Ship.Throttle), ThrustHeight - 6f);
 
-        // Whatever a zone has taken off each end, drawn over the top of it.
+        // Whatever a zone has taken off each end, drawn over the top of it. The bar itself is always
+        // there - the throttle is in play every second of the game - but these only appear when
+        // something is actually closing the range.
         float low = At(session.Ship.ThrottleFloor);
         float high = At(session.Ship.ThrottleCeiling);
         _thrustBlockedLow.Position = Vector2.Zero;
         _thrustBlockedLow.Size = new Vector2(low, ThrustHeight);
+        _thrustBlockedLow.Visible = low > 0.5f;
         _thrustBlockedHigh.Position = new Vector2(high, 0f);
         _thrustBlockedHigh.Size = new Vector2(ThrustWidth - high, ThrustHeight);
+        _thrustBlockedHigh.Visible = high < ThrustWidth - 0.5f;
     }
 
     /// <param name="runTime">Time from earlier levels of this run; the level's own time is added.</param>

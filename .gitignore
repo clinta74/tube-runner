@@ -19,6 +19,9 @@ obj/
 *.nupkg
 TestResults/
 
+# Video from ./play.ps1 -Record. Godot writes uncompressed AVI, gigabytes a minute.
+recordings/
+
 # Game builds / exports
 builds/
 exports/
