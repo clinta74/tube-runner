@@ -122,6 +122,7 @@ steering toward an opening.
 A **block** is solid: hitting one breaks it, costs a shield, and slows the ship briefly. It stops shots
 unless it's breakable — give it `"hits": N` and N shots break it (the ring gun breaks it in one).
 A **target** is destroyed by shots for 100 points, and hurts like a block if you fly into it.
+Breaking a block scores 50 per hit it takes, so a `"hits": 3` block pays 150.
 The ship has three shields; losing them all ends the run.
 
 Put obstacles in the `obstacles` list of the track piece they belong to. Their `at` is measured from the
@@ -177,6 +178,7 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 | `shield-slot` | Adds a shield slot, already filled, up to 6. |
 | `rapid-fire` | Fires about three times as fast for 8 seconds. |
 | `ring-gun` | 3 ring-gun shots. Each sweeps the whole tube, breaking every target and breakable block it passes; solid blocks survive. |
+| `unstoppable` | For 6 seconds the ship smashes through anything it touches — solid blocks included — scoring each one and losing no shields. |
 
 ```json
 { "length": 250, "pickups": [

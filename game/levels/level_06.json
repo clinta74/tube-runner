@@ -54,7 +54,9 @@
       { "at": 140, "kind": "target", "angle": 0, "count": 8, "angleStep": 45 }
     ] },
 
-    { "length": 300, "section": "flat", "speed": 130 },             // 1500 - 1800
+    { "length": 300, "section": "flat", "speed": 130, "pickups": [  // 1500 - 1800
+      { "at": 60, "kind": "unstoppable" }
+    ] },
 
     // Breakable blocks strung across the floor: shoot a gap or weave through it, then one last wall.
     { "length": 400, "obstacles": [                                 // 1800 - 2200

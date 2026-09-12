@@ -23,6 +23,7 @@ public partial class ObstacleRenderer : Node3D
         [PickupKind.ShieldSlot] = (new Color(1f, 0.85f, 0.3f), "SLOT"),
         [PickupKind.RapidFire] = (new Color(1f, 0.5f, 0.15f), "RAPID"),
         [PickupKind.RingGun] = (new Color(1f, 0.3f, 1f), "RING"),
+        [PickupKind.Unstoppable] = (new Color(1f, 0.2f, 0.2f), "RAM"),
     };
 
     private readonly Dictionary<Obstacle, View> _views = new();
@@ -50,6 +51,21 @@ public partial class ObstacleRenderer : Node3D
     [Export] public float ViewAhead { get; set; } = 450f;
     [Export] public float ViewBehind { get; set; } = 20f;
     [Export] public float RideHeight { get; set; } = 0.6f;
+
+    /// <summary>Frees the current level's views, ready for <see cref="Init"/> with the next one.</summary>
+    public void Reset()
+    {
+        foreach (var view in _views.Values) view.Node.QueueFree();
+        foreach (var view in _pickupViews.Values) view.Node.QueueFree();
+        foreach (var node in _shotViews) node.QueueFree();
+        foreach (var node in _ringViews) node.QueueFree();
+        foreach (var burst in _bursts) burst.Node.QueueFree();
+        _views.Clear();
+        _pickupViews.Clear();
+        _shotViews.Clear();
+        _ringViews.Clear();
+        _bursts.Clear();
+    }
 
     public void Init(GameSession session, Theme theme)
     {

@@ -82,7 +82,9 @@
     ], "obstacles": [
       { "at": 50, "angle": 0, "count": 4, "spacing": 45, "angleStep": 90 }
     ] },
-    { "length": 100, "section": "box", "speed": 100 },              // 1940 - 2040
+    { "length": 100, "section": "box", "speed": 100, "pickups": [   // 1940 - 2040
+      { "at": 50, "kind": "unstoppable" }
+    ] },
     { "length": 250, "turn": 40, "obstacles": [                     // 2040 - 2290
       { "at": 50, "x": -5, "width": 10 },
       { "at": 120, "x": 5, "width": 10 },

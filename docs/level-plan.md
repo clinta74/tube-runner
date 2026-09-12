@@ -34,6 +34,17 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 File names match these numbers, so `level_08.json` is missing until Crossroads exists and level 7
 points straight at level 9. The same goes for a level 10.
 
+## A run, not a level
+
+Levels play back to back with no pause. Shields, shield slots, rapid fire, ring charges, unstoppable
+time, throttle and score all carry across, and each level's time is kept as a split; the end screen
+lists them with the run's total. Losing every shield ends the *run*, so a level's difficulty is really
+"how much does this cost me for the rest of the run" — a level that takes two shields off you is much
+worse than it looks on its own.
+
+That makes the placement of shields between levels part of the pacing: a hard level should hand some
+back before the next one starts.
+
 ## Difficulty levers
 
 What we actually turn to make a level harder. Most are level-file settings; a few are consequences of
@@ -105,6 +116,7 @@ line or down the meaner branch, so they cost something to take.
 | Extra shield slot | 2, on the ceiling | going off-line to reach it |
 | Rapid fire | 2, before tough blocks | 2, 4-hit blocks |
 | Ring gun | 2, before a ring of targets | 2, second ring at an offset angle |
+| Unstoppable | 6, before the breakable rows | 7 at the box, 9 before the twisting finish |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
 | Forks | 7 | 8, branches with different rewards |

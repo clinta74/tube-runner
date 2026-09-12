@@ -18,14 +18,26 @@ public enum SessionEvent
     BlockDamaged,
     BlockDestroyed,
     ShotBlocked,
+    Rammed,
     ShieldRestored,
     ShieldsRefilled,
     ShieldSlotAdded,
     RapidFireStarted,
     RingGunCharged,
+    UnstoppableStarted,
     Finished,
     GameOver,
 }
+
+/// <summary>What a run carries from one level into the next: no pause, nothing reset.</summary>
+public sealed record RunState(
+    int Shields,
+    int MaxShields,
+    float RapidFireLeft,
+    int RingCharges,
+    float RamLeft,
+    float Throttle,
+    int Score);
 
 /// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
 /// <param name="Special">Fire the ring gun, if it has charges.</param>
@@ -42,6 +54,7 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 /// <param name="RapidFireTime">Seconds a rapid-fire pickup lasts.</param>
 /// <param name="RapidFireFactor">Fire interval multiplier during rapid fire.</param>
 /// <param name="RingChargesPerPickup">Ring gun shots each ring-gun pickup gives.</param>
+/// <param name="RamTime">Seconds an unstoppable pickup lasts.</param>
 /// <param name="RingRange">Distance a ring shot sweeps before it fades.</param>
 /// <param name="RingReach">On open planes, how far to either side a ring shot reaches.</param>
 /// <param name="PickupRadius">How close the ship has to pass to a pickup to collect it.</param>
@@ -60,6 +73,7 @@ public sealed record SessionSettings(
     float RapidFireTime = 8f,
     float RapidFireFactor = 0.35f,
     int RingChargesPerPickup = 3,
+    float RamTime = 6f,
     float RingRange = 250f,
     float RingReach = 45f,
     float PickupRadius = 1.5f,
@@ -109,9 +123,11 @@ public sealed class GameSession
     private readonly ProfileShapeCache _shapes = new();
     private float _fireCooldown;
     private int _bonus;
+    private int _carriedScore;
 
+    /// <param name="carry">State from earlier levels of the same run; null starts fresh.</param>
     public GameSession(Track track, IEnumerable<Obstacle> obstacles, SessionSettings settings, TrackPosition start,
-        IEnumerable<Pickup>? pickups = null)
+        IEnumerable<Pickup>? pickups = null, RunState? carry = null)
     {
         Track = track;
         _settings = settings;
@@ -119,6 +135,17 @@ public sealed class GameSession
         _pickups = (pickups ?? []).OrderBy(p => p.S).ToList();
         Ship = new ShipSim(settings.Ship, track, start);
         Shields = MaxShields = settings.Shields;
+
+        if (carry is not null)
+        {
+            Shields = carry.Shields;
+            MaxShields = carry.MaxShields;
+            RapidFireLeft = carry.RapidFireLeft;
+            RingCharges = carry.RingCharges;
+            RamLeft = carry.RamLeft;
+            Ship.Throttle = carry.Throttle;
+            _carriedScore = carry.Score;
+        }
     }
 
     public Track Track { get; }
@@ -144,6 +171,9 @@ public sealed class GameSession
     /// <summary>Ring gun shots available.</summary>
     public int RingCharges { get; private set; }
 
+    /// <summary>Seconds left of smashing through anything the ship touches.</summary>
+    public float RamLeft { get; private set; }
+
     /// <summary>Seconds left of post-hit invulnerability.</summary>
     public float RecoveryLeft { get; private set; }
 
@@ -151,7 +181,10 @@ public sealed class GameSession
     public float Elapsed { get; private set; }
 
     /// <summary>Points for targets, broken blocks, and pickups, plus one point per 10 units travelled.</summary>
-    public int Score => _bonus + (int)(Ship.Position.S / 10.0);
+    public int Score => _carriedScore + _bonus + (int)(Ship.Position.S / 10.0);
+
+    /// <summary>State to carry into the next level of the run.</summary>
+    public RunState Carry => new(Shields, MaxShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score);
 
     public void Step(float dt, ShipInput input)
     {
@@ -160,6 +193,7 @@ public sealed class GameSession
 
         Elapsed += dt;
         RapidFireLeft = Math.Max(0f, RapidFireLeft - dt);
+        RamLeft = Math.Max(0f, RamLeft - dt);
         RecoveryLeft = Math.Max(0f, RecoveryLeft - dt);
         float recovered = 1f - RecoveryLeft / _settings.RecoveryTime;
         Ship.SpeedScale = _settings.HitSlowdown + (1f - _settings.HitSlowdown) * recovered;
@@ -199,6 +233,13 @@ public sealed class GameSession
                 ? MathF.Abs(pos.X - o.X)
                 : TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, o.X);
             if (lateral >= o.Width / 2f + _settings.ShipHalfWidth || Ship.HeightAbove(o.Surface) >= o.Height) continue;
+
+            // Unstoppable: smash straight through and score it, with no shield lost.
+            if (RamLeft > 0f)
+            {
+                Break(o, Points(o), SessionEvent.Rammed);
+                continue;
+            }
             if (RecoveryLeft > 0f) continue;
 
             // Whatever the ship hits breaks apart, so it doesn't fly on through it.
@@ -260,6 +301,10 @@ public sealed class GameSession
                 RingCharges += _settings.RingChargesPerPickup;
                 _events.Add(SessionEvent.RingGunCharged);
                 break;
+            case PickupKind.Unstoppable:
+                RamLeft = _settings.RamTime;
+                _events.Add(SessionEvent.UnstoppableStarted);
+                break;
         }
     }
 
@@ -316,9 +361,13 @@ public sealed class GameSession
     {
         if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
         else if (o.Hits <= 0) _events.Add(SessionEvent.ShotBlocked);
-        else if (++o.HitsTaken >= o.Hits) Break(o, BreakPoints, SessionEvent.BlockDestroyed);
+        else if (++o.HitsTaken >= o.Hits) Break(o, Points(o), SessionEvent.BlockDestroyed);
         else _events.Add(SessionEvent.BlockDamaged);
     }
+
+    // Targets pay a flat rate; a block pays by how much shooting it takes to break.
+    private static int Points(Obstacle o) =>
+        o.Kind == ObstacleKind.Target ? TargetPoints : BreakPoints * Math.Max(1, o.Hits);
 
     private void Break(Obstacle o, int points, SessionEvent e)
     {
@@ -347,7 +396,7 @@ public sealed class GameSession
                 if (!ShapeAt(o.S, o.Branch).IsClosed && MathF.Abs(o.X) > _settings.RingReach) continue;
 
                 if (o.Kind == ObstacleKind.Target) Break(o, TargetPoints, SessionEvent.TargetDestroyed);
-                else if (o.Hits > 0) Break(o, BreakPoints, SessionEvent.BlockDestroyed);
+                else if (o.Hits > 0) Break(o, Points(o), SessionEvent.BlockDestroyed);
             }
 
             if (to >= ring.End || to >= Track.Length) _rings.RemoveAt(i);

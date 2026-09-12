@@ -111,6 +111,62 @@ public class PowerUpTests
     }
 
     [Fact]
+    public void Unstoppable_SmashesThroughBlocksAndScoresThem()
+    {
+        var solid = Block(60);
+        var tough = new Obstacle { Kind = ObstacleKind.Block, S = 120, Hits = 3 };
+        var game = Session([solid, tough], [Power(PickupKind.Unstoppable, 10)]);
+
+        var events = Run(game, 4f);
+
+        Assert.Equal(3, game.Shields);
+        Assert.True(solid.Destroyed);
+        Assert.True(tough.Destroyed);
+        Assert.Equal(2, events.Count(e => e == SessionEvent.Rammed));
+        // 50 for the plain block, 150 for the three-hit one, 25 for the pickup.
+        Assert.True(game.Score >= 225, $"score was {game.Score}");
+    }
+
+    [Fact]
+    public void Unstoppable_WearsOff()
+    {
+        var game = Session([Block(40), Block(200)], [Power(PickupKind.Unstoppable, 10)],
+            Settings with { RamTime = 1f });
+
+        Run(game, 6f);
+
+        Assert.Equal(2, game.Shields);   // the first is smashed, the second is a crash
+    }
+
+    [Fact]
+    public void ShootingBlocks_PaysByHowToughTheyAre()
+    {
+        var game = Session([new Obstacle { Kind = ObstacleKind.Block, S = 150, Hits = 3 }], []);
+
+        Run(game, 1.5f, new ShipInput(Fire: true));
+
+        Assert.True(game.Score >= 3 * GameSession.BreakPoints, $"score was {game.Score}");
+    }
+
+    [Fact]
+    public void Carry_KeepsShieldsPowerUpsAndScoreBetweenLevels()
+    {
+        var first = Session([], [Power(PickupKind.RingGun, 20), Power(PickupKind.ShieldSlot, 40)]);
+        Run(first, 2f);
+        var carried = first.Carry;
+
+        var track = new Track(Circle, startSpeed: 50f);
+        track.Append(new TrackPiece(2000f, Circle));
+        var second = new GameSession(track, [], Settings, new TrackPosition(0, Surface.Floor, 0f), null, carried);
+
+        Assert.Equal(carried.MaxShields, second.MaxShields);
+        Assert.Equal(4, second.MaxShields);
+        Assert.Equal(carried.RingCharges, second.RingCharges);
+        Assert.Equal(3, second.RingCharges);
+        Assert.True(second.Score >= carried.Score);
+    }
+
+    [Fact]
     public void Pickup_OnTheOtherSurfaceOfOpenPlanes_IsMissed()
     {
         var planes = Circle with { Opening = 1f };
@@ -159,11 +215,11 @@ public class PowerUpTests
         Assert.Contains(message, e.Message);
     }
 
-    private static GameSession Session(Obstacle[] obstacles, Pickup[] pickups)
+    private static GameSession Session(Obstacle[] obstacles, Pickup[] pickups, SessionSettings? settings = null)
     {
         var track = new Track(Circle, startSpeed: 50f);
         track.Append(new TrackPiece(2000f, Circle));
-        return new GameSession(track, obstacles, Settings, new TrackPosition(0, Surface.Floor, 0f), pickups);
+        return new GameSession(track, obstacles, settings ?? Settings, new TrackPosition(0, Surface.Floor, 0f), pickups);
     }
 
     private static Obstacle Block(double s) => new() { Kind = ObstacleKind.Block, S = s };

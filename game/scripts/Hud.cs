@@ -33,7 +33,8 @@ public partial class Hud : CanvasLayer
         _time = AddLabel(30, Control.LayoutPreset.TopLeft, HorizontalAlignment.Left);
         _speed = AddLabel(24, Control.LayoutPreset.BottomRight, HorizontalAlignment.Right);
         _title = AddLabel(56, Control.LayoutPreset.CenterTop, HorizontalAlignment.Center);
-        _message = AddLabel(44, Control.LayoutPreset.Center, HorizontalAlignment.Center);
+        // Small enough that an end-of-run list of splits fits.
+        _message = AddLabel(34, Control.LayoutPreset.Center, HorizontalAlignment.Center);
 
         _shieldBar = new HBoxContainer();
         _shieldBar.AddThemeConstantOverride("separation", 10);
@@ -72,11 +73,14 @@ public partial class Hud : CanvasLayer
         }
     }
 
-    public void Update(GameSession session, float dt)
+    /// <param name="runTime">Time from earlier levels of this run; the level's own time is added.</param>
+    public void Update(GameSession session, float dt, float runTime)
     {
         _score.Text = $"SCORE  {session.Score}";
-        _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}";
-        var status = new List<string>(3);
+        _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}" +
+            $"\nRUN   {runTime + session.Elapsed:0.00}";
+        var status = new List<string>(4);
+        if (session.RamLeft > 0f) status.Add($"UNSTOPPABLE  {session.RamLeft:0.0}s");
         if (session.RapidFireLeft > 0f) status.Add($"RAPID FIRE  {session.RapidFireLeft:0.0}s");
         if (session.RingCharges > 0) status.Add($"RING GUN  x{session.RingCharges}");
         status.Add($"{session.Ship.ForwardSpeed:0} u/s");

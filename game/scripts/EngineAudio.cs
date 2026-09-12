@@ -69,11 +69,16 @@ public partial class EngineAudio : AudioStreamPlayer
                 _voices.Add(Voice.Tone(1200f, 150f, 0.5f, 0.2f));
                 _voices.Add(Voice.Noise(0.3f, 0.15f));
                 break;
+            case SessionEvent.Rammed:
+                _voices.Add(Voice.Noise(0.22f, 0.35f));
+                _voices.Add(Voice.Tone(140f, 70f, 0.2f, 0.3f, square: true));
+                break;
             case SessionEvent.ShieldRestored:
             case SessionEvent.ShieldsRefilled:
             case SessionEvent.ShieldSlotAdded:
             case SessionEvent.RapidFireStarted:
             case SessionEvent.RingGunCharged:
+            case SessionEvent.UnstoppableStarted:
                 // A quick rising arpeggio for any power-up.
                 foreach (float f in new[] { 660f, 880f, 1320f }) _voices.Add(Voice.Tone(f, f * 1.05f, 0.18f, 0.12f));
                 break;

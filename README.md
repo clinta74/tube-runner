@@ -47,6 +47,19 @@ This writes `builds/windows/TubeRunner.exe` plus its `data_TubeRunner_windows_x8
 The export preset is `game/export_presets.cfg`. It includes `levels/*.json`, which Godot wouldn't
 package otherwise, so new level files are picked up automatically.
 
+### Releasing from GitHub
+
+`.github/workflows/release.yml` does the same build on a Windows runner and attaches the zip to a
+GitHub release, so players can download it from the repo's Releases page:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+It installs Godot and its export templates itself, so nothing needs setting up on the runner. Running
+it from the Actions tab (workflow_dispatch) builds the zip as a workflow artifact without publishing a
+release. `.github/workflows/tests.yml` runs the tests on every push and pull request.
+
 ## Requirements
 - [Godot 4.7.x **.NET** edition](https://godotengine.org/download/windows/)
 - .NET 8 SDK or newer

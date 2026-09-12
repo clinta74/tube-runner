@@ -46,7 +46,7 @@ public sealed class ShipSim
     public float JumpProgress { get; private set; }
 
     /// <summary>The player's speed setting, as a multiple of the track's speed. Holds until changed.</summary>
-    public float Throttle { get; private set; } = 1f;
+    public float Throttle { get; set; } = 1f;
 
     /// <summary>Multiplier on forward speed, e.g. slowed after a hit.</summary>
     public float SpeedScale { get; set; } = 1f;

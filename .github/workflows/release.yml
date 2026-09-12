@@ -1,0 +1,60 @@
+# Builds the standalone Windows game and attaches the zip to a GitHub release.
+# Tag a commit to publish one:  git tag v0.1.0 && git push origin v0.1.0
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Godot and its export templates
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:GODOT_VERSION
+          $base = "https://github.com/godotengine/godot-builds/releases/download/$version"
+          $ProgressPreference = 'SilentlyContinue'
+
+          Invoke-WebRequest "$base/Godot_v${version}_mono_win64.zip" -OutFile godot.zip
+          Expand-Archive godot.zip -DestinationPath godot
+
+          # .tpz is a zip; Expand-Archive insists on the extension.
+          Invoke-WebRequest "$base/Godot_v${version}_mono_export_templates.tpz" -OutFile templates.zip
+          Expand-Archive templates.zip -DestinationPath tpz
+          $target = Join-Path $env:APPDATA "Godot\export_templates\$($version.Replace('-', '.')).mono"
+          New-Item -ItemType Directory -Force $target | Out-Null
+          Move-Item tpz/templates/* $target
+
+      - name: Build and export
+        shell: pwsh
+        run: |
+          $version = $env:GODOT_VERSION
+          $env:GODOT = (Resolve-Path "godot/Godot_v${version}_mono_win64/Godot_v${version}_mono_win64_console.exe").Path
+          ./export.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TubeRunner-windows
+          path: builds/TubeRunner-windows.zip
+
+      - name: Attach the zip to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: builds/TubeRunner-windows.zip
+          generate_release_notes: true

@@ -164,8 +164,9 @@ public static class LevelLoader
                 "shield-slot" => PickupKind.ShieldSlot,
                 "rapid-fire" => PickupKind.RapidFire,
                 "ring-gun" => PickupKind.RingGun,
+                "unstoppable" => PickupKind.Unstoppable,
                 _ => throw new LevelFormatException(
-                    $"{where}: unknown kind '{p.Kind}' (use shield, full-shields, shield-slot, rapid-fire, or ring-gun)."),
+                    $"{where}: unknown kind '{p.Kind}' (use shield, full-shields, shield-slot, rapid-fire, ring-gun, or unstoppable)."),
             };
 
             foreach (var (s, branch, surface, x) in Place(p, track, offset, where))

@@ -39,6 +39,16 @@ public partial class TrackRenderer : Node3D
     [Export] public float ViewBehind { get; set; } = 30f;
     [Export] public float ViewAhead { get; set; } = 450f;
 
+    /// <summary>Frees the current level's meshes, ready for <see cref="Init"/> with the next one.</summary>
+    public void Reset()
+    {
+        foreach (var placed in _chunks.Values) placed.Node.QueueFree();
+        foreach (var placed in _caps.Values) placed.Node.QueueFree();
+        _chunks.Clear();
+        _caps.Clear();
+        _capSpecs.Clear();
+    }
+
     public void Init(Track track, Material material, float chunkLength, Theme theme)
     {
         _track = track;

@@ -120,7 +120,9 @@
         { "at": 130, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 50 }
       ]
     },
-    { "length": 100, "section": "tube" },                           // 4020 - 4120
+    { "length": 100, "section": "tube", "pickups": [                // 4020 - 4120
+      { "at": 50, "kind": "unstoppable" }
+    ] },
 
     // Twisting finish, at full speed: the bends give you almost no warning.
     { "length": 150, "turn": -80, "obstacles": [                    // 4120 - 4270

@@ -16,6 +16,9 @@ public enum PickupKind
 
     /// <summary>Charges the ring gun, whose shots sweep the whole surface of the tube.</summary>
     RingGun,
+
+    /// <summary>Smash through anything for a while, without losing a shield.</summary>
+    Unstoppable,
 }
 
 /// <summary>A power-up set into a track surface. Flying over it collects it.</summary>
