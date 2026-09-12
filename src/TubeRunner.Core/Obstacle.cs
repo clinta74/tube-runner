@@ -91,6 +91,30 @@ public sealed class Obstacle
     public bool IsSolidAt(float time) =>
         Period <= 0f || (time / Period + Phase) % 1f < 0.5f;
 
+    /// <summary>
+    /// How far a gate stands out of the wall at <paramref name="time"/>, from 0 fully withdrawn to 1
+    /// fully out. Only the view uses this: <see cref="IsSolidAt"/> stays the truth for collision, so
+    /// a gate closing catches the ship a moment before it looks shut, which is the right way round.
+    /// Popping in and out gives the eye nothing to track; sliding shows which way the cycle is going.
+    /// </summary>
+    public float ExtensionAt(float time)
+    {
+        if (Period <= 0f) return 1f;
+
+        // Fraction of the slide in cycle time, either side of each boundary.
+        const float half = 0.09f;
+        float u = (time / Period + Phase) % 1f;
+        if (u < 0f) u += 1f;
+
+        float linear =
+            u < half ? 0.5f + 0.5f * (u / half)                     // coming out, through the boundary at 0
+            : u < 0.5f - half ? 1f                                  // all the way out
+            : u < 0.5f + half ? 0.5f - 0.5f * ((u - 0.5f) / half)   // going back in
+            : u < 1f - half ? 0f                                    // all the way in
+            : 0.5f * (1f - (1f - u) / half);                        // starting back out
+        return linear * linear * (3f - 2f * linear);
+    }
+
     /// <summary>Where it sits across the surface at <paramref name="time"/>, once any sweep is applied.</summary>
     public float XAt(float time) =>
         Sweep == 0f ? X : X + Sweep * MathF.Sin(2f * MathF.PI * time / (SweepTime <= 0f ? 2f : SweepTime));

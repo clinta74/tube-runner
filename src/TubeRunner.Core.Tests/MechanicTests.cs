@@ -34,6 +34,29 @@ public class MechanicTests
     }
 
     [Fact]
+    public void Gate_SlidesRatherThanPopping()
+    {
+        var gate = new Obstacle { Kind = ObstacleKind.Block, S = 400, Period = 4f };
+
+        // Fully out through the middle of the solid half, fully in through the middle of the open
+        // half, and part way at each boundary - so there is something for the eye to follow.
+        Assert.Equal(1f, gate.ExtensionAt(1f), precision: 2);
+        Assert.Equal(0f, gate.ExtensionAt(3f), precision: 2);
+        Assert.Equal(0.5f, gate.ExtensionAt(2f), precision: 2);
+        Assert.Equal(0.5f, gate.ExtensionAt(0f), precision: 2);
+
+        // It leaves and returns smoothly, never jumping.
+        Assert.InRange(gate.ExtensionAt(2.2f), 0.01f, 0.5f);
+        Assert.InRange(gate.ExtensionAt(1.8f), 0.5f, 0.99f);
+    }
+
+    [Fact]
+    public void Obstacle_WithoutAPeriod_StandsFullyOut()
+    {
+        Assert.Equal(1f, new Obstacle { Kind = ObstacleKind.Block, S = 400 }.ExtensionAt(7.3f));
+    }
+
+    [Fact]
     public void Obstacle_WithoutAPeriod_IsAlwaysSolid()
     {
         var block = new Obstacle { Kind = ObstacleKind.Block, S = 400 };

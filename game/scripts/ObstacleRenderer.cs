@@ -34,6 +34,7 @@ public partial class ObstacleRenderer : Node3D
     private const int SignsInRing = 6;
 
     private readonly Dictionary<Obstacle, View> _views = new();
+    private readonly Dictionary<Obstacle, View> _socketViews = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
     private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
@@ -43,6 +44,7 @@ public partial class ObstacleRenderer : Node3D
     private readonly ProfileShapeCache _shapes = new();
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
+    private Func<Obstacle, View> _createSocket = null!;
     private Func<Pickup, View> _createPickup = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
     private StandardMaterial3D _plateMaterial = null!;
@@ -51,6 +53,8 @@ public partial class ObstacleRenderer : Node3D
     private Mesh _wellIcon = null!;
     private StandardMaterial3D _blockMaterial = null!;
     private StandardMaterial3D _hazardMaterial = null!;
+    private StandardMaterial3D _gateMaterial = null!;
+    private StandardMaterial3D _socketMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
     private StandardMaterial3D _ringMaterial = null!;
@@ -87,6 +91,7 @@ public partial class ObstacleRenderer : Node3D
     {
         _session = session;
         _createObstacle = CreateObstacleView;
+        _createSocket = CreateSocketView;
         _createPickup = CreatePickupView;
         _createSign = CreateSignView;
         _glow = theme.Glow;
@@ -96,6 +101,16 @@ public partial class ObstacleRenderer : Node3D
         // Hazard stripes for plates. Nothing else in the game is this colour, because nothing else
         // has to be read as "no way through this one" from as far off as the player can see it.
         _hazardMaterial = Glowing(new Color(1f, 0.42f, 0.05f), 1.2f + theme.Glow);
+        // Gates take the level's own seam colour rather than the block white, which is the brightest
+        // thing on screen and painful to stare at for a stretch built around watching one thing.
+        _gateMaterial = Glowing(theme.SeamLight.ToColor().Darkened(0.25f), 0.6f + theme.Glow);
+        // The socket a gate withdraws into, left on the wall so its position is readable even when
+        // nothing is standing there. Dark, unlit, and flush: a mark, not an obstacle.
+        _socketMaterial = new StandardMaterial3D
+        {
+            AlbedoColor = theme.SeamDark.ToColor(),
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        };
         _targetMaterial = Glowing(theme.Target.ToColor(), 1.5f + theme.Glow);
         _shotMaterial = Glowing(theme.SeamLight.ToColor(), 4f);
         _ringMaterial = Glowing(new Color(1f, 0.3f, 1f), 4f);
@@ -127,12 +142,15 @@ public partial class ObstacleRenderer : Node3D
         _time += dt;
         double s = _session.Ship.Position.S;
 
-        // A gate is only shown while it is solid, so it disappears as it opens. The burst flag stays
-        // tied to being destroyed alone - otherwise every cycle would set off a fake explosion.
+        // A gate keeps its view the whole time and slides into the wall instead, so the eye can
+        // follow it. The burst flag stays tied to being destroyed alone - otherwise every cycle
+        // would set off a fake explosion. Each gate also leaves a socket on the wall, so where one
+        // lives can be read on the approach even while it is withdrawn.
         foreach (var o in _session.Obstacles)
         {
-            bool there = !o.Destroyed && o.IsSolidAt(_session.Elapsed) && InView(o.S, s);
+            bool there = !o.Destroyed && InView(o.S, s);
             Sync(_views, o, there, o.Destroyed, _createObstacle, origin);
+            if (o.Period > 0f) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
         }
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
         foreach (var w in _session.Warps)
@@ -195,11 +213,15 @@ public partial class ObstacleRenderer : Node3D
         {
             ObstacleKind.Target => _targetMaterial,
             ObstacleKind.Plate => _hazardMaterial,
-            _ => o.Hits > 0 ? Solid(_breakable) : _blockMaterial,
+            _ => o.Period > 0f ? _gateMaterial : o.Hits > 0 ? Solid(_breakable) : _blockMaterial,
         };
         var node = new MeshInstance3D { Mesh = mesh, MaterialOverride = material };
         AddChild(node);
-        return new View(node, center, forward, up, Spins: target, material) { Obstacle = o };
+        return new View(node, center, forward, up, Spins: target, material)
+        {
+            Obstacle = o,
+            Slides = o.Period > 0f,
+        };
     }
 
     // Placeholder power-up: a glowing pad set into the surface with a floating label.
@@ -348,8 +370,30 @@ public partial class ObstacleRenderer : Node3D
             ? Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f).Center
             : view.Center;
         var pos = center.RelativeTo(origin).ToGodot();
+
+        // A gate withdraws into its socket rather than blinking out, so the cycle can be watched
+        // rather than counted. The socket itself never moves.
+        if (view.Slides && view.Obstacle is { } gate)
+        {
+            pos -= view.Up * (1f - gate.ExtensionAt(_session.Elapsed)) * (gate.Height + 0.4f);
+        }
+
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
         if (view.Spins) view.Node.RotateObjectLocal(Vector3.Up, _time * 2.5f);
+    }
+
+    // The mark a gate leaves on the wall: flush, dark, and a little wider than the gate itself, so
+    // the spot reads from a distance whether or not anything is standing in it.
+    private View CreateSocketView(Obstacle o)
+    {
+        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), 0.05f);
+        var node = new MeshInstance3D
+        {
+            Mesh = new BoxMesh { Size = new Vector3(o.Width * 1.12f, 0.1f, o.Length * 1.8f) },
+            MaterialOverride = _socketMaterial,
+        };
+        AddChild(node);
+        return new View(node, center, forward, up, Spins: false, _socketMaterial) { Obstacle = o };
     }
 
     private void UpdateShots(Vector3d origin)
@@ -473,6 +517,9 @@ public partial class ObstacleRenderer : Node3D
 
         /// <summary>The obstacle this shows, when it is one that moves; null for anything fixed.</summary>
         public Obstacle? Obstacle { get; init; }
+
+        /// <summary>Whether this withdraws into the wall on a gate's cycle. Sockets never do.</summary>
+        public bool Slides { get; init; }
     }
 
     private sealed record Burst(CpuParticles3D Node, Vector3d Center, float Expires);
