@@ -103,7 +103,8 @@ public class PowerUpTests
         var block = new Obstacle { Kind = ObstacleKind.Block, S = 150, Hits = 3 };
         var game = Session([block], []);
 
-        var events = Run(game, 1f, new ShipInput(Fire: true));
+        // Long enough for three shots to cross the gap at the base fire rate.
+        var events = Run(game, 1.5f, new ShipInput(Fire: true));
 
         Assert.True(block.Destroyed);
         Assert.Equal(2, events.Count(e => e == SessionEvent.BlockDamaged));

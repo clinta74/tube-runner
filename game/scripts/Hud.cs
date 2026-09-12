@@ -48,6 +48,8 @@ public partial class Hud : CanvasLayer
     {
         _accent = accent;
         _best = best;
+        // A level starting clears whatever screen was up: the retry prompt, or the run summary.
+        _message.Text = "";
         _title.Text = levelName.ToUpperInvariant();
         _titleLeft = TitleSeconds;
         BuildPips(shields);

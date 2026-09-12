@@ -69,7 +69,7 @@ public sealed record SessionSettings(
     float HitSlowdown = 0.45f,
     float ShotSpeed = 220f,
     float ShotRange = 300f,
-    float FireInterval = 0.15f,
+    float FireInterval = 0.32f,
     float RapidFireTime = 8f,
     float RapidFireFactor = 0.35f,
     int RingChargesPerPickup = 3,
