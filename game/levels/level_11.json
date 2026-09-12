@@ -26,7 +26,10 @@
   "sections": {
     "tube": { "radius": 6 },
     "flat": { "radius": 6, "opening": 1 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
@@ -80,6 +83,25 @@
     { "length": 200, "section": "oval", "pickups": [                // 1940 - 2140
       { "at": 100, "kind": "shield", "angle": 180 }
     ] },
+
+    // A fork, so branching does not go quiet for the whole of the back half. The quick way round is
+    // the tight one and carries the gates; the long way is roomy and clear. Same bet as ever - time
+    // against shields - with the block's own mechanic priced into the short road.
+    { "length": 140, "section": "chamber", "speed": 130 },          // 2140 - 2280
+    { "length": 420, "turn": 80, "split": {                         // 2280 - 2700
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [140, -30, 0], [280, -30, 0], [420, -8, 0]] },
+          { "offsets": [[0, 8, 0], [140, 30, 0], [280, 30, 0], [420, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        { "at": 210, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 130, "branch": 1, "period": 2.4, "angle": 0, "width": 16, "height": 3 },
+        { "at": 290, "branch": 1, "period": 2.4, "phase": 0.5, "angle": 180, "width": 16, "height": 3 }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 2700 - 2840
 
     // The hard pairing: flat again, faster, gates on both surfaces on a tighter cycle. A jump takes
     // 0.55 s, so at this speed the crossing itself has to be timed into the gap.

@@ -103,6 +103,14 @@ ignore speed or make the player *spend* it.
 engine subsystems that do not exist — a roll channel through frame propagation, and chunk rebuilding
 for animated geometry — and neither is worth holding seventeen levels for.
 
+**Keep the old mechanics running underneath the new ones.** The first cut of 10–26 scheduled a new
+idea into every block and quietly let forks and wells lapse: they appeared at 7–9, vanished for
+twelve levels, and came back at 22. That is long enough for a player to forget the game has
+branching at all, and it dumped the whole reintroduction on block D, making level 22 far denser than
+the other block openers. A fork now lands every third level from 11, and a well every third from 12,
+offset so they alternate rather than stack. **Nothing already taught should go more than three or
+four levels unused** — a mechanic the game stops using reads as a mechanic the game abandoned.
+
 ## A run, not a level
 
 Levels play back to back with no pause. Shields, shield slots, rapid fire, ring charges, unstoppable
@@ -207,8 +215,8 @@ line or down the meaner branch, so they cost something to take.
 | Unstoppable | 6, before the breakable rows | 7 at the box, 9 before the twisting finish |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
-| Forks | 7 | 8, three junctions where the short way is the tight one |
-| Warp zones | 8, in the run for home | 23, sitting on the tempting line |
+| Forks | 7 | 8, three junctions where the short way is the tight one; then every third level from 11 |
+| Warp zones | 8, in the run for home | every third level from 12, and all through block D |
 | Timed gates | 10, a single gate on a straight | 11, gates in rhythm with jumps |
 | Ordered target groups | 12, one group at a time | 13, groups mixed into a dense run |
 | Speed-limit zones | 14, one limit after a straight | 15, limits where the track invites speed |

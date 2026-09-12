@@ -37,7 +37,9 @@
     { "length": 180 },                                              //    0 -  180
 
     // No free look, no refill. Keys, doors and plates from the first bend.
-    { "length": 420, "turn": 40, "obstacles": [                     //  180 -  600
+    { "length": 420, "turn": 40, "warps": [                         //  180 -  600
+      { "at": 260, "angle": -90 }
+    ], "obstacles": [
       { "at": 90,  "kind": "target", "angle": 90, "group": "k1" },
       { "at": 200, "kind": "plate", "angle": 0, "width": 12, "height": 3 },
       { "at": 350, "lockedBy": "k1", "angle": 180, "width": 24, "height": 3 }

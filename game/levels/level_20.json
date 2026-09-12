@@ -28,7 +28,10 @@
     "tube": { "radius": 6 },
     "wide": { "radius": 7.5 },
     "oval": { "halfWidth": 9, "halfHeight": 4.5 },
-    "box":  { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 }
+    "box":  { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
@@ -83,6 +86,25 @@
     { "length": 240, "section": "wide", "pickups": [                // 2700 - 2940
       { "at": 120, "kind": "ring-gun" }
     ] },
+
+    // A fork whose short road is locked: the key stands in the chamber before it, so the branch has
+    // to be paid for with a shot taken before the fork is even reached.
+    { "length": 160, "section": "chamber", "speed": 160, "obstacles": [   // 2940 - 3100
+      { "at": 70, "kind": "target", "angle": 90, "group": "kf" }
+    ] },
+    { "length": 440, "turn": 85, "split": {                         // 3100 - 3540
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        { "at": 210, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 120, "branch": 1, "lockedBy": "kf", "angle": 0, "width": 20, "height": 3 }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 3540 - 3680
 
     // A key that is part of an ordered group: the ring gun cannot touch it, and it will not break
     // until its turn. Two mechanics stacked, and the door behind them does not care.

@@ -96,8 +96,12 @@
     ] },
 
     // Plates narrowing the only line, with a shield past them worth the squeeze.
+    // A well among the plates. Both are things no tool answers, so the whole stretch is steering -
+    // but one of them costs a shield and the other costs the clock.
     { "length": 380, "turn": -45, "pickups": [                      // 2720 - 3100
       { "at": 330, "kind": "shield", "angle": 0 }
+    ], "warps": [
+      { "at": 150, "angle": -90 }
     ], "obstacles": [
       { "at": 110, "kind": "plate", "angle": 90,  "width": 13, "height": 3 },
       { "at": 210, "kind": "plate", "angle": -90, "width": 13, "height": 3 },

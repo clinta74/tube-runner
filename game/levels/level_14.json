@@ -30,7 +30,10 @@
     "tube":   { "radius": 6 },
     "narrow": { "radius": 4.5 },
     "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
-    "wide":   { "radius": 7 }
+    "wide":   { "radius": 7 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
@@ -84,6 +87,26 @@
     ], "obstacles": [
       { "at": 190, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
+
+    // A fork where the quick branch is the one under a limit. The short way saves ground and then
+    // makes you give the speed back, which is this level's whole argument in one junction.
+    { "length": 140, "section": "chamber", "speed": 150 },          // 2720 - 2860
+    { "length": 440, "turn": 85, "split": {                         // 2860 - 3300
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "speedLimits": [
+        { "at": 220, "branch": 1, "length": 240, "maxSpeed": 105 }
+      ],
+      "obstacles": [
+        { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 160, "branch": 1, "angle": 0, "width": 7 }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 3300 - 3440
 
     // Two limits back to back with a gap between them. The gap is long enough to be worth speeding
     // through, which is the decision: take the free stretch fast and risk overrunning into the next

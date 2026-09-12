@@ -28,7 +28,10 @@
     "narrow": { "radius": 4.5 },
     "flat":   { "radius": 6, "opening": 1 },
     "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
-    "wide":   { "radius": 7.5 }
+    "wide":   { "radius": 7.5 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
@@ -90,6 +93,26 @@
     ], "obstacles": [
       { "at": 180, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
     ] },
+
+    // The block's test gets a fork too, with a mover down the short road and a well down it as well
+    // - the first time a branch carries one, five levels before Roulette makes a level of the idea.
+    { "length": 140, "section": "chamber", "speed": 160 },          // 2740 - 2880
+    { "length": 440, "turn": -85, "split": {                        // 2880 - 3320
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]], "section": "branch-tight" },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]] }
+        ]
+      },
+      "warps": [
+        { "at": 300, "branch": 0, "angle": -90 }
+      ],
+      "obstacles": [
+        { "at": 150, "branch": 0, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
+        { "at": 220, "branch": 1, "kind": "target", "angle": 180 }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 3320 - 3460
 
     // Fast straight into a blind limited bend, the trap from 14 and 15, with a mover waiting in it.
     { "length": 380, "section": "tube", "speed": 165 },             // 2740 - 3120

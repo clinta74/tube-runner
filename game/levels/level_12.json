@@ -67,7 +67,11 @@
 
     // Two groups at once, interleaved around the tube. Each has its own order, and picking the wrong
     // one to start costs the whole approach.
-    { "length": 420, "section": "tube", "turn": -35, "obstacles": [ // 1360 - 1780
+    // A well on the outer wall of the bend, where the tube curves away and presents it early. The
+    // first one since Crossroads: wells should not go quiet for a dozen levels.
+    { "length": 420, "section": "tube", "turn": -35, "warps": [     // 1360 - 1780
+      { "at": 360, "angle": -90 }
+    ], "obstacles": [
       { "at": 120, "kind": "target", "angle": 0,    "group": "d", "order": 0 },
       { "at": 120, "kind": "target", "angle": 90,   "group": "e", "order": 0 },
       { "at": 240, "kind": "target", "angle": 180,  "group": "d", "order": 1 },

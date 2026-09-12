@@ -78,11 +78,14 @@
 
     // The longest straight in the level, at its highest speed. Then the tightest limit.
     { "length": 460, "section": "tube", "speed": 165 },             // 2400 - 2860
+    // A well inside a limit: held slow, so there is time to see it and no speed to steer with. The
+    // narrow bore is what makes it bite - a mouth takes a third of the wall whatever the tube.
     { "length": 340, "section": "narrow", "turn": 65, "speedLimits": [   // 2860 - 3200
       { "at": 170, "length": 260, "maxSpeed": 95 }
+    ], "warps": [
+      { "at": 240, "angle": 90 }
     ], "obstacles": [
-      { "at": 120, "angle": 180, "width": 7 },
-      { "at": 240, "angle": 0,   "width": 7 }
+      { "at": 120, "angle": 180, "width": 7 }
     ] },
 
     { "length": 240, "section": "tube", "speed": 150, "pickups": [  // 3200 - 3440
