@@ -96,7 +96,13 @@ public partial class ObstacleRenderer : Node3D
     private Mesh _padMesh = null!;
     private float _time;
 
+    /// <summary>How far ahead views are made in the solid style, where the fade hides the rest.</summary>
     [Export] public float ViewAhead { get; set; } = 450f;
+
+    // What this level actually uses. A wire level sees much further than a solid one, and obstacles
+    // appearing out of nothing well inside a tube the player can already see reads worse than the
+    // popping it replaced.
+    private float _viewAhead;
     [Export] public float ViewBehind { get; set; } = 20f;
     [Export] public float RideHeight { get; set; } = 0.6f;
 
@@ -173,6 +179,8 @@ public partial class ObstacleRenderer : Node3D
         // has two pairs interleaved, knowing which key opens which is the entire puzzle.
         _themeGlow = theme.Glow;
         _targetColor = theme.Target.ToColor();
+        // Matches the track's own reach, so obstacles and the tube they sit in appear together.
+        _viewAhead = theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead;
         _keyGroups.Clear();
         _keyMaterials.Clear();
         _doorMaterials.Clear();
@@ -275,7 +283,7 @@ public partial class ObstacleRenderer : Node3D
         UpdateBursts(origin);
     }
 
-    private bool InView(double at, double s) => at > s - ViewBehind && at < s + ViewAhead;
+    private bool InView(double at, double s) => at > s - ViewBehind && at < s + _viewAhead;
 
     // Creates, places, or removes the view for one item. Items removed because they were broken or
     // collected burst apart.
