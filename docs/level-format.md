@@ -280,6 +280,13 @@ clear the whole group a member at a time.
 the ship flies into it, whatever its turn. So put an ordered group **off the flight line** — out at an
 `angle`, or wide on an `x` — or the player will clear it by driving through it.
 
+**A key and the door it opens are drawn in the same colour**, so a target that opens something does
+not look like an ordinary target and a locked door does not look like an ordinary block. The door
+sits in the same hue but dark, as the shut version of the bright thing that opens it, and bursts
+apart when its last key goes. Colours are handed out in the order the pairs are met and there are
+four of them, so **keep the number of pairs open at once to four or fewer** — beyond that they start
+repeating, and telling which key opens which is the whole puzzle wherever pairs overlap.
+
 **Shots leave at the ship's own position across the surface**, and travel straight down the track.
 There is no aiming, so the player lines a target up by steering onto it. That is what makes an
 ordered group a puzzle worth having: they must steer to each one in turn, in the order you set,

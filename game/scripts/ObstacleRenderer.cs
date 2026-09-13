@@ -61,6 +61,24 @@ public partial class ObstacleRenderer : Node3D
     private StandardMaterial3D _gateMaterial = null!;
     private StandardMaterial3D _jumpOpenMaterial = null!;
     private StandardMaterial3D _jumpCloseMaterial = null!;
+
+    // Hues for key-and-door pairs. Distinct from each other and from the target pink, the hazard
+    // orange and the breakable green, so a key never reads as one of those.
+    private static readonly Color[] KeyColors =
+    {
+        new(0.35f, 0.85f, 1f),    // cyan
+        new(0.75f, 1f, 0.35f),    // lime
+        new(1f, 0.55f, 0.95f),    // orchid
+        new(1f, 0.85f, 0.3f),     // gold
+    };
+
+    // Group name to its place in the level, so colours are handed out in the order the player meets
+    // the pairs. Hashing the name instead would let two pairs on screen at once land on the same
+    // colour by chance, which is exactly the case the colour exists to disambiguate.
+    private readonly Dictionary<string, int> _keyGroups = new();
+    private readonly Dictionary<string, StandardMaterial3D> _keyMaterials = new();
+    private readonly Dictionary<string, StandardMaterial3D> _doorMaterials = new();
+    private float _themeGlow;
     private StandardMaterial3D _socketMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
@@ -137,6 +155,22 @@ public partial class ObstacleRenderer : Node3D
         // mean opposite things, and a mark that only says "something changes here" is half a mark.
         _jumpOpenMaterial = Glowing(new Color(0.45f, 1f, 0.7f), 1.7f + theme.Glow);
         _jumpCloseMaterial = Glowing(new Color(1f, 0.72f, 0.2f), 1.7f + theme.Glow);
+
+        // A key and the door it opens share a colour. Without it a key is just another target and a
+        // door is just another block, which makes the whole mechanic guesswork - and where a stretch
+        // has two pairs interleaved, knowing which key opens which is the entire puzzle.
+        _themeGlow = theme.Glow;
+        _keyGroups.Clear();
+        _keyMaterials.Clear();
+        _doorMaterials.Clear();
+        // Obstacles arrive sorted by distance, so this walks the level in the order it is flown.
+        foreach (var o in session.Obstacles)
+        {
+            if (o.LockedBy is not null && !_keyGroups.ContainsKey(o.LockedBy))
+            {
+                _keyGroups[o.LockedBy] = _keyGroups.Count;
+            }
+        }
         // The socket a gate withdraws into, left on the wall so its position is readable even when
         // nothing is standing there. Dark, unlit, and flush: a mark, not an obstacle.
         _socketMaterial = new StandardMaterial3D
@@ -262,10 +296,15 @@ public partial class ObstacleRenderer : Node3D
         // Breakable blocks get their own material so each can darken as it takes hits. A plate has
         // to be unmistakable: it is the one obstacle nothing answers, so a player who meets one while
         // unstoppable has to read it as a rule rather than a bug.
+        // A target that opens something, and the thing it opens, are drawn in their pair's colour.
+        // Note a target can be in a group without being a key - ordered groups use groups too - so
+        // this asks whether anything is actually locked by it.
         var material = o.Kind switch
         {
+            ObstacleKind.Target when o.Group is not null && _keyGroups.ContainsKey(o.Group) => KeyMaterial(o.Group),
             ObstacleKind.Target => _targetMaterial,
             ObstacleKind.Plate => _hazardMaterial,
+            _ when o.LockedBy is not null => DoorMaterial(o.LockedBy),
             _ => o.Period > 0f ? _gateMaterial : o.Hits > 0 ? Solid(_breakable) : _blockMaterial,
         };
         var node = new MeshInstance3D { Mesh = mesh, MaterialOverride = material };
@@ -454,6 +493,30 @@ public partial class ObstacleRenderer : Node3D
 
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
         if (view.Spins) view.Node.RotateObjectLocal(Vector3.Up, _time * 2.5f);
+    }
+
+    // Colours cycle in the order the pairs are met, so consecutive pairs always differ and a key and
+    // its door always match. With more simultaneous pairs than colours they would start repeating,
+    // which the format guide warns about rather than the renderer trying to be clever.
+    private Color PairColor(string group) =>
+        KeyColors[(_keyGroups.TryGetValue(group, out int index) ? index : 0) % KeyColors.Length];
+
+    private StandardMaterial3D KeyMaterial(string group)
+    {
+        if (_keyMaterials.TryGetValue(group, out var material)) return material;
+        material = Glowing(PairColor(group), 2.1f + _themeGlow);
+        _keyMaterials[group] = material;
+        return material;
+    }
+
+    // The door sits in the same hue but dark and barely lit, so it reads as the shut version of the
+    // bright thing that opens it.
+    private StandardMaterial3D DoorMaterial(string group)
+    {
+        if (_doorMaterials.TryGetValue(group, out var material)) return material;
+        material = Glowing(PairColor(group).Darkened(0.55f), 0.55f + _themeGlow);
+        _doorMaterials[group] = material;
+        return material;
     }
 
     // A line across the plane where the jump window opens or shuts. Wide enough to span the whole
