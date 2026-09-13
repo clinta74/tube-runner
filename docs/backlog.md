@@ -14,7 +14,36 @@ lines and a total. An 11-level run already overflowed its panel and ran off the 
 screen, so a player who finishes the game cannot see what they did — the one thing they earned. The
 other three parts of the finale sequence are features; this is something that does not work.
 
-### 2. Check the engine plume against v0.2.2 before building anything
+### 2. Hits landing after the ship looks past the obstacle
+*New item. Core. Testable once the cause is confirmed.*
+
+Reported on **stationary** obstacles, which rules out the mover and gate timing already fixed. Second
+because it is a fairness problem: a hit the player cannot account for reads as the game cheating,
+and it undermines every other difficulty decision in the game.
+
+Most likely cause, to be measured rather than assumed. Collision is swept over the distance covered
+in a frame, `[before, now]`, and fires if the obstacle lies anywhere in that span — but the ship is
+**drawn at the end of the sweep**. At 190 u/s and 60 fps that span is over three units, and an
+obstacle is two long, so the ship can be drawn a full body length past something at the instant the
+hit registers. The collision is right and the picture is wrong.
+
+If that is it, the fix is presentational, not a hitbox change: report where in the sweep the hit
+happened and show the ship and the burst at the impact point for that frame. Worth confirming before
+touching `ShipHalfLength` (0.8) or obstacle `Length` (2), since shrinking a box that is already
+correct would make contact miss instead.
+
+### 3. Knowing when the jump is available on flat sections
+*New item. HUD, plus possibly wall markings. Small to medium.*
+
+Jumping is gated on the section being fully unrolled (`opening >= 0.5`), and the transition in and
+out is gradual, so there is a stretch where the player cannot tell whether the button will work. A
+HUD icon with up/down arrows, and/or markings on the walls where the jump window opens and closes.
+
+The gate is already a clean boolean in `ShipSim`, so the HUD side is cheap and the state is exact —
+no guessing at thresholds. Wall markings are the more useful half if they can be placed where the
+window actually starts, since that keeps the player's eyes on the tube.
+
+### 4. Check the engine plume against v0.2.2 before building anything
 *From item 5. Costs nothing.*
 
 `ShipView` already stretches the nozzles with speed, pushes the plumes back as they grow, and scales
@@ -22,14 +51,14 @@ nozzle emission with it. Until `v0.2.2` that glow sat under the bloom threshold 
 effectively unlit, so the response may have been there and invisible. Look first: this either closes
 the item or turns it into "more pronounced", which is a different and smaller job.
 
-### 3. Thrust bar to vertical
+### 5. Thrust bar to vertical
 *From item 4. HUD, small.*
 
 Cheap, and it pairs with whatever comes out of (2) — the bar says what the throttle is doing
 numerically, the plume says it physically. Settle placement at the same time: a vertical bar wants a
 screen edge, and the left is taken by the shield pips, the right by the speed readout.
 
-### 4. Primary fire stops autofiring
+### 6. Primary fire stops autofiring
 *From item 9. Core, small change, wide blast radius. Rebalances most of the game.*
 
 Early on purpose. It changes how every level with shooting in it plays, and doing it now means every
@@ -42,31 +71,35 @@ since a deliberate tap every third of a second may now feel sluggish rather than
 Needs a playtest from level 1, not a spot check: sealed rings, breakable walls, ordered groups and
 keys were all authored assuming a held trigger.
 
-### 5. Warp wells: particles and fewer signs
+### 7. Warp wells: bigger, with particles, and fewer signs
 *From item 1. Renderer. Playtest only.*
 
-Do the **particles and the sign count** now; hold the **size** until (6) is decided. This is the
-fourth pass at well visibility and the previous three each helped without finishing it, so another
-size bump is the weakest half of the item. A swirl of dust being pulled in is the part that makes a
-well read as active rather than as a dark patch, and it follows an existing pattern — the renderer
-already drives particle bursts for breaking blocks.
+All three parts together: **bigger**, a **swirl of dust being pulled in**, and the **sign ring down
+to 4**. The size bump is no longer held back — the wireframe look is wanted for its own sake rather
+than as the way wells get taught, so it cannot be relied on to solve this.
 
-### 6. Spike the see-through wireframe look
+Wells are still easy to avoid and barely noticed after three passes, so this one should stop being
+timid about size. Around the tube is capped by the rule that two thirds of the wall stays flyable,
+but **length along the track, depth of the bore, and the size of the open throat are all free**, and
+previous passes only moved the first two by modest amounts. The particles are what make a well read
+as active rather than as a dark patch, and they follow an existing pattern — the renderer already
+drives particle bursts for breaking blocks.
+
+### 8. The see-through wireframe look
 *From item 2. Renderer + shader + theme, plus one authored level. The biggest item here.*
 
-A timeboxed prototype rather than a commitment, because its result decides three other things:
+Wanted as **an effect in its own right**, not only as a teaching aid for wells. That changes what it
+has to be: not a prototype that might be thrown away, but a second render style good enough to build
+levels around, with the wire level being a distinct experience rather than a tutorial.
 
-- it is the most complete answer to "warp wells are hard to see" there is — a well becomes an
-  obvious hole in a visible surface — so it may retire the rest of item 1;
-- it makes item 7 (the map) redundant, or proves it is still wanted;
-- it raises the priority of item 8 (fork funnels), because a flat wall with holes in it would be
-  conspicuous in a level built to be seen through.
+Two existing systems push back and need answering: the distance fade exists to hide what is far
+away, which is the opposite of the point; and the end-of-level wall is hidden by that fade, which is
+what the whole run-out design rests on.
 
-Two existing systems push back and need answering in the spike: the distance fade exists to hide
-what is far away, which is the opposite of the point; and the end-of-level wall is hidden by that
-fade, which is what the whole run-out design rests on.
+It still raises the priority of (10), fork funnels — a flat wall with holes in it would be
+conspicuous in a level built to be seen through.
 
-### 7. A level map on the HUD
+### 9. A level map on the HUD
 *From item 3. HUD + a testable projection in Core.*
 
 Deferred behind (6) deliberately: same goal, and if seeing through the tube works, an abstraction of
@@ -75,7 +108,7 @@ u/s anything the player looks away from the tube to read costs them what it was 
 choice at a fork is the one decision made in advance and currently made blind, so a marker that
 lights up before a split may beat a map that is always there.
 
-### 8. Fork and merge funnels
+### 10. Fork and merge funnels
 *From item 7. Renderer. User marked it lower priority.*
 
 Its priority depends on (6). The abruptness is structural: a fork is a flat disc across the chamber
@@ -83,7 +116,7 @@ with the branch openings cut out by a shader, so the player flies at a wall with
 into diverging tubes. The fix is the technique warp wells already use — displace the vertices into a
 throat instead of cutting a hole.
 
-### 9. A better ship model
+### 11. A better ship model
 *From item 6. Renderer or asset work.*
 
 Late because it is the item most likely to be invisible in play. There is no ambient light, only a
@@ -94,7 +127,7 @@ Settle first whether the complaint is *detail* or the ship reading as a cheap sh
 latter, silhouette and motion buy more than geometry, and the cheap route gets most of it. A paused
 screenshot up close should decide it.
 
-### 10. The rest of the finale: autopilot, camera, victory tube
+### 12. The rest of the finale: autopilot, camera, victory tube
 *From item 8. The three parts that are not the win screen.*
 
 Last because it is the largest and the least load-bearing. The looping item-free tube is cheap and
