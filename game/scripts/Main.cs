@@ -80,6 +80,13 @@ public partial class Main : Node3D
     private const float OutroExtend = 2000f;
 
     /// <summary>
+    /// Where the victory lap stops growing and starts over. The track holds a frame every unit, so
+    /// an endless lap is an endless list: about 190 KB a minute at the speed it cruises. This caps
+    /// it near half an hour, which is far longer than anyone reads a results screen.
+    /// </summary>
+    private const double OutroMaxLength = 100_000.0;
+
+    /// <summary>
     /// How far into the victory track the ship starts. The camera looks back at it from ahead, so it
     /// needs real track behind it - starting near the beginning put the edge of the world in shot.
     /// </summary>
@@ -565,12 +572,15 @@ public partial class Main : Node3D
         // matches. Chunks behind are already freed as the ship goes, so this only ever costs the
         // track's own frames.
         var track = _level.Track;
-        if (track.Length - _session.Ship.Position.S < OutroExtend)
+        if (track.Length - _session.Ship.Position.S < OutroExtend && track.Length < OutroMaxLength)
         {
             track.Append(new TrackPiece(OutroExtend, track.SectionAt(track.Length)));
         }
 
-        // Only if extending ever failed to keep up. It should not.
+        // Growing for ever is not free - the track keeps a frame every unit - so past a point it
+        // stops extending, the lap runs out, and this loads it fresh. That costs one seam in the
+        // wall pattern somewhere around half an hour in, against memory that would otherwise climb
+        // for as long as the screen is left up.
         if (_session.State != SessionState.Playing) LoadVictoryLap();
     }
 
