@@ -43,7 +43,14 @@ public partial class TrackRenderer : Node3D
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
+
+    /// <summary>How far ahead chunks are built in the solid style, where the fade hides the rest.</summary>
     [Export] public float ViewAhead { get; set; } = 450f;
+
+    // How far ahead this level actually builds. A wireframe level sees much further than a solid one
+    // - that is the point of it - and there is no sense fading lines out over a distance the mesh
+    // never reaches, which is what happened: the tube simply stopped, well inside the fade.
+    private float _viewAhead;
 
     /// <summary>Frees the current level's meshes, ready for <see cref="Init"/> with the next one.</summary>
     public void Reset()
@@ -68,6 +75,9 @@ public partial class TrackRenderer : Node3D
         _track = track;
         _material = material;
         _chunkLength = chunkLength;
+        // Build out to where the style stops showing anything: the solid fade reaches far_color at
+        // FadeEnd, while the wire style only dims to a quarter by twice that.
+        _viewAhead = theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead;
 
         // Each mouth is measured once into distance along the track and distance around the tube,
         // so the cut works the same on either surface and across the seam between them.
@@ -126,7 +136,7 @@ public partial class TrackRenderer : Node3D
     /// </summary>
     public void UpdateView(double s, Vector3d origin)
     {
-        double from = s - ViewBehind, to = s + ViewAhead;
+        double from = s - ViewBehind, to = s + _viewAhead;
         long lastInTrack = (long)Math.Ceiling(_track.Length / _chunkLength) - 1;
         long first = (long)Math.Floor(from / _chunkLength);
         long last = Math.Min((long)Math.Floor(to / _chunkLength), lastInTrack);
