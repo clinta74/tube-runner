@@ -339,10 +339,15 @@ bends down into a throat that opens through it. Fly into one and the ship falls 
 before being thrown back up the track. It costs **time, never a shield**, and a well stays armed —
 fly into the same one again and it takes you again.
 
-A ring of six warning signs is placed automatically 75 units back up the track: a yellow triangular
-plate with a dark border, carrying a black disc, held off the wall on a post, and pulsing. Six is
-enough that one faces the player whichever way round the tube they are flying. Nothing needs
-declaring for them.
+Dust is drawn down into every well: spawned in a shell around the mouth, pulled inwards and given a
+twist on the way, so it spirals in. This is what says the thing is live. Three passes at making
+wells bigger never quite finished the job, and the reason was that a well is a hole in a dark wall
+that holds perfectly still — nothing about it moved.
+
+A ring of four warning signs is placed automatically 75 units back up the track: a yellow triangular
+plate with a dark border, carrying a black disc, held off the wall on a post, and pulsing. Four is
+enough that one faces the player whichever way round the tube they are flying, now that the well
+does some of its own warning. Nothing needs declaring for them.
 
 Every part of that is there to stop a sign reading as an obstacle, which is worse than no sign at
 all — it gets dodged rather than heeded. Blocks sit flat on the wall and are solid, so the **post and
@@ -353,7 +358,7 @@ the gap under it** are most of what separates them at a glance, and **nothing el
 | `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
 | `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
 | `width` | `14` | Opening across the surface. A little over a third of the way around a radius-6 tube. |
-| `length` | `40` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
+| `length` | `52` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
 | `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
 | `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
 

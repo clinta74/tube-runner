@@ -31,7 +31,7 @@ public partial class ObstacleRenderer : Node3D
 
     // Warning signs stand in one ring around the tube, this far back from a warp well.
     private const float SignRing = 75f;
-    private const int SignsInRing = 6;
+    private const int SignsInRing = 4;
 
     private readonly Dictionary<Obstacle, View> _views = new();
     private readonly Dictionary<Obstacle, View> _socketViews = new();
@@ -39,6 +39,7 @@ public partial class ObstacleRenderer : Node3D
     private readonly List<(double S, bool Opens, Surface Surface)> _jumpMarks = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
     private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
+    private readonly Dictionary<Warp, View> _dustViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
     private readonly List<MeshInstance3D> _shotViews = new();
     private readonly List<MeshInstance3D> _ringViews = new();
@@ -50,6 +51,8 @@ public partial class ObstacleRenderer : Node3D
     private Func<(double S, bool Opens, Surface Surface), View> _createJumpMark = null!;
     private Func<Pickup, View> _createPickup = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
+    private Func<Warp, View> _createDust = null!;
+    private StandardMaterial3D _dustMaterial = null!;
     private StandardMaterial3D _plateMaterial = null!;
     private StandardMaterial3D _iconMaterial = null!;
     private Mesh _signMesh = null!;
@@ -105,6 +108,7 @@ public partial class ObstacleRenderer : Node3D
         foreach (var view in _jumpMarkViews.Values) view.Node.QueueFree();
         foreach (var view in _pickupViews.Values) view.Node.QueueFree();
         foreach (var view in _signViews.Values) view.Node.QueueFree();
+        foreach (var view in _dustViews.Values) view.Node.QueueFree();
         foreach (var node in _shotViews) node.QueueFree();
         foreach (var node in _ringViews) node.QueueFree();
         foreach (var burst in _bursts) burst.Node.QueueFree();
@@ -113,6 +117,7 @@ public partial class ObstacleRenderer : Node3D
         // clearing these their nodes would stay in the tree for the rest of the run, unreachable.
         _socketViews.Clear();
         _jumpMarkViews.Clear();
+        _dustViews.Clear();
         _pickupViews.Clear();
         _signViews.Clear();
         _shotViews.Clear();
@@ -143,6 +148,7 @@ public partial class ObstacleRenderer : Node3D
         }
         _createPickup = CreatePickupView;
         _createSign = CreateSignView;
+        _createDust = CreateWarpDustView;
         _glow = theme.Glow;
         _breakable = theme.Breakable.ToColor();
 
@@ -153,6 +159,10 @@ public partial class ObstacleRenderer : Node3D
         // Gates take the level's own seam colour rather than the block white, which is the brightest
         // thing on screen and painful to stare at for a stretch built around watching one thing.
         _gateMaterial = Glowing(theme.SeamLight.ToColor().Darkened(0.25f), 0.6f + theme.Glow);
+        // Dust being pulled into a well. A well is a hole in a dark wall and holds still, which is
+        // most of why three passes at making it bigger never finished the job - nothing about it
+        // moved. This is the part that says the thing is live.
+        _dustMaterial = Glowing(theme.SeamLight.ToColor(), 1.8f + theme.Glow);
         // The line where jumping starts and the line where it stops. Different colours because they
         // mean opposite things, and a mark that only says "something changes here" is half a mark.
         _jumpOpenMaterial = Glowing(new Color(0.45f, 1f, 0.7f), 1.7f + theme.Glow);
@@ -246,7 +256,9 @@ public partial class ObstacleRenderer : Node3D
         }
         foreach (var w in _session.Warps)
         {
-            // The well itself is the tube wall extruded into it by TrackRenderer; only signs here.
+            // The well itself is the tube wall extruded into it by TrackRenderer; the dust and the
+            // signs are here.
+            Sync(_dustViews, w, InView(w.S, s), burst: false, _createDust, origin);
             for (int i = 0; i < SignsInRing; i++)
             {
                 Sync(_signViews, (w, i), InView(w.S - SignRing, s), burst: false, _createSign, origin);
@@ -417,6 +429,40 @@ public partial class ObstacleRenderer : Node3D
         }
         st.GenerateNormals();
         return st.Commit();
+    }
+
+    // Dust drawn down into a well: spawned in a shell around the mouth, pulled inwards and given a
+    // twist on the way, so it spirals in rather than falling straight. Local coordinates, or the
+    // floating origin would leave the particles behind as the world shifts under them each frame.
+    private View CreateWarpDustView(Warp w)
+    {
+        var (center, forward, up) = Pose(w.S, w.Branch, w.Surface, w.X, 0.5f);
+        var particles = new CpuParticles3D
+        {
+            Amount = 70,
+            Lifetime = 1.25f,
+            LocalCoords = true,
+            Mesh = _burstMesh,
+            MaterialOverride = _dustMaterial,
+            EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere,
+            EmissionSphereRadius = w.Width * 0.85f,
+            Spread = 0f,
+            InitialVelocityMin = 0f,
+            InitialVelocityMax = 2f,
+            // Local +Y is the surface normal, so down it is into the wall.
+            Gravity = new Vector3(0f, -16f, 0f),
+            RadialAccelMin = -9f,
+            RadialAccelMax = -4f,
+            TangentialAccelMin = 7f,
+            TangentialAccelMax = 13f,
+            DampingMin = 0.2f,
+            DampingMax = 0.6f,
+            ScaleAmountMin = 0.12f,
+            ScaleAmountMax = 0.36f,
+        };
+        AddChild(particles);
+        particles.Emitting = true;
+        return new View(particles, center, forward, up, Spins: false, _dustMaterial);
     }
 
     // One warning plate from the ring standing around the tube ahead of a well. A ring warns whatever

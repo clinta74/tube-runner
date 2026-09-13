@@ -15,8 +15,10 @@ namespace TubeRunner.Game;
 public partial class TrackRenderer : Node3D
 {
     private const int RingsPerChunk = 40;
-    // How far into a well the wall keeps going before the throat is left open.
-    private const float ThroatFraction = 0.72f;
+    // How far into a well the wall keeps going before the throat is left open. Lower means a wider
+    // hole at the bottom: it costs nothing in play, since a well's reach is set by its width and
+    // length, and the hole is most of what makes one read as a hole.
+    private const float ThroatFraction = 0.62f;
     private const int SurfaceSegments = 48;
     private const int CapSegments = 96;
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
@@ -74,7 +76,7 @@ public partial class TrackRenderer : Node3D
         {
             var shape = _shapes.Get(track.SectionAt(w.S, w.Branch));
             _warpCuts.Add(new WarpCut(w.S, shape.Loop(w.Surface, w.X), shape.Perimeter,
-                w.Length / 2f, w.Width / 2f, 2.5f * (w.Width / 2f), w.Branch));
+                w.Length / 2f, w.Width / 2f, 3f * (w.Width / 2f), w.Branch));
         }
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a
