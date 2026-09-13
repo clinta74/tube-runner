@@ -19,11 +19,20 @@ public sealed class Warp
     public float X { get; init; }
 
     /// <summary>
-    /// Extent across the surface. A well should never block more than about a third of the way round
-    /// the tube, so the rest of it always stays safe to fly: this is a hazard to steer around, not a
-    /// wall to thread. 14 units is a little over a third of the way around a radius-6 tube.
+    /// How far round the tube the mouth reaches, as a share of the section's perimeter.
+    ///
+    /// A share rather than a count of units, because the same absolute width is a third of the way
+    /// round a standard tube and nearly half of a narrow one - so one authored number behaved like
+    /// three different hazards depending on where it sat. A third leaves two thirds of the wall
+    /// flyable, which is the rule: a well is something to steer around, not a gap to thread.
+    ///
+    /// At a third the arithmetic is tidy: half the arc is pi*r/3, so the well's radius across the
+    /// surface comes out about equal to the tube's own radius.
     /// </summary>
-    public float Width { get; init; } = 14f;
+    public float Span { get; init; } = 0.33f;
+
+    /// <summary>The mouth's width across the surface of <paramref name="shape"/>, in units.</summary>
+    public float WidthOn(ProfileShape shape) => Span * shape.Perimeter;
 
     /// <summary>
     /// Extent along the track. Longer than it is wide: the way round the tube is capped by

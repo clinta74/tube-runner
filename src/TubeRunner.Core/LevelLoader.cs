@@ -217,6 +217,9 @@ public static class LevelLoader
         return pickups;
     }
 
+    // The one place a warp's defaults live, so the loader cannot disagree with the type again.
+    private static readonly Warp WarpDefaults = new() { S = 0 };
+
     private static List<Warp> ToWarps(List<WarpData> list, Track track, double offset, string label)
     {
         var warps = new List<Warp>();
@@ -225,17 +228,27 @@ public static class LevelLoader
             var w = list[i];
             string where = $"{label} {i}";
             if (w.Back < 0f) throw new LevelFormatException($"{where}: 'back' can't be negative.");
+            if (w.Span is <= 0f or > 0.4f)
+            {
+                throw new LevelFormatException(
+                    $"{where}: 'span' is the share of the way round the tube and must be over 0 and at most 0.4. "
+                    + "Past that there is not enough wall left to fly.");
+            }
+            if (w.Length is <= 0f) throw new LevelFormatException($"{where}: 'length' must be positive.");
 
             foreach (var (s, branch, surface, x) in Place(w, track, offset, where))
             {
+                // Defaults come from the Warp itself rather than being written out again here. They
+                // were duplicated once, and the copy in this file quietly won: every well in the
+                // game was a sixth of its intended size for as long as that went unnoticed.
                 warps.Add(new Warp
                 {
                     S = s,
                     Branch = branch,
                     Surface = surface,
                     X = x,
-                    Width = w.Width,
-                    Length = w.Length,
+                    Span = w.Span ?? WarpDefaults.Span,
+                    Length = w.Length ?? WarpDefaults.Length,
                     Back = w.Back,
                 });
             }
@@ -451,8 +464,11 @@ public static class LevelLoader
 
     private sealed class WarpData : PlacementData
     {
-        public float Width { get; set; } = 6f;
-        public float Length { get; set; } = 6f;
+        /// <summary>Share of the way round the tube; null takes the game's own default.</summary>
+        public float? Span { get; set; }
+
+        /// <summary>Extent along the track; null takes the game's own default.</summary>
+        public float? Length { get; set; }
 
         /// <summary>How far back it throws the ship; 0 takes the game's default.</summary>
         public float Back { get; set; }

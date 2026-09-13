@@ -75,8 +75,9 @@ public partial class TrackRenderer : Node3D
         foreach (var w in warps ?? Array.Empty<Warp>())
         {
             var shape = _shapes.Get(track.SectionAt(w.S, w.Branch));
+            float halfWidth = w.WidthOn(shape) / 2f;
             _warpCuts.Add(new WarpCut(w.S, shape.Loop(w.Surface, w.X), shape.Perimeter,
-                w.Length / 2f, w.Width / 2f, 3f * (w.Width / 2f), w.Branch));
+                w.Length / 2f, halfWidth, 3f * halfWidth, w.Branch));
         }
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a

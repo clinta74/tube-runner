@@ -453,10 +453,11 @@ public sealed class GameSession
             double reach = w.Length / 2f + _settings.ShipHalfLength;
             if (to < w.S - reach || from > w.S + reach) continue;
 
+            var shape = ShapeAt(w.S, w.Branch);
             float lateral = Ship.IsJumping
                 ? MathF.Abs(pos.X - w.X)
-                : TrackSpace.SurfaceDistance(ShapeAt(w.S, w.Branch), pos.Surface, pos.X, w.Surface, w.X);
-            if (lateral >= w.Width / 2f + _settings.ShipHalfWidth) continue;
+                : TrackSpace.SurfaceDistance(shape, pos.Surface, pos.X, w.Surface, w.X);
+            if (lateral >= w.WidthOn(shape) / 2f + _settings.ShipHalfWidth) continue;
 
             w.Used = true;
             Diving = w;

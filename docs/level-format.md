@@ -357,7 +357,7 @@ the gap under it** are most of what separates them at a glance, and **nothing el
 |---|---|---|
 | `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
 | `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
-| `width` | `14` | Opening across the surface. A little over a third of the way around a radius-6 tube. |
+| `span` | `0.33` | How far round the tube the mouth reaches, as a share of the section's perimeter. At most 0.4. |
 | `length` | `52` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
 | `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
 | `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
@@ -377,11 +377,17 @@ curve of the wall turns that patch back towards the ship: it stands out as a cle
 long way out and only goes edge-on once you are on top of it, which is exactly the right order for
 a hazard.
 
-**Keep a mouth to about a third of the way around the tube**, so two thirds of the circumference
-stays safe. A warp is something the player steers around, not a gap they thread: on a radius-6 tube
-(perimeter about 37.7) the default `width` of 14 is already at that share, so **grow a mouth along
-the track, not around it**. That is why `length` is the longer axis — it is the only one free, and
-the long-range read is what a small mouth loses.
+**A mouth is measured as a share of the way round, not in units.** A warp is something the player
+steers around rather than a gap they thread, so two thirds of the wall has to stay flyable — and an
+absolute width cannot hold that promise, because the same number is a third of a standard tube and
+nearly half of a narrow one. One authored well would behave like three different hazards depending
+on which section it landed in.
+
+At a third the arithmetic is tidy: half the arc is `pi x r / 3`, so **a well's radius across the
+surface comes out about equal to the tube's own radius**. A radius-10 tube gets a mouth about 10
+across the wall; a radius-6 tube gets about 6.
+
+`length` along the track is still in units, since nothing constrains it.
 
 **The wall is drawn down into the well**, rather than the opening being a hole with something else
 hung behind it. Vertices inside the mouth are displaced inwards along the surface normal, so the

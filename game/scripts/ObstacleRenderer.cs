@@ -437,6 +437,7 @@ public partial class ObstacleRenderer : Node3D
     private View CreateWarpDustView(Warp w)
     {
         var (center, forward, up) = Pose(w.S, w.Branch, w.Surface, w.X, 0.5f);
+        float width = w.WidthOn(_shapes.Get(_session.Track.SectionAt(w.S, w.Branch)));
         var particles = new CpuParticles3D
         {
             Amount = 70,
@@ -445,7 +446,7 @@ public partial class ObstacleRenderer : Node3D
             Mesh = _burstMesh,
             MaterialOverride = _dustMaterial,
             EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere,
-            EmissionSphereRadius = w.Width * 0.85f,
+            EmissionSphereRadius = width * 0.85f,
             Spread = 0f,
             InitialVelocityMin = 0f,
             InitialVelocityMax = 2f,
