@@ -47,6 +47,14 @@ public sealed class ShipSim
 
     public bool IsJumping { get; private set; }
 
+    /// <summary>
+    /// Whether a jump can be started right now. Only on a fully unrolled section: in a tube, or
+    /// anywhere part way through opening out or closing back up, there is nowhere to jump to.
+    /// The HUD reads this rather than working it out again, so what it promises and what the ship
+    /// will actually do cannot drift apart.
+    /// </summary>
+    public bool CanJump => !IsJumping && Shape.Unroll >= 1f;
+
     /// <summary>Progress through the current jump, from 0 to 1.</summary>
     public float JumpProgress { get; private set; }
 
@@ -85,7 +93,7 @@ public sealed class ShipSim
             Throttle + Math.Clamp(throttle, -1f, 1f) * _settings.ThrottleRate * dt,
             ThrottleFloor,
             ThrottleCeiling);
-        if (jump && !IsJumping && Shape.Unroll >= 1f)
+        if (jump && CanJump)
         {
             IsJumping = true;
             JumpProgress = 0f;

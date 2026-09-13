@@ -30,6 +30,10 @@ public partial class Hud : CanvasLayer
     private ColorRect _messageBack = null!;
     private ColorRect _menuBack = null!;
     private Label _menu = null!;
+    private Control _jumpCue = null!;
+    private Label _jumpLabel = null!;
+    private Polygon2D _jumpUp = null!;
+    private Polygon2D _jumpDown = null!;
     private Control _thrustBar = null!;
     private ColorRect _thrustTrack = null!;
     private ColorRect _thrustFill = null!;
@@ -68,6 +72,7 @@ public partial class Hud : CanvasLayer
         _menu = AddLabel(40, Control.LayoutPreset.Center, HorizontalAlignment.Center);
 
         BuildThrustBar();
+        BuildJumpCue();
 
         _shieldBar = new HBoxContainer();
         _shieldBar.AddThemeConstantOverride("separation", 10);
@@ -146,6 +151,71 @@ public partial class Hud : CanvasLayer
         }
     }
 
+    private const int JumpWidth = 190;
+    private const int JumpHeight = 30;
+
+    // Whether a jump is legal right now. It is only possible on a fully unrolled section, and the
+    // way in and out of one is gradual, so without this there is a stretch where the player cannot
+    // tell whether the button will do anything. Drawn as arrows because the thing it offers is the
+    // crossing between floor and ceiling, not an action in the abstract.
+    private void BuildJumpCue()
+    {
+        _jumpCue = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        AddChild(_jumpCue);
+        _jumpCue.AnchorLeft = 0.5f;
+        _jumpCue.AnchorRight = 0.5f;
+        _jumpCue.AnchorTop = 1f;
+        _jumpCue.AnchorBottom = 1f;
+        _jumpCue.OffsetLeft = -JumpWidth / 2f;
+        _jumpCue.OffsetRight = JumpWidth / 2f;
+        _jumpCue.OffsetTop = -(Margin + ThrustHeight + 14 + JumpHeight);
+        _jumpCue.OffsetBottom = -(Margin + ThrustHeight + 14);
+
+        // Real triangles rather than characters: the default font is not guaranteed to carry arrow
+        // glyphs, and a pair of tofu boxes would say nothing at all.
+        _jumpUp = Arrow(up: true, x: 6f);
+        _jumpDown = Arrow(up: false, x: JumpWidth - 32f);
+
+        _jumpLabel = new Label
+        {
+            Text = "JUMP",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            LabelSettings = new LabelSettings
+            {
+                FontSize = 24,
+                OutlineSize = 5,
+                OutlineColor = new Color(0f, 0f, 0f, 0.8f),
+            },
+        };
+        _jumpCue.AddChild(_jumpLabel);
+        _jumpLabel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+
+        Polygon2D Arrow(bool up, float x)
+        {
+            var poly = new Polygon2D
+            {
+                Polygon = up
+                    ? new[] { new Vector2(13f, 0f), new Vector2(26f, 24f), new Vector2(0f, 24f) }
+                    : new[] { new Vector2(0f, 0f), new Vector2(26f, 0f), new Vector2(13f, 24f) },
+                Position = new Vector2(x, 3f),
+            };
+            _jumpCue.AddChild(poly);
+            return poly;
+        }
+    }
+
+    private void UpdateJumpCue(GameSession session)
+    {
+        _jumpCue.Visible = session.Ship.CanJump;
+        if (!_jumpCue.Visible) return;
+
+        _jumpLabel.Modulate = _accent;
+        _jumpUp.Color = _accent;
+        _jumpDown.Color = _accent;
+    }
+
     private void UpdateThrustBar(GameSession session)
     {
         var ship = session.Ship.Settings;
@@ -177,6 +247,7 @@ public partial class Hud : CanvasLayer
     public void Update(GameSession session, float dt, float runTime)
     {
         UpdateThrustBar(session);
+        UpdateJumpCue(session);
 
         // Keep the backing panels wrapped around whatever their labels currently say.
         _messageBack.Visible = _message.Text.Length > 0;

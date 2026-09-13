@@ -263,6 +263,32 @@ public class MechanicTests
     }
 
     [Fact]
+    public void Jump_IsOnlyOfferedWhereItActuallyWorks()
+    {
+        var flat = new CrossSection(6f, 6f, 0f, 1f);
+        var track = new Track(Tube, startSpeed: 50f);
+        track.Append(new TrackPiece(300f, Tube));    // closed tube
+        track.Append(new TrackPiece(300f, flat));    // opening out
+        track.Append(new TrackPiece(600f, flat));    // fully flat
+        var ship = new ShipSim(Settings.Ship, track, new TrackPosition(0, Surface.Floor, 0f));
+
+        Assert.False(ship.CanJump);   // nowhere to jump to inside a tube
+
+        // Part way through opening out it is still refused, which is the stretch the HUD cue exists
+        // for: the section looks flat enough to try from, and the button does nothing.
+        while (ship.Position.S < 420) ship.Step(1f / 60f, steer: 0f);
+        Assert.False(ship.CanJump);
+
+        while (ship.Position.S < 900) ship.Step(1f / 60f, steer: 0f);
+        Assert.True(ship.CanJump);
+
+        // And not while one is already in the air.
+        ship.Step(1f / 60f, steer: 0f, jump: true);
+        Assert.True(ship.IsJumping);
+        Assert.False(ship.CanJump);
+    }
+
+    [Fact]
     public void Loader_ReadsTheNewMechanics()
     {
         var level = LevelLoader.Parse("""
