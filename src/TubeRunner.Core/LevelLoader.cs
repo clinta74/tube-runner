@@ -368,7 +368,8 @@ public static class LevelLoader
                 Breakable: Color(t.Breakable, d.Breakable),
                 FadeStart: t.FadeStart ?? d.FadeStart,
                 FadeEnd: t.FadeEnd ?? d.FadeEnd,
-                Glow: t.Glow ?? d.Glow);
+                Glow: t.Glow ?? d.Glow,
+                Wire: t.Wire ?? d.Wire);
         }
         catch (FormatException e)
         {
@@ -523,5 +524,6 @@ public static class LevelLoader
         public float? FadeStart { get; set; }
         public float? FadeEnd { get; set; }
         public float? Glow { get; set; }
+        public bool? Wire { get; set; }
     }
 }

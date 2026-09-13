@@ -86,12 +86,19 @@ public partial class TrackRenderer : Node3D
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a
         // finished level never looks out into the void.
-        foreach (var split in track.Splits)
+        //
+        // A wireframe level leaves them all out. A disc across the chamber would hide the branches
+        // diverging behind it, and seeing that is most of why the style exists; and with the wall
+        // already see-through there is nothing for a wall at the end of the track to protect.
+        if (!theme.Wire)
         {
-            _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
-            _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
+            foreach (var split in track.Splits)
+            {
+                _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
+                _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
+            }
+            if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
         }
-        if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
 
         // Fork and merge walls sit in shadow around their openings. The wall closing the end of the
         // track is different: on the last level it is the thing you fly at, so it takes a color you

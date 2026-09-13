@@ -32,6 +32,13 @@ public readonly record struct Rgb(float R, float G, float B)
 /// <param name="FadeStart">Distance where the fade begins.</param>
 /// <param name="FadeEnd">Distance where walls are fully faded.</param>
 /// <param name="Glow">Extra brightness on light cells and seams; above 0 they bloom (a neon look).</param>
+/// <param name="Wire">
+/// Draw the tube as a see-through wireframe instead of a solid checkered wall. A different way of
+/// showing the same track rather than a different palette: with the wall gone the player can see
+/// splits diverging, wells cut into the far side, and the shape of bends long before reaching them.
+/// The fork and merge walls are left out in this style, since a disc across the chamber would hide
+/// the branches that are the main thing worth seeing.
+/// </param>
 public sealed record Theme(
     IReadOnlyList<Rgb> Darks,
     IReadOnlyList<Rgb> Lights,
@@ -44,7 +51,8 @@ public sealed record Theme(
     Rgb Breakable,
     float FadeStart,
     float FadeEnd,
-    float Glow)
+    float Glow,
+    bool Wire = false)
 {
     public const int MaxPaletteColors = 4;
 
