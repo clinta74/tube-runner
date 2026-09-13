@@ -182,6 +182,42 @@ public partial class ShipView : Node3D
         Part(new CylinderMesh { TopRadius = 0f, BottomRadius = 0.27f, Height = 0.7f, RadialSegments = 4 },
             _hullMaterial, new Vector3(0f, 0.02f, -1.15f), new Vector3(-90f, 0f, 0f));
 
+        // A canopy, low and swept back. The ship is looked at from the front right on the victory
+        // lap, so it wants something up front that reads as a cockpit rather than a blank wedge.
+        var canopy = Part(new SphereMesh { Radius = 0.14f, Height = 0.28f, RadialSegments = 10, Rings = 5 },
+            _darkMaterial, new Vector3(0f, 0.15f, -0.45f), Vector3.Zero);
+        canopy.Scale = new Vector3(0.82f, 0.6f, 1.9f);
+        // Its rim, which is what actually carries the shape: nothing here is lit well enough for a
+        // dark dome on a pale hull to show on its own.
+        Part(new BoxMesh { Size = new Vector3(0.26f, 0.015f, 0.52f) }, _accentMaterial,
+            new Vector3(0f, 0.11f, -0.45f), Vector3.Zero);
+
+        // A strip down the spine, and two along the nose. Emissive because the ship is lit by one
+        // headlight from the camera and nothing else - a panel line cut into the hull would be
+        // invisible wherever the face it sits on turns away.
+        Part(new BoxMesh { Size = new Vector3(0.04f, 0.02f, 0.95f) }, _accentMaterial,
+            new Vector3(0f, 0.2f, 0.42f), Vector3.Zero);
+        for (int i = 0; i < 2; i++)
+        {
+            Part(new BoxMesh { Size = new Vector3(0.02f, 0.02f, 0.42f) }, _accentMaterial,
+                new Vector3(Side(i) * 0.1f, 0.02f, -1.0f), new Vector3(0f, Side(i) * 4f, 0f));
+        }
+
+        // Intakes either side of the wedge, with a lit lip so they read as openings.
+        for (int i = 0; i < 2; i++)
+        {
+            float side = Side(i);
+            Part(new BoxMesh { Size = new Vector3(0.1f, 0.13f, 0.38f) }, _darkMaterial,
+                new Vector3(side * 0.29f, -0.03f, -0.12f), Vector3.Zero);
+            Part(new BoxMesh { Size = new Vector3(0.115f, 0.02f, 0.03f) }, _accentMaterial,
+                new Vector3(side * 0.29f, -0.03f, -0.31f), Vector3.Zero);
+        }
+
+        // A shallow ventral fin. Pure silhouette: from the side and from below it is the difference
+        // between a shape and a slab.
+        Part(new BoxMesh { Size = new Vector3(0.05f, 0.22f, 0.34f) }, _hullMaterial,
+            new Vector3(0f, -0.2f, 0.62f), Vector3.Zero);
+
         // Swept wings, each with a glowing leading edge and an aileron on the trailing edge.
         for (int i = 0; i < 2; i++)
         {
@@ -195,6 +231,13 @@ public partial class ShipView : Node3D
 
             _ailerons.Add(Part(new BoxMesh { Size = new Vector3(0.42f, 0.06f, 0.18f) }, _darkMaterial,
                 new Vector3(side * 0.25f, 0f, 0.5f), Vector3.Zero, wing));
+
+            // A winglet at each tip, with a lit cap. The wing's local +X runs outboard on both sides
+            // once its sweep is applied, so the same offset times the side lands on the right tip.
+            var winglet = Part(new BoxMesh { Size = new Vector3(0.05f, 0.24f, 0.34f) }, _hullMaterial,
+                new Vector3(side * 0.47f, 0.11f, 0.06f), new Vector3(0f, 0f, side * -10f), wing);
+            Part(new BoxMesh { Size = new Vector3(0.055f, 0.03f, 0.34f) }, _accentMaterial,
+                new Vector3(0f, 0.12f, 0f), Vector3.Zero, winglet);
         }
 
         // Canted tail fins.
@@ -210,6 +253,14 @@ public partial class ShipView : Node3D
             float side = Side(i);
             Part(new CylinderMesh { TopRadius = 0.14f, BottomRadius = 0.14f, Height = 0.8f, RadialSegments = 8 },
                 _darkMaterial, new Vector3(side * 0.28f, -0.01f, 0.48f), new Vector3(-90f, 0f, 0f));
+
+            // Two bands round each nacelle. The engines are what the victory camera is pointed at,
+            // and a bare cylinder at that range is the one part of the ship with nothing on it.
+            for (int band = 0; band < 2; band++)
+            {
+                Part(new CylinderMesh { TopRadius = 0.155f, BottomRadius = 0.155f, Height = 0.025f, RadialSegments = 8 },
+                    _accentMaterial, new Vector3(side * 0.28f, -0.01f, 0.26f + band * 0.3f), new Vector3(-90f, 0f, 0f));
+            }
 
             _nozzles.Add(Part(new CylinderMesh { TopRadius = 0.075f, BottomRadius = 0.135f, Height = 0.28f, RadialSegments = 8 },
                 _nozzleMaterial, new Vector3(side * 0.28f, -0.01f, 1.0f), new Vector3(-90f, 0f, 0f)));
