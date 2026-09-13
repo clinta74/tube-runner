@@ -192,8 +192,13 @@ public partial class ObstacleRenderer : Node3D
         // lives can be read on the approach even while it is withdrawn.
         foreach (var o in _session.Obstacles)
         {
-            bool there = !o.Destroyed && InView(o.S, s);
-            Sync(_views, o, there, o.Destroyed, _createObstacle, origin);
+            // A door whose keys have been shot is no longer solid, so it must stop being drawn -
+            // otherwise it stands there looking like a wall and the ship sails through it, and the
+            // whole point of shooting the key is lost. It bursts as it goes, so the shot that opened
+            // it has something to show for itself.
+            bool open = o.LockedBy is not null && _session.IsUnlocked(o);
+            bool there = !o.Destroyed && !open && InView(o.S, s);
+            Sync(_views, o, there, o.Destroyed || open, _createObstacle, origin);
             if (o.Period > 0f) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
         }
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);

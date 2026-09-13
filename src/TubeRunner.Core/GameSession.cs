@@ -390,8 +390,13 @@ public sealed class GameSession
     // A gate is only there for half its cycle. Anything without a period is always solid.
     private bool IsSolid(Obstacle o) => o.IsSolidAt(Elapsed) && !IsUnlocked(o);
 
-    // A locked gate opens once every target keyed to it is gone, so shooting buys passage.
-    private bool IsUnlocked(Obstacle o)
+    /// <summary>
+    /// Whether a locked obstacle has had its keys shot and is no longer in the way. The view needs
+    /// this as much as the collision does: an unlocked door is not destroyed, just no longer solid,
+    /// so anything drawing obstacles by whether they are destroyed will leave a door standing that
+    /// the ship then flies straight through.
+    /// </summary>
+    public bool IsUnlocked(Obstacle o)
     {
         if (o.LockedBy is null) return false;
         foreach (var key in _obstacles)
