@@ -136,6 +136,25 @@ movement path. The camera is the real work: it is a fixed offset behind and abov
 target, and the floating-origin placement runs through it, so a front-right framing is a change
 rather than a parameter.
 
+### 13. A game menu on Escape
+*New item. HUD + input. Quit, restart, re-run; the existing prompts move into it.*
+
+Higher than it looks. **There is currently no way to quit the game** - nothing is bound to Escape,
+and the only exit is closing the window. That is a missing basic rather than a nicety, and it should
+probably jump most of the list below it.
+
+Notes for eval:
+- Wants: resume, restart this level, restart the run, quit. The retry and re-run prompts currently
+  live as hint text on the results and shields-down screens, and would move here, which also frees
+  those screens from explaining their own controls.
+- It needs pause semantics, and pause already exists (P) - the menu should use the same hold rather
+  than inventing a second one. Worth deciding whether the menu *is* the pause screen, which would
+  make P and Escape the same thing and leave one concept instead of two.
+- Escape is `ui_cancel` in Godot by default, so the binding is free but wants registering explicitly
+  alongside the rest in InputSetup rather than relying on the built-in.
+- Mostly untestable as UI, though "which options are offered in which state" is small enough to keep
+  honest by hand: mid-level, run over, and run complete each want a different set.
+
 ## Standing constraints
 
 Any of this has to keep three guards passing, all of which exist because something shipped wrong:

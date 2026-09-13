@@ -311,6 +311,10 @@ public sealed class GameSession
             // Whatever the ship hits breaks apart, so it doesn't fly on through it. A plate is wall:
             // it stays, and flying into it again costs again.
             if (o.Kind != ObstacleKind.Plate) o.Destroyed = true;
+            // Stop where the two actually met, rather than wherever this frame's travel happened to
+            // end. The sweep can carry the ship a body length past an obstacle before the hit is
+            // noticed, and it is drawn where it ends up, so the hit appears to land on nothing.
+            Ship.StopAt(Math.Max(from, o.S - reach));
             if (!TakeHit()) return;
         }
     }

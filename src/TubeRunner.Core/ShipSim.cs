@@ -144,6 +144,22 @@ public sealed class ShipSim
         Position = moved;
     }
 
+    /// <summary>
+    /// Pulls the ship back to where it met something, on the frame it hit it.
+    ///
+    /// Collision is swept across a whole frame of travel - over three units at full speed, against
+    /// obstacles two units long - but the ship is drawn at the end of that sweep. Without this the
+    /// hit lands with the ship already drawn clear of the thing it hit, which reads as being struck
+    /// by nothing. Never moves the ship further back than where it began the frame.
+    /// </summary>
+    internal void StopAt(double s)
+    {
+        if (s >= Position.S) return;
+        var moved = _track.MoveTo(Position, s);
+        Shape = _shapes.Get(_track.SectionAt(s, moved.Branch));
+        Position = moved;
+    }
+
     /// <summary>Ship position and up direction in section space, <paramref name="rideHeight"/> above its surface.</summary>
     public (Vector2 Point, Vector2 Up) Pose(float rideHeight)
     {
