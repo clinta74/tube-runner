@@ -116,8 +116,11 @@ public partial class Hud : CanvasLayer
     }
 
     // Width of the thrust bar, and how tall its blocked ends are drawn.
-    private const int ThrustWidth = 260;
-    private const int ThrustHeight = 16;
+    // Upright, because more thrust reading as higher is one less thing to learn. It sits on the
+    // right edge beside the speed readout, so how hard the engines are working and how fast that is
+    // actually going are in one place.
+    private const int ThrustWidth = 18;
+    private const int ThrustHeight = 220;
 
     // A bar showing where the throttle sits in its range, with the ends a thrust zone has closed off
     // drawn over it. Without this the zones are invisible: the player feels the ship refuse to slow
@@ -129,14 +132,14 @@ public partial class Hud : CanvasLayer
         AddChild(_thrustBar);
         // Anchored by hand rather than with a preset. Setting a preset and then overwriting Position
         // fights the anchors, and the bar ends up somewhere off screen.
-        _thrustBar.AnchorLeft = 0.5f;
-        _thrustBar.AnchorRight = 0.5f;
-        _thrustBar.AnchorTop = 1f;
-        _thrustBar.AnchorBottom = 1f;
-        _thrustBar.OffsetLeft = -ThrustWidth / 2f;
-        _thrustBar.OffsetRight = ThrustWidth / 2f;
-        _thrustBar.OffsetTop = -(Margin + ThrustHeight);
-        _thrustBar.OffsetBottom = -Margin;
+        _thrustBar.AnchorLeft = 1f;
+        _thrustBar.AnchorRight = 1f;
+        _thrustBar.AnchorTop = 0.5f;
+        _thrustBar.AnchorBottom = 0.5f;
+        _thrustBar.OffsetLeft = -(Margin + ThrustWidth);
+        _thrustBar.OffsetRight = -Margin;
+        _thrustBar.OffsetTop = -ThrustHeight / 2f;
+        _thrustBar.OffsetBottom = ThrustHeight / 2f;
 
         _thrustTrack = AddRect(new Color(1f, 1f, 1f, 0.16f));
         _thrustFill = AddRect(Colors.White);
@@ -168,8 +171,9 @@ public partial class Hud : CanvasLayer
         _jumpCue.AnchorBottom = 1f;
         _jumpCue.OffsetLeft = -JumpWidth / 2f;
         _jumpCue.OffsetRight = JumpWidth / 2f;
-        _jumpCue.OffsetTop = -(Margin + ThrustHeight + 14 + JumpHeight);
-        _jumpCue.OffsetBottom = -(Margin + ThrustHeight + 14);
+        // Where the thrust bar used to sit, now that it has moved to the edge.
+        _jumpCue.OffsetTop = -(Margin + JumpHeight);
+        _jumpCue.OffsetBottom = -Margin;
 
         // Real triangles rather than characters: the default font is not guaranteed to carry arrow
         // glyphs, and a pair of tofu boxes would say nothing at all.
@@ -220,27 +224,29 @@ public partial class Hud : CanvasLayer
     {
         var ship = session.Ship.Settings;
         float span = Mathf.Max(0.001f, ship.MaxThrottle - ship.MinThrottle);
-        float At(float throttle) => Mathf.Clamp((throttle - ship.MinThrottle) / span, 0f, 1f) * ThrustWidth;
+        // Height above the foot of the bar, so low throttle is low on screen.
+        float At(float throttle) => Mathf.Clamp((throttle - ship.MinThrottle) / span, 0f, 1f) * ThrustHeight;
 
         _thrustTrack.Position = Vector2.Zero;
         _thrustTrack.Size = new Vector2(ThrustWidth, ThrustHeight);
 
-        // The fill runs from the bottom of the range to where the throttle currently sits.
+        // Godot counts y downwards, so the fill is placed by its top edge and grown towards the foot.
+        float fill = At(session.Ship.Throttle);
         _thrustFill.Color = _accent;
-        _thrustFill.Position = new Vector2(0f, 3f);
-        _thrustFill.Size = new Vector2(At(session.Ship.Throttle), ThrustHeight - 6f);
+        _thrustFill.Position = new Vector2(3f, ThrustHeight - fill);
+        _thrustFill.Size = new Vector2(ThrustWidth - 6f, fill);
 
         // Whatever a zone has taken off each end, drawn over the top of it. The bar itself is always
         // there - the throttle is in play every second of the game - but these only appear when
         // something is actually closing the range.
         float low = At(session.Ship.ThrottleFloor);
         float high = At(session.Ship.ThrottleCeiling);
-        _thrustBlockedLow.Position = Vector2.Zero;
-        _thrustBlockedLow.Size = new Vector2(low, ThrustHeight);
+        _thrustBlockedLow.Position = new Vector2(0f, ThrustHeight - low);
+        _thrustBlockedLow.Size = new Vector2(ThrustWidth, low);
         _thrustBlockedLow.Visible = low > 0.5f;
-        _thrustBlockedHigh.Position = new Vector2(high, 0f);
-        _thrustBlockedHigh.Size = new Vector2(ThrustWidth - high, ThrustHeight);
-        _thrustBlockedHigh.Visible = high < ThrustWidth - 0.5f;
+        _thrustBlockedHigh.Position = Vector2.Zero;
+        _thrustBlockedHigh.Size = new Vector2(ThrustWidth, ThrustHeight - high);
+        _thrustBlockedHigh.Visible = high < ThrustHeight - 0.5f;
     }
 
     /// <param name="runTime">Time from earlier levels of this run; the level's own time is added.</param>
