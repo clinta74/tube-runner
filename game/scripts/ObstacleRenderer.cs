@@ -35,6 +35,8 @@ public partial class ObstacleRenderer : Node3D
 
     private readonly Dictionary<Obstacle, View> _views = new();
     private readonly Dictionary<Obstacle, View> _socketViews = new();
+    private readonly Dictionary<(double S, bool Opens, Surface Surface), View> _jumpMarkViews = new();
+    private readonly List<(double S, bool Opens, Surface Surface)> _jumpMarks = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
     private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
@@ -45,6 +47,7 @@ public partial class ObstacleRenderer : Node3D
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
     private Func<Obstacle, View> _createSocket = null!;
+    private Func<(double S, bool Opens, Surface Surface), View> _createJumpMark = null!;
     private Func<Pickup, View> _createPickup = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
     private StandardMaterial3D _plateMaterial = null!;
@@ -56,6 +59,8 @@ public partial class ObstacleRenderer : Node3D
     private StandardMaterial3D _blockMaterial = null!;
     private StandardMaterial3D _hazardMaterial = null!;
     private StandardMaterial3D _gateMaterial = null!;
+    private StandardMaterial3D _jumpOpenMaterial = null!;
+    private StandardMaterial3D _jumpCloseMaterial = null!;
     private StandardMaterial3D _socketMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
@@ -76,12 +81,18 @@ public partial class ObstacleRenderer : Node3D
     public void Reset()
     {
         foreach (var view in _views.Values) view.Node.QueueFree();
+        foreach (var view in _socketViews.Values) view.Node.QueueFree();
+        foreach (var view in _jumpMarkViews.Values) view.Node.QueueFree();
         foreach (var view in _pickupViews.Values) view.Node.QueueFree();
         foreach (var view in _signViews.Values) view.Node.QueueFree();
         foreach (var node in _shotViews) node.QueueFree();
         foreach (var node in _ringViews) node.QueueFree();
         foreach (var burst in _bursts) burst.Node.QueueFree();
         _views.Clear();
+        // Sockets and jump marks are keyed by things that do not survive a level change, so without
+        // clearing these their nodes would stay in the tree for the rest of the run, unreachable.
+        _socketViews.Clear();
+        _jumpMarkViews.Clear();
         _pickupViews.Clear();
         _signViews.Clear();
         _shotViews.Clear();
@@ -89,11 +100,27 @@ public partial class ObstacleRenderer : Node3D
         _bursts.Clear();
     }
 
-    public void Init(GameSession session, Theme theme)
+    /// <param name="jumpWindows">
+    /// Stretches where the ship can cross between floor and ceiling. Their edges are marked on the
+    /// wall, so the window can be seen coming rather than found by trying the button against it.
+    /// </param>
+    public void Init(GameSession session, Theme theme, IReadOnlyList<JumpWindow>? jumpWindows = null)
     {
         _session = session;
         _createObstacle = CreateObstacleView;
         _createSocket = CreateSocketView;
+        _createJumpMark = CreateJumpMarkView;
+
+        _jumpMarks.Clear();
+        foreach (var window in jumpWindows ?? Array.Empty<JumpWindow>())
+        {
+            // Both surfaces: the ship can be riding either one when the window opens or shuts.
+            foreach (var surface in new[] { Surface.Floor, Surface.Ceiling })
+            {
+                _jumpMarks.Add((window.From, true, surface));
+                _jumpMarks.Add((window.To, false, surface));
+            }
+        }
         _createPickup = CreatePickupView;
         _createSign = CreateSignView;
         _glow = theme.Glow;
@@ -106,6 +133,10 @@ public partial class ObstacleRenderer : Node3D
         // Gates take the level's own seam colour rather than the block white, which is the brightest
         // thing on screen and painful to stare at for a stretch built around watching one thing.
         _gateMaterial = Glowing(theme.SeamLight.ToColor().Darkened(0.25f), 0.6f + theme.Glow);
+        // The line where jumping starts and the line where it stops. Different colours because they
+        // mean opposite things, and a mark that only says "something changes here" is half a mark.
+        _jumpOpenMaterial = Glowing(new Color(0.45f, 1f, 0.7f), 1.7f + theme.Glow);
+        _jumpCloseMaterial = Glowing(new Color(1f, 0.72f, 0.2f), 1.7f + theme.Glow);
         // The socket a gate withdraws into, left on the wall so its position is readable even when
         // nothing is standing there. Dark, unlit, and flush: a mark, not an obstacle.
         _socketMaterial = new StandardMaterial3D
@@ -166,6 +197,10 @@ public partial class ObstacleRenderer : Node3D
             if (o.Period > 0f) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
         }
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
+        foreach (var mark in _jumpMarks)
+        {
+            Sync(_jumpMarkViews, mark, InView(mark.S, s), burst: false, _createJumpMark, origin);
+        }
         foreach (var w in _session.Warps)
         {
             // The well itself is the tube wall extruded into it by TrackRenderer; only signs here.
@@ -414,6 +449,22 @@ public partial class ObstacleRenderer : Node3D
 
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
         if (view.Spins) view.Node.RotateObjectLocal(Vector3.Up, _time * 2.5f);
+    }
+
+    // A line across the plane where the jump window opens or shuts. Wide enough to span the whole
+    // strafe range, so it cannot be flown around and missed, and flush to the surface so it reads as
+    // a marking rather than as something to dodge.
+    private View CreateJumpMarkView((double S, bool Opens, Surface Surface) mark)
+    {
+        var (center, forward, up) = Pose(mark.S, -1, mark.Surface, 0f, 0.07f);
+        var node = new MeshInstance3D
+        {
+            Mesh = new BoxMesh { Size = new Vector3(96f, 0.14f, 1.8f) },
+            MaterialOverride = mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial,
+        };
+        AddChild(node);
+        return new View(node, center, forward, up, Spins: false,
+            mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial);
     }
 
     // The mark a gate leaves on the wall: flush, dark, and a little wider than the gate itself, so

@@ -183,7 +183,7 @@ public partial class Main : Node3D
         _track.Reset();
         _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps, level.Next is null);
         _obstacles.Reset();
-        _obstacles.Init(_session, level.Theme);
+        _obstacles.Init(_session, level.Theme, JumpWindows.Find(level.Track));
         _fx.SetStreakColor(level.Theme.SeamLight.ToColor());
         _hud.Init(level.Name, _session.MaxShields, _session.ExtraShields, level.Theme.SeamLight.ToColor(),
             _bestTimes.Get(LevelId));
