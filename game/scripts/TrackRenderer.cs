@@ -21,10 +21,10 @@ public partial class TrackRenderer : Node3D
     private const float ThroatFraction = 0.62f;
     private const int SurfaceSegments = 48;
     private const int CapSegments = 96;
-    // Rings across a fork or merge wall, so it can be drawn into the branch mouths rather than left
-    // flat, and how far into a branch the deepest part of it reaches.
+    // Rings across a fork or merge wall, so the divider between the branches can stand off the plane
+    // rather than the wall being flat, and how far it stands off at its nose.
     private const int CapRings = 10;
-    private const float FunnelReach = 26f;
+    private const float FunnelReach = 20f;
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
     private static readonly float[] WingSteps = { 0.02f, 0.1f, 0.35f, 1f };
     private static readonly int StripVertices = SurfaceSegments + 1 + 2 * WingSteps.Length;
@@ -301,13 +301,12 @@ public partial class TrackRenderer : Node3D
         var origin = frame.Position;
 
         var split = spec.Split;
-        // A fork opens downstream and a merge upstream, so the funnel leans whichever way the
-        // branches go from here.
-        float lean = spec.Along <= 0f ? 1f : -1f;
+        // The divider stands towards whoever is looking at it: back up the track at a fork, where the
+        // ship is arriving, and on down it at a merge, where the ship arrives from the branches.
+        float lean = spec.Along <= 0f ? -1f : 1f;
 
-        // A grid rather than a fan, so every vertex can be drawn into the nearest branch mouth. Flat,
-        // this was a disc with holes punched through it and the player flew at a wall; drawn in, the
-        // chamber necks down into each opening the way a tube that forks actually would.
+        // A grid rather than a fan, so the surface between the branch mouths can stand off the plane.
+        // Flat, this was a disc with holes punched through it and the player flew at a wall.
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         int stride = CapSegments + 1;
@@ -317,7 +316,7 @@ public partial class TrackRenderer : Node3D
             for (int i = 0; i <= CapSegments; i++)
             {
                 var p = chamber.PointAt(Surface.Floor, chamber.Perimeter * i / CapSegments) * t;
-                double at = s + lean * FunnelDepth(split, spec.Along, p);
+                double at = s + lean * FunnelDepth(split, spec.Along, p, t);
                 // The UV stays the flat section position: that is what the shader cuts the holes
                 // against, and it must not move with the vertex.
                 st.SetUV(new Vector2(p.X, p.Y));
@@ -361,24 +360,38 @@ public partial class TrackRenderer : Node3D
         return new Placed(node, origin);
     }
 
-    // How far into a branch the chamber is drawn at this point in the section: deepest inside an
-    // opening, falling away with distance from the nearest one, and nothing at all on the end wall
-    // of a level, which has no branches to funnel into.
-    private static float FunnelDepth(TrackSplit? split, float along, System.Numerics.Vector2 p)
+    /// <summary>
+    /// How far the chamber wall stands off the split plane at this point in the section, which is
+    /// what turns a flat wall into a junction.
+    ///
+    /// It is the divider between the branches that moves, not the mouths. At a real fork the branch
+    /// openings sit in the plane and the wedge between them noses back towards the oncoming ship,
+    /// with the chamber flowing into each tube around it. Pushing the surface the other way - into
+    /// the branches - put it inside the first stretch of tube the branches already draw, so two
+    /// surfaces fought over the same space, and it lifted the outer edge off the plane so the cap no
+    /// longer met the chamber wall at all.
+    ///
+    /// Zero at a branch rim and zero at the chamber wall, so it seams with both.
+    /// </summary>
+    /// <param name="t">How far out in the section this point is: 0 at the centre, 1 at the wall.</param>
+    private static float FunnelDepth(TrackSplit? split, float along, System.Numerics.Vector2 p, float t)
     {
         if (split is null) return 0f;
 
-        float deepest = 0f;
+        float nearest = float.MaxValue;
         for (int b = 0; b < split.BranchCount; b++)
         {
             var c = split.OffsetAt(b, along);
             var section = split.Section(b);
             float qx = (p.X - c.X) / section.HalfWidth;
             float qy = (p.Y - c.Y) / section.HalfHeight;
-            float q = MathF.Sqrt(qx * qx + qy * qy);
-            deepest = MathF.Max(deepest, FunnelReach * MathF.Exp(-1.8f * MathF.Max(0f, q - 1f)));
+            nearest = MathF.Min(nearest, MathF.Sqrt(qx * qx + qy * qy));
         }
-        return deepest;
+
+        // Nothing at a rim, rising as the surface leaves one behind...
+        float away = Math.Clamp((nearest - 1f) / 0.5f, 0f, 1f);
+        // ...and nothing at the chamber wall, so the junction still meets the tube around it.
+        return FunnelReach * away * (1f - t * t);
     }
 
     // Surface X positions across one strip: left wing, the surface itself, right wing.
