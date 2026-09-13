@@ -61,9 +61,20 @@ public partial class Main : Node3D
     // Seconds for the camera to swing round at the end of a run, and where it ends up relative to
     // the ship: ahead of it, out to the right, and a little above.
     private const float OutroSwing = 2.2f;
-    private const float OutroAhead = 16f;
-    private const float OutroSide = 5.5f;
-    private const float OutroLift = 2.5f;
+
+    // Close in on the ship's front right quarter: near enough that it fills the frame and its detail
+    // is worth having, and near enough that the view back past it does not reach the end of the
+    // built world. It sits a little closer than the camera does in play.
+    private const float OutroAhead = 4.5f;
+    private const float OutroSide = 2.4f;
+    private const float OutroLift = 1.1f;
+
+    /// <summary>
+    /// How much track the victory lap keeps behind the ship. The camera looks back at it, so what is
+    /// normally off-screen history is now the whole backdrop, and chunks being freed at the usual
+    /// distance would be freed in plain sight.
+    /// </summary>
+    private const float OutroBehind = 260f;
 
     /// <summary>How much track the victory lap adds at a time, and how close to the end it gets first.</summary>
     private const float OutroExtend = 2000f;
@@ -79,6 +90,7 @@ public partial class Main : Node3D
     private float _outroBlend;
     private int _finalScore;
     private float _finalRun;
+    private float _trackViewBehind;
     private readonly List<(string Label, Action Pick)> _menu = new();
     private bool _menuOpen;
     private bool _menuConfirming;
@@ -120,6 +132,7 @@ public partial class Main : Node3D
         _ship = GetNode<ShipView>("Ship");
         _camera = GetNode<Camera3D>("Camera3D");
         _track = GetNode<TrackRenderer>("TrackRenderer");
+        _trackViewBehind = _track.ViewBehind;
         _obstacles = GetNode<ObstacleRenderer>("ObstacleRenderer");
         _hud = GetNode<Hud>("Hud");
         _fx = GetNode<SpeedFx>("SpeedFx");
@@ -184,6 +197,8 @@ public partial class Main : Node3D
 
         _level = level;
         _levelEntry = carry;
+        // The victory lap widens this and nothing else does; put it back for an ordinary level.
+        _track.ViewBehind = _trackViewBehind;
         _outro = false;
         _paused = false;
         _levelDone = false;
@@ -522,6 +537,7 @@ public partial class Main : Node3D
     private void LoadVictoryLap()
     {
         LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: OutroStart);
+        _track.ViewBehind = OutroBehind;
         _running = true;
         _outro = true;
         _hud.Freeze(_finalScore, _finalRun);
