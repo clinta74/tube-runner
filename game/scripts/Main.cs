@@ -65,6 +65,15 @@ public partial class Main : Node3D
     private const float OutroSide = 5.5f;
     private const float OutroLift = 2.5f;
 
+    /// <summary>How much track the victory lap adds at a time, and how close to the end it gets first.</summary>
+    private const float OutroExtend = 2000f;
+
+    /// <summary>
+    /// How far into the victory track the ship starts. The camera looks back at it from ahead, so it
+    /// needs real track behind it - starting near the beginning put the edge of the world in shot.
+    /// </summary>
+    private const double OutroStart = 900.0;
+
     private bool _outro;
     private float _outroTime;
     private float _outroBlend;
@@ -512,7 +521,7 @@ public partial class Main : Node3D
     // Loading a level clears whatever message is up, so the summary goes back on afterwards.
     private void LoadVictoryLap()
     {
-        LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: 20.0);
+        LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: OutroStart);
         _running = true;
         _outro = true;
         _hud.Freeze(_finalScore, _finalRun);
@@ -528,8 +537,18 @@ public partial class Main : Node3D
         _outroBlend = Mathf.Min(1f, _outroBlend + dt / OutroSwing);
         _session.Step(dt, new ShipInput(Steer: 0.55f * Mathf.Sin(_outroTime * 0.55f)));
 
-        // The tube runs out eventually. Put it back to the start and carry on, so the lap lasts as
-        // long as the player wants to sit with their times.
+        // The track grows ahead of the ship instead of the lap looping. Looping cannot be made
+        // seamless: each wall segment picks its palette and checker size from a hash of its index,
+        // so coming back round to an earlier stretch changes the pattern even though the geometry
+        // matches. Chunks behind are already freed as the ship goes, so this only ever costs the
+        // track's own frames.
+        var track = _level.Track;
+        if (track.Length - _session.Ship.Position.S < OutroExtend)
+        {
+            track.Append(new TrackPiece(OutroExtend, track.SectionAt(track.Length)));
+        }
+
+        // Only if extending ever failed to keep up. It should not.
         if (_session.State != SessionState.Playing) LoadVictoryLap();
     }
 

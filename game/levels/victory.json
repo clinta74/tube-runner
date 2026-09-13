@@ -30,15 +30,17 @@
     "glow": 0.35
   },
 
+  // Only the opening stretch. Main adds more ahead of the ship as it flies, so the lap never has to
+  // wrap round - each wall segment picks its look from its own index, so coming back to an earlier
+  // stretch would change the pattern under an unbroken piece of geometry. The ship starts well in,
+  // because the camera watches it from ahead and needs track behind it to look at.
   "sections": {
     "flat": { "radius": 7, "opening": 1 }
   },
 
   "start": "flat",
   "track": [
-    { "length": 3000 },
-    { "length": 3000 },
-    { "length": 3000 },
-    { "length": 3000 }
+    { "length": 2000 },
+    { "length": 2000 }
   ]
 }
