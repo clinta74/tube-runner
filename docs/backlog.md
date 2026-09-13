@@ -20,6 +20,12 @@ and whether a test can judge it or only playing can.
   of the tube's perimeter, which also removes the second place it could be defined.
 - **13. Escape menu** — resume, restart level, restart run, quit, with confirms on the two that
   throw a run away.
+- **5. Thrust bar** — upright on the right edge beside the speed readout.
+- **8. Wireframe style** — a per-level theme flag. Lines kept, wall discarded, so the track ahead is
+  visible through it. Two systems that exist to hide distance had to be answered: the fade now only
+  dims rather than hides, and chunks build as far as the style can see instead of a flat 450.
+  Fork and merge walls are dropped in this style, since a disc across the chamber hides the branches
+  that are the point of it. Bench at `levels/bench/wire.json`.
 
 Found and fixed along the way, not on the original list:
 
@@ -127,6 +133,12 @@ what the whole run-out design rests on.
 
 It still raises the priority of (10), fork funnels — a flat wall with holes in it would be
 conspicuous in a level built to be seen through.
+
+### Small follow-up: obstacles still appear at 450 in a wire level
+The track now builds much further in the wire style, but `ObstacleRenderer` keeps its own view
+distance, so blocks and wells pop in well inside the visible tube. One line to change; held back
+because obstacle views are individual nodes rather than batched chunks, so the cost is worth seeing
+before extending it.
 
 ### 9. A level map on the HUD
 *From item 3. HUD + a testable projection in Core.*
