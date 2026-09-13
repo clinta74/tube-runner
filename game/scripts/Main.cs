@@ -58,6 +58,16 @@ public partial class Main : Node3D
     private float _endedFor;
     private float _scrollHeld;
     private float _scrollRepeat;
+    // Seconds for the camera to swing round at the end of a run, and where it ends up relative to
+    // the ship: ahead of it, out to the right, and a little above.
+    private const float OutroSwing = 2.2f;
+    private const float OutroAhead = 16f;
+    private const float OutroSide = 5.5f;
+    private const float OutroLift = 2.5f;
+
+    private bool _outro;
+    private float _outroTime;
+    private float _outroBlend;
     private readonly List<(string Label, Action Pick)> _menu = new();
     private bool _menuOpen;
     private bool _menuConfirming;
@@ -163,6 +173,7 @@ public partial class Main : Node3D
 
         _level = level;
         _levelEntry = carry;
+        _outro = false;
         _paused = false;
         _levelDone = false;
         _endedFor = 0f;
@@ -213,6 +224,15 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed(InputSetup.Restart))
         {
             LoadLevel(LevelPath, _levelEntry, _levelStart);
+            DrawWorld(dt, steer: 0f);
+            return;
+        }
+
+        // The victory lap: the ship flies itself while the results are up, and space starts a new run.
+        if (_outro)
+        {
+            if (WaitForContinue(dt)) return;
+            StepOutro(dt);
             DrawWorld(dt, steer: 0f);
             return;
         }
@@ -348,6 +368,18 @@ public partial class Main : Node3D
             float left = 1f - _session.DiveProgress;
             target = target.Lerp(shipPos, 1f - left * left * left);
         }
+
+        // The victory lap swings the camera round to the ship's front right and holds it there,
+        // eased in from wherever the run left it rather than cutting.
+        if (_outro)
+        {
+            var over = FrameOnPath(pos.S + OutroAhead)
+                .PointOnSection(ridePoint + new System.Numerics.Vector2(OutroSide, OutroLift))
+                .RelativeTo(origin).ToGodot() + snapOffset;
+            float swing = _outroBlend * _outroBlend * (3f - 2f * _outroBlend);
+            camPos = camPos.Lerp(over, swing);
+            target = target.Lerp(shipPos, swing);
+        }
         _camera.LookAtFromPosition(camPos, target, up);
         _camera.Fov = Mathf.Lerp(BaseFov, MaxFov, _fx.Intensity);
         Shake(dt);
@@ -428,8 +460,8 @@ public partial class Main : Node3D
         {
             if (!_practice) _bestTimes.Record(RunKey, SplitTotal);
             if (!_practice) SaveBestTimes();
-            ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
-            return false;
+            EnterOutro();
+            return true;
         }
 
         if (best) SaveBestTimes();
@@ -457,6 +489,41 @@ public partial class Main : Node3D
 
         string bestRun = _bestTimes.Get(RunKey) is float best2 ? $"   (best {best2:0.00}s)" : "";
         _hud.ShowSummary(headline, subline, rows, $"TOTAL   {SplitTotal:0.00}s{bestRun}", hint);
+    }
+
+    /// <summary>
+    /// A finished run does not stop. The ship carries on into an empty tube and flies itself while
+    /// the results are up, with the camera swung round to watch it go past. Ending on a frozen frame
+    /// of whatever happened to be on screen is a poor way to finish twenty-six levels.
+    /// </summary>
+    private void EnterOutro()
+    {
+        _outroTime = 0f;
+        _outroBlend = 0f;
+        LoadVictoryLap();
+    }
+
+    // Loading a level clears whatever message is up, so the summary goes back on afterwards.
+    private void LoadVictoryLap()
+    {
+        LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: 20.0);
+        _running = true;
+        _outro = true;
+        ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
+    }
+
+    // Flying itself: a slow weave around the tube. The ship is fed input like on any other frame
+    // rather than being moved directly, so there is one movement path in the game and the victory
+    // lap obeys the same rules the run did.
+    private void StepOutro(float dt)
+    {
+        _outroTime += dt;
+        _outroBlend = Mathf.Min(1f, _outroBlend + dt / OutroSwing);
+        _session.Step(dt, new ShipInput(Steer: 0.55f * Mathf.Sin(_outroTime * 0.55f)));
+
+        // The tube runs out eventually. Put it back to the start and carry on, so the lap lasts as
+        // long as the player wants to sit with their times.
+        if (_session.State != SessionState.Playing) LoadVictoryLap();
     }
 
     // What the menu offers depends on where the run is: there is nothing to resume once it is over,

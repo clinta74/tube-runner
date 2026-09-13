@@ -1,0 +1,52 @@
+{
+  "name": "Victory",
+  "speed": 115,
+  "segmentLength": 60,
+
+  // Where the ship goes when a run is finished: a long, empty, gently turning tube that it flies by
+  // itself while the results are up. Not part of the run and not reachable by playing - Main loads
+  // it by name when the last level ends - so it sits outside the level_NN naming and the guards that
+  // walk the chain.
+  //
+  // Nothing in it. No obstacles, no pickups, no wells, no splits. The player is reading their own
+  // times and watching the ship fly; anything to dodge would be asking for attention that is not
+  // available, and a ship that crashed on the victory screen would be a poor joke.
+  "theme": {
+    "darks": ["#101a2c", "#0d1624", "#141f33"],
+    "lights": ["#5f7fb0", "#51709e", "#6e8dc0"],
+    "seamDark": "#070c14",
+    "seamLight": "#bcd9ff",
+    "far": "#03060a",
+    "ship": "#ffffff",
+    "block": "#c3d2e2",
+    "target": "#ff5a7a",
+    "breakable": "#7cffc4",
+    "fadeStart": 40,
+    "fadeEnd": 420,
+    "glow": 0.35
+  },
+
+  "sections": {
+    "tube": { "radius": 7 },
+    "wide": { "radius": 8.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 400 },
+    { "length": 700, "turn": 40, "climb": 8 },
+    { "length": 600, "section": "wide", "turn": -30 },
+    { "length": 700, "turn": -45, "climb": -10 },
+    { "length": 600, "section": "tube", "turn": 25 },
+    { "length": 800, "turn": 55, "climb": 12 },
+    { "length": 600, "section": "wide", "turn": -20, "climb": -8 },
+    { "length": 800, "turn": -50 },
+    { "length": 700, "section": "tube", "turn": 35, "climb": 6 },
+    { "length": 900, "turn": -40, "climb": -12 },
+    { "length": 800, "section": "wide", "turn": 30 },
+    { "length": 900, "turn": 45, "climb": 10 },
+    { "length": 700, "section": "tube", "turn": -35 },
+    { "length": 800, "turn": -25, "climb": -6 },
+    { "length": 1000 }
+  ]
+}
