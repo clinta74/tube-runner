@@ -247,7 +247,11 @@ public partial class Main : Node3D
             return;
         }
 
-        if (Input.IsActionJustPressed(InputSetup.Restart))
+        // R does nothing on the victory lap. The level being flown there is the victory track, which
+        // is not a level anyone can retry, and quietly turning "retry this level" into "throw the
+        // finished run away" would be a nasty thing for one key to do. Space starts a new run and
+        // Escape opens the menu; both say what they are.
+        if (!_outro && Input.IsActionJustPressed(InputSetup.Restart))
         {
             LoadLevel(LevelPath, _levelEntry, _levelStart);
             DrawWorld(dt, steer: 0f);
@@ -551,7 +555,9 @@ public partial class Main : Node3D
     {
         _outroTime += dt;
         _outroBlend = Mathf.Min(1f, _outroBlend + dt / OutroSwing);
-        _session.Step(dt, new ShipInput(Steer: 0.55f * Mathf.Sin(_outroTime * 0.55f)));
+        // Throttle held all the way down: the run is over, so the lap is a cruise rather than a
+        // sprint, and a slower ship is one the camera can actually look at.
+        _session.Step(dt, new ShipInput(Steer: 0.55f * Mathf.Sin(_outroTime * 0.55f), Throttle: -1f));
 
         // The track grows ahead of the ship instead of the lap looping. Looping cannot be made
         // seamless: each wall segment picks its palette and checker size from a hash of its index,
@@ -578,17 +584,21 @@ public partial class Main : Node3D
         // Always first, and always the one selected on opening: the default pick has to be the one
         // that changes nothing, since Escape is also what people hit by accident.
         _menu.Add((_session.State == SessionState.Playing && _running ? "Resume" : "Back", CloseMenu));
-        _menu.Add(("Restart this level", () =>
+        // Not offered on the victory lap: the level being flown there is the victory track, and
+        // restarting it would hand the player a tube with nothing in it and no way out.
+        if (!_outro)
         {
-            CloseMenu();
-            LoadLevel(LevelPath, _levelEntry, _levelStart);
-        }));
+            _menu.Add(("Restart this level", () =>
+            {
+                CloseMenu();
+                LoadLevel(LevelPath, _levelEntry, _levelStart);
+            }));
+        }
         // The two that throw away a whole run ask first. They sit next to things picked in a hurry.
         _menu.Add(("Restart the run", () => Confirm("Start the run over?", "Yes, start over", () =>
         {
             CloseMenu();
-            _splits.Clear();
-            LoadLevel(_runStart, carry: null, startS: _startS);
+            RestartRun();
         })));
         _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
 
@@ -711,9 +721,16 @@ public partial class Main : Node3D
         if (_endedFor < 1f) return false;
         if (!Input.IsActionJustPressed(InputSetup.Jump) && !Input.IsActionJustPressed(InputSetup.Fire)) return false;
 
+        RestartRun();
+        return true;
+    }
+
+    // Back to the level the run began on, with the splits, the score and the clock all starting
+    // again. Loading a level clears the frozen numbers the victory lap was holding.
+    private void RestartRun()
+    {
         _splits.Clear();
         LoadLevel(_runStart, carry: null, startS: _startS);
-        return true;
     }
 
     private void SaveBestTimes()
