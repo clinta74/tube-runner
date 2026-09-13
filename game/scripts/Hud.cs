@@ -47,6 +47,8 @@ public partial class Hud : CanvasLayer
     private float _titleLeft;
     private float _flashLeft;
     private float? _best;
+    private int? _frozenScore;
+    private float _frozenRun;
 
     public override void _Ready()
     {
@@ -86,6 +88,7 @@ public partial class Hud : CanvasLayer
     {
         _accent = accent;
         _best = best;
+        _frozenScore = null;
         // A level starting clears whatever screen was up: the retry prompt, or the run summary.
         ShowMessage("");
         _title.Text = levelName.ToUpperInvariant();
@@ -271,9 +274,20 @@ public partial class Hud : CanvasLayer
             _menuBack.Size = rect.Size + new Vector2(96f, 64f);
         }
 
-        _score.Text = $"SCORE  {session.Score}";
-        _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}" +
-            $"\nRUN   {runTime + session.Elapsed:0.00}";
+        // A finished run holds its numbers. The victory lap is a fresh session flying a fresh track,
+        // so left alone the score would climb on distance the player never earned and the clock
+        // would start again from nothing, both over the top of the results they are reading.
+        if (_frozenScore is int final)
+        {
+            _score.Text = $"SCORE  {final}";
+            _time.Text = $"RUN   {_frozenRun:0.00}";
+        }
+        else
+        {
+            _score.Text = $"SCORE  {session.Score}";
+            _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}" +
+                $"\nRUN   {runTime + session.Elapsed:0.00}";
+        }
         var status = new List<string>(4);
         if (session.RamLeft > 0f) status.Add($"UNSTOPPABLE  {session.RamLeft:0.0}s");
         if (session.RapidFireLeft > 0f) status.Add($"RAPID FIRE  {session.RapidFireLeft:0.0}s");
@@ -301,6 +315,13 @@ public partial class Hud : CanvasLayer
     }
 
     public void SetBest(float best) => _best = best;
+
+    /// <summary>Holds the score and run time at what the run ended on, for the victory lap.</summary>
+    public void Freeze(int score, float runTime)
+    {
+        _frozenScore = score;
+        _frozenRun = runTime;
+    }
 
     public void Flash() => _flashLeft = 1f;
 

@@ -68,6 +68,8 @@ public partial class Main : Node3D
     private bool _outro;
     private float _outroTime;
     private float _outroBlend;
+    private int _finalScore;
+    private float _finalRun;
     private readonly List<(string Label, Action Pick)> _menu = new();
     private bool _menuOpen;
     private bool _menuConfirming;
@@ -500,6 +502,10 @@ public partial class Main : Node3D
     {
         _outroTime = 0f;
         _outroBlend = 0f;
+        // Taken before the victory level replaces the session: these are the run's numbers, and the
+        // lap that follows is a fresh session on a fresh track with nothing to do with them.
+        _finalScore = _session.Score;
+        _finalRun = SplitTotal;
         LoadVictoryLap();
     }
 
@@ -509,6 +515,7 @@ public partial class Main : Node3D
         LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: 20.0);
         _running = true;
         _outro = true;
+        _hud.Freeze(_finalScore, _finalRun);
         ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
     }
 
