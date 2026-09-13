@@ -263,6 +263,78 @@ public class MechanicTests
     }
 
     [Fact]
+    public void HoldingTheTrigger_DoesNothingWithoutRapidFire()
+    {
+        var targets = new[]
+        {
+            new Obstacle { Kind = ObstacleKind.Target, S = 300, Width = 40f },
+            new Obstacle { Kind = ObstacleKind.Target, S = 400, Width = 40f },
+        };
+        var game = Game(targets);
+
+        // Held, never pressed: the trigger was down the whole way and nothing was shot.
+        Fly(game, to: 250, new ShipInput(FireHeld: true));
+
+        Assert.All(targets, t => Assert.False(t.Destroyed));
+    }
+
+    [Fact]
+    public void HoldingTheTrigger_FiresWhileRapidFireRuns()
+    {
+        var targets = new[]
+        {
+            new Obstacle { Kind = ObstacleKind.Target, S = 300, Width = 40f },
+            new Obstacle { Kind = ObstacleKind.Target, S = 400, Width = 40f },
+        };
+        var pickup = new Pickup { Kind = PickupKind.RapidFire, S = 100 };
+        var game = new GameSession(Track(), targets, Settings, Start, [pickup]);
+
+        Fly(game, to: 250, new ShipInput(FireHeld: true));
+
+        Assert.True(game.RapidFireLeft > 0f, "rapid fire should still be running");
+        Assert.All(targets, t => Assert.True(t.Destroyed));
+    }
+
+    [Fact]
+    public void APressStillFiresOneShot()
+    {
+        var target = new Obstacle { Kind = ObstacleKind.Target, S = 300, Width = 40f };
+        var game = Game([target]);
+
+        // A single frame with the button pressed, then nothing.
+        game.Step(1f / 60f, new ShipInput(Fire: true));
+        Fly(game, to: 250);
+
+        Assert.True(target.Destroyed);
+    }
+
+    [Fact]
+    public void Jump_IsOnlyOfferedWhereItActuallyWorks()
+    {
+        var flat = new CrossSection(6f, 6f, 0f, 1f);
+        var track = new Track(Tube, startSpeed: 50f);
+        track.Append(new TrackPiece(300f, Tube));    // closed tube
+        track.Append(new TrackPiece(300f, flat));    // opening out
+        track.Append(new TrackPiece(600f, flat));    // fully flat
+        var ship = new ShipSim(Settings.Ship, track, new TrackPosition(0, Surface.Floor, 0f));
+
+        Assert.False(ship.CanJump);   // nowhere to jump to inside a tube
+
+        // Part way through opening out it is still refused, which is the stretch the HUD cue exists
+        // for: the section looks flat enough to try from, and the button does nothing.
+        while (ship.Position.S < 420) ship.Step(1f / 60f, steer: 0f);
+        Assert.False(ship.CanJump);
+
+        while (ship.Position.S < 900) ship.Step(1f / 60f, steer: 0f);
+        Assert.True(ship.CanJump);
+
+        // And not while one is already in the air.
+        ship.Step(1f / 60f, steer: 0f, jump: true);
+        Assert.True(ship.IsJumping);
+        Assert.False(ship.CanJump);
+    }
+
+    [Fact]
     public void Loader_ReadsTheNewMechanics()
     {
         var level = LevelLoader.Parse("""

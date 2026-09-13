@@ -31,12 +31,15 @@ public partial class ObstacleRenderer : Node3D
 
     // Warning signs stand in one ring around the tube, this far back from a warp well.
     private const float SignRing = 75f;
-    private const int SignsInRing = 6;
+    private const int SignsInRing = 4;
 
     private readonly Dictionary<Obstacle, View> _views = new();
     private readonly Dictionary<Obstacle, View> _socketViews = new();
+    private readonly Dictionary<(double S, bool Opens, Surface Surface), View> _jumpMarkViews = new();
+    private readonly List<(double S, bool Opens, Surface Surface)> _jumpMarks = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
     private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
+    private readonly Dictionary<Warp, View> _dustViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
     private readonly List<MeshInstance3D> _shotViews = new();
     private readonly List<MeshInstance3D> _ringViews = new();
@@ -45,8 +48,11 @@ public partial class ObstacleRenderer : Node3D
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
     private Func<Obstacle, View> _createSocket = null!;
+    private Func<(double S, bool Opens, Surface Surface), View> _createJumpMark = null!;
     private Func<Pickup, View> _createPickup = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
+    private Func<Warp, View> _createDust = null!;
+    private StandardMaterial3D _dustMaterial = null!;
     private StandardMaterial3D _plateMaterial = null!;
     private StandardMaterial3D _iconMaterial = null!;
     private Mesh _signMesh = null!;
@@ -56,6 +62,28 @@ public partial class ObstacleRenderer : Node3D
     private StandardMaterial3D _blockMaterial = null!;
     private StandardMaterial3D _hazardMaterial = null!;
     private StandardMaterial3D _gateMaterial = null!;
+    private StandardMaterial3D _jumpOpenMaterial = null!;
+    private StandardMaterial3D _jumpCloseMaterial = null!;
+
+    // Hues for key-and-door pairs. Distinct from each other and from the target pink, the hazard
+    // orange and the breakable green, so a key never reads as one of those.
+    private static readonly Color[] KeyColors =
+    {
+        new(0.35f, 0.85f, 1f),    // cyan
+        new(0.75f, 1f, 0.35f),    // lime
+        new(1f, 0.55f, 0.95f),    // orchid
+        new(1f, 0.85f, 0.3f),     // gold
+    };
+
+    // Group name to its place in the level, so colours are handed out in the order the player meets
+    // the pairs. Hashing the name instead would let two pairs on screen at once land on the same
+    // colour by chance, which is exactly the case the colour exists to disambiguate.
+    private readonly Dictionary<string, int> _keyGroups = new();
+    private readonly Dictionary<string, StandardMaterial3D> _keyMaterials = new();
+    private readonly Dictionary<string, StandardMaterial3D> _doorMaterials = new();
+    private readonly Dictionary<string, StandardMaterial3D> _waitingMaterials = new();
+    private Color _targetColor;
+    private float _themeGlow;
     private StandardMaterial3D _socketMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
     private StandardMaterial3D _shotMaterial = null!;
@@ -68,7 +96,13 @@ public partial class ObstacleRenderer : Node3D
     private Mesh _padMesh = null!;
     private float _time;
 
+    /// <summary>How far ahead views are made in the solid style, where the fade hides the rest.</summary>
     [Export] public float ViewAhead { get; set; } = 450f;
+
+    // What this level actually uses. A wire level sees much further than a solid one, and obstacles
+    // appearing out of nothing well inside a tube the player can already see reads worse than the
+    // popping it replaced.
+    private float _viewAhead;
     [Export] public float ViewBehind { get; set; } = 20f;
     [Export] public float RideHeight { get; set; } = 0.6f;
 
@@ -76,12 +110,20 @@ public partial class ObstacleRenderer : Node3D
     public void Reset()
     {
         foreach (var view in _views.Values) view.Node.QueueFree();
+        foreach (var view in _socketViews.Values) view.Node.QueueFree();
+        foreach (var view in _jumpMarkViews.Values) view.Node.QueueFree();
         foreach (var view in _pickupViews.Values) view.Node.QueueFree();
         foreach (var view in _signViews.Values) view.Node.QueueFree();
+        foreach (var view in _dustViews.Values) view.Node.QueueFree();
         foreach (var node in _shotViews) node.QueueFree();
         foreach (var node in _ringViews) node.QueueFree();
         foreach (var burst in _bursts) burst.Node.QueueFree();
         _views.Clear();
+        // Sockets and jump marks are keyed by things that do not survive a level change, so without
+        // clearing these their nodes would stay in the tree for the rest of the run, unreachable.
+        _socketViews.Clear();
+        _jumpMarkViews.Clear();
+        _dustViews.Clear();
         _pickupViews.Clear();
         _signViews.Clear();
         _shotViews.Clear();
@@ -89,13 +131,30 @@ public partial class ObstacleRenderer : Node3D
         _bursts.Clear();
     }
 
-    public void Init(GameSession session, Theme theme)
+    /// <param name="jumpWindows">
+    /// Stretches where the ship can cross between floor and ceiling. Their edges are marked on the
+    /// wall, so the window can be seen coming rather than found by trying the button against it.
+    /// </param>
+    public void Init(GameSession session, Theme theme, IReadOnlyList<JumpWindow>? jumpWindows = null)
     {
         _session = session;
         _createObstacle = CreateObstacleView;
         _createSocket = CreateSocketView;
+        _createJumpMark = CreateJumpMarkView;
+
+        _jumpMarks.Clear();
+        foreach (var window in jumpWindows ?? Array.Empty<JumpWindow>())
+        {
+            // Both surfaces: the ship can be riding either one when the window opens or shuts.
+            foreach (var surface in new[] { Surface.Floor, Surface.Ceiling })
+            {
+                _jumpMarks.Add((window.From, true, surface));
+                _jumpMarks.Add((window.To, false, surface));
+            }
+        }
         _createPickup = CreatePickupView;
         _createSign = CreateSignView;
+        _createDust = CreateWarpDustView;
         _glow = theme.Glow;
         _breakable = theme.Breakable.ToColor();
 
@@ -106,6 +165,34 @@ public partial class ObstacleRenderer : Node3D
         // Gates take the level's own seam colour rather than the block white, which is the brightest
         // thing on screen and painful to stare at for a stretch built around watching one thing.
         _gateMaterial = Glowing(theme.SeamLight.ToColor().Darkened(0.25f), 0.6f + theme.Glow);
+        // Dust being pulled into a well. A well is a hole in a dark wall and holds still, which is
+        // most of why three passes at making it bigger never finished the job - nothing about it
+        // moved. This is the part that says the thing is live.
+        _dustMaterial = Glowing(theme.SeamLight.ToColor(), 1.8f + theme.Glow);
+        // The line where jumping starts and the line where it stops. Different colours because they
+        // mean opposite things, and a mark that only says "something changes here" is half a mark.
+        _jumpOpenMaterial = Glowing(new Color(0.45f, 1f, 0.7f), 1.7f + theme.Glow);
+        _jumpCloseMaterial = Glowing(new Color(1f, 0.72f, 0.2f), 1.7f + theme.Glow);
+
+        // A key and the door it opens share a colour. Without it a key is just another target and a
+        // door is just another block, which makes the whole mechanic guesswork - and where a stretch
+        // has two pairs interleaved, knowing which key opens which is the entire puzzle.
+        _themeGlow = theme.Glow;
+        _targetColor = theme.Target.ToColor();
+        // Matches the track's own reach, so obstacles and the tube they sit in appear together.
+        _viewAhead = theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead;
+        _keyGroups.Clear();
+        _keyMaterials.Clear();
+        _doorMaterials.Clear();
+        _waitingMaterials.Clear();
+        // Obstacles arrive sorted by distance, so this walks the level in the order it is flown.
+        foreach (var o in session.Obstacles)
+        {
+            if (o.LockedBy is not null && !_keyGroups.ContainsKey(o.LockedBy))
+            {
+                _keyGroups[o.LockedBy] = _keyGroups.Count;
+            }
+        }
         // The socket a gate withdraws into, left on the wall so its position is readable even when
         // nothing is standing there. Dark, unlit, and flush: a mark, not an obstacle.
         _socketMaterial = new StandardMaterial3D
@@ -161,14 +248,25 @@ public partial class ObstacleRenderer : Node3D
         // lives can be read on the approach even while it is withdrawn.
         foreach (var o in _session.Obstacles)
         {
-            bool there = !o.Destroyed && InView(o.S, s);
-            Sync(_views, o, there, o.Destroyed, _createObstacle, origin);
+            // A door whose keys have been shot is no longer solid, so it must stop being drawn -
+            // otherwise it stands there looking like a wall and the ship sails through it, and the
+            // whole point of shooting the key is lost. It bursts as it goes, so the shot that opened
+            // it has something to show for itself.
+            bool open = o.LockedBy is not null && _session.IsUnlocked(o);
+            bool there = !o.Destroyed && !open && InView(o.S, s);
+            Sync(_views, o, there, o.Destroyed || open, _createObstacle, origin);
             if (o.Period > 0f) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
         }
         foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
+        foreach (var mark in _jumpMarks)
+        {
+            Sync(_jumpMarkViews, mark, InView(mark.S, s), burst: false, _createJumpMark, origin);
+        }
         foreach (var w in _session.Warps)
         {
-            // The well itself is the tube wall extruded into it by TrackRenderer; only signs here.
+            // The well itself is the tube wall extruded into it by TrackRenderer; the dust and the
+            // signs are here.
+            Sync(_dustViews, w, InView(w.S, s), burst: false, _createDust, origin);
             for (int i = 0; i < SignsInRing; i++)
             {
                 Sync(_signViews, (w, i), InView(w.S - SignRing, s), burst: false, _createSign, origin);
@@ -177,6 +275,7 @@ public partial class ObstacleRenderer : Node3D
         foreach (var (o, view) in _views)
         {
             if (o.Hits > 0 && view.HitsShown != o.HitsTaken) ShowDamage(o, view);
+            if (o.Kind == ObstacleKind.Target && o.Group is not null) ShowTurn(o, view);
         }
 
         UpdateShots(origin);
@@ -184,7 +283,7 @@ public partial class ObstacleRenderer : Node3D
         UpdateBursts(origin);
     }
 
-    private bool InView(double at, double s) => at > s - ViewBehind && at < s + ViewAhead;
+    private bool InView(double at, double s) => at > s - ViewBehind && at < s + _viewAhead;
 
     // Creates, places, or removes the view for one item. Items removed because they were broken or
     // collected burst apart.
@@ -222,10 +321,15 @@ public partial class ObstacleRenderer : Node3D
         // Breakable blocks get their own material so each can darken as it takes hits. A plate has
         // to be unmistakable: it is the one obstacle nothing answers, so a player who meets one while
         // unstoppable has to read it as a rule rather than a bug.
+        // A target that opens something, and the thing it opens, are drawn in their pair's colour.
+        // Note a target can be in a group without being a key - ordered groups use groups too - so
+        // this asks whether anything is actually locked by it.
         var material = o.Kind switch
         {
+            ObstacleKind.Target when o.Group is not null && _keyGroups.ContainsKey(o.Group) => KeyMaterial(o.Group),
             ObstacleKind.Target => _targetMaterial,
             ObstacleKind.Plate => _hazardMaterial,
+            _ when o.LockedBy is not null => DoorMaterial(o.LockedBy),
             _ => o.Period > 0f ? _gateMaterial : o.Hits > 0 ? Solid(_breakable) : _blockMaterial,
         };
         var node = new MeshInstance3D { Mesh = mesh, MaterialOverride = material };
@@ -335,6 +439,41 @@ public partial class ObstacleRenderer : Node3D
         return st.Commit();
     }
 
+    // Dust drawn down into a well: spawned in a shell around the mouth, pulled inwards and given a
+    // twist on the way, so it spirals in rather than falling straight. Local coordinates, or the
+    // floating origin would leave the particles behind as the world shifts under them each frame.
+    private View CreateWarpDustView(Warp w)
+    {
+        var (center, forward, up) = Pose(w.S, w.Branch, w.Surface, w.X, 0.5f);
+        float width = w.WidthOn(_shapes.Get(_session.Track.SectionAt(w.S, w.Branch)));
+        var particles = new CpuParticles3D
+        {
+            Amount = 70,
+            Lifetime = 1.25f,
+            LocalCoords = true,
+            Mesh = _burstMesh,
+            MaterialOverride = _dustMaterial,
+            EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere,
+            EmissionSphereRadius = width * 0.85f,
+            Spread = 0f,
+            InitialVelocityMin = 0f,
+            InitialVelocityMax = 2f,
+            // Local +Y is the surface normal, so down it is into the wall.
+            Gravity = new Vector3(0f, -16f, 0f),
+            RadialAccelMin = -9f,
+            RadialAccelMax = -4f,
+            TangentialAccelMin = 7f,
+            TangentialAccelMax = 13f,
+            DampingMin = 0.2f,
+            DampingMax = 0.6f,
+            ScaleAmountMin = 0.12f,
+            ScaleAmountMax = 0.36f,
+        };
+        AddChild(particles);
+        particles.Emitting = true;
+        return new View(particles, center, forward, up, Spins: false, _dustMaterial);
+    }
+
     // One warning plate from the ring standing around the tube ahead of a well. A ring warns whatever
     // way round the player is flying, and sits clear of the well's own line so it hides nothing.
     private View CreateSignView((Warp Warp, int Index) sign)
@@ -389,6 +528,33 @@ public partial class ObstacleRenderer : Node3D
         return new View(root, center, forward, up, Spins: false, _plateMaterial);
     }
 
+    // In an ordered group, the one whose turn it is burns at full while the rest sit dim and wait.
+    // The useful thing to know is not which group a target belongs to but whether shooting it now
+    // will do anything - and unlike a fixed marker, this answers that again after every shot.
+    private void ShowTurn(Obstacle o, View view)
+    {
+        bool ready = _session.CanBreak(o);
+        if (view.ReadyShown == ready) return;
+        view.ReadyShown = ready;
+        if (view.Node is MeshInstance3D mesh) mesh.MaterialOverride = TurnMaterial(o, ready);
+    }
+
+    private StandardMaterial3D TurnMaterial(Obstacle o, bool ready)
+    {
+        string group = o.Group!;
+        bool key = _keyGroups.ContainsKey(group);
+        // A key keeps its pair colour while it waits, so the two signals stack rather than fight:
+        // the colour says which door it opens, the brightness says whether it is next.
+        if (ready) return key ? KeyMaterial(group) : _targetMaterial;
+
+        string cacheKey = key ? group : "";
+        if (_waitingMaterials.TryGetValue(cacheKey, out var material)) return material;
+        var color = key ? PairColor(group) : _targetColor;
+        material = Glowing(color.Darkened(0.55f), 0.5f + _themeGlow);
+        _waitingMaterials[cacheKey] = material;
+        return material;
+    }
+
     // Breakable blocks darken with each hit.
     private void ShowDamage(Obstacle o, View view)
     {
@@ -414,6 +580,46 @@ public partial class ObstacleRenderer : Node3D
 
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
         if (view.Spins) view.Node.RotateObjectLocal(Vector3.Up, _time * 2.5f);
+    }
+
+    // Colours cycle in the order the pairs are met, so consecutive pairs always differ and a key and
+    // its door always match. With more simultaneous pairs than colours they would start repeating,
+    // which the format guide warns about rather than the renderer trying to be clever.
+    private Color PairColor(string group) =>
+        KeyColors[(_keyGroups.TryGetValue(group, out int index) ? index : 0) % KeyColors.Length];
+
+    private StandardMaterial3D KeyMaterial(string group)
+    {
+        if (_keyMaterials.TryGetValue(group, out var material)) return material;
+        material = Glowing(PairColor(group), 2.1f + _themeGlow);
+        _keyMaterials[group] = material;
+        return material;
+    }
+
+    // The door sits in the same hue but dark and barely lit, so it reads as the shut version of the
+    // bright thing that opens it.
+    private StandardMaterial3D DoorMaterial(string group)
+    {
+        if (_doorMaterials.TryGetValue(group, out var material)) return material;
+        material = Glowing(PairColor(group).Darkened(0.55f), 0.55f + _themeGlow);
+        _doorMaterials[group] = material;
+        return material;
+    }
+
+    // A line across the plane where the jump window opens or shuts. Wide enough to span the whole
+    // strafe range, so it cannot be flown around and missed, and flush to the surface so it reads as
+    // a marking rather than as something to dodge.
+    private View CreateJumpMarkView((double S, bool Opens, Surface Surface) mark)
+    {
+        var (center, forward, up) = Pose(mark.S, -1, mark.Surface, 0f, 0.07f);
+        var node = new MeshInstance3D
+        {
+            Mesh = new BoxMesh { Size = new Vector3(96f, 0.14f, 1.8f) },
+            MaterialOverride = mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial,
+        };
+        AddChild(node);
+        return new View(node, center, forward, up, Spins: false,
+            mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial);
     }
 
     // The mark a gate leaves on the wall: flush, dark, and a little wider than the gate itself, so
@@ -548,6 +754,9 @@ public partial class ObstacleRenderer : Node3D
     private sealed record View(Node3D Node, Vector3d Center, Vector3 Forward, Vector3 Up, bool Spins, Material BurstMaterial)
     {
         public int HitsShown { get; set; }
+
+        /// <summary>Whether this was last drawn as ready to break; null before it has been decided.</summary>
+        public bool? ReadyShown { get; set; }
 
         /// <summary>The obstacle this shows, when it is one that moves; null for anything fixed.</summary>
         public Obstacle? Obstacle { get; init; }

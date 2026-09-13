@@ -15,8 +15,10 @@ namespace TubeRunner.Game;
 public partial class TrackRenderer : Node3D
 {
     private const int RingsPerChunk = 40;
-    // How far into a well the wall keeps going before the throat is left open.
-    private const float ThroatFraction = 0.72f;
+    // How far into a well the wall keeps going before the throat is left open. Lower means a wider
+    // hole at the bottom: it costs nothing in play, since a well's reach is set by its width and
+    // length, and the hole is most of what makes one read as a hole.
+    private const float ThroatFraction = 0.62f;
     private const int SurfaceSegments = 48;
     private const int CapSegments = 96;
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
@@ -41,7 +43,14 @@ public partial class TrackRenderer : Node3D
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
+
+    /// <summary>How far ahead chunks are built in the solid style, where the fade hides the rest.</summary>
     [Export] public float ViewAhead { get; set; } = 450f;
+
+    // How far ahead this level actually builds. A wireframe level sees much further than a solid one
+    // - that is the point of it - and there is no sense fading lines out over a distance the mesh
+    // never reaches, which is what happened: the tube simply stopped, well inside the fade.
+    private float _viewAhead;
 
     /// <summary>Frees the current level's meshes, ready for <see cref="Init"/> with the next one.</summary>
     public void Reset()
@@ -66,6 +75,9 @@ public partial class TrackRenderer : Node3D
         _track = track;
         _material = material;
         _chunkLength = chunkLength;
+        // Build out to where the style stops showing anything: the solid fade reaches far_color at
+        // FadeEnd, while the wire style only dims to a quarter by twice that.
+        _viewAhead = theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead;
 
         // Each mouth is measured once into distance along the track and distance around the tube,
         // so the cut works the same on either surface and across the seam between them.
@@ -73,18 +85,30 @@ public partial class TrackRenderer : Node3D
         foreach (var w in warps ?? Array.Empty<Warp>())
         {
             var shape = _shapes.Get(track.SectionAt(w.S, w.Branch));
+            // Roughly a hemisphere: as deep as the mouth is wide across, so it reads as a hole in a
+            // surface. It used to bore three times its half-width, which was nine units when a mouth
+            // was small and became nineteen once the mouth scaled with the tube - deeper than the
+            // tube's own radius, so the player was looking down a cave at its lit far end.
+            float halfWidth = w.WidthOn(shape) / 2f;
             _warpCuts.Add(new WarpCut(w.S, shape.Loop(w.Surface, w.X), shape.Perimeter,
-                w.Length / 2f, w.Width / 2f, 2.5f * (w.Width / 2f), w.Branch));
+                w.Length / 2f, halfWidth, 1.1f * halfWidth, w.Branch));
         }
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a
         // finished level never looks out into the void.
-        foreach (var split in track.Splits)
+        //
+        // A wireframe level leaves them all out. A disc across the chamber would hide the branches
+        // diverging behind it, and seeing that is most of why the style exists; and with the wall
+        // already see-through there is nothing for a wall at the end of the track to protect.
+        if (!theme.Wire)
         {
-            _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
-            _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
+            foreach (var split in track.Splits)
+            {
+                _capSpecs.Add(new CapSpec(split.StartS, split, 0f));
+                _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
+            }
+            if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
         }
-        if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
 
         // Fork and merge walls sit in shadow around their openings. The wall closing the end of the
         // track is different: on the last level it is the thing you fly at, so it takes a color you
@@ -112,7 +136,7 @@ public partial class TrackRenderer : Node3D
     /// </summary>
     public void UpdateView(double s, Vector3d origin)
     {
-        double from = s - ViewBehind, to = s + ViewAhead;
+        double from = s - ViewBehind, to = s + _viewAhead;
         long lastInTrack = (long)Math.Ceiling(_track.Length / _chunkLength) - 1;
         long first = (long)Math.Floor(from / _chunkLength);
         long last = Math.Min((long)Math.Floor(to / _chunkLength), lastInTrack);

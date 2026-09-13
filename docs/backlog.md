@@ -1,0 +1,206 @@
+# Backlog
+
+Work queued on the `level-options` branch, taken from playtesting `v0.2.2`. Ordered below by what
+unblocks or invalidates what, not by size. Each entry says whether it is engine work or authoring,
+and whether a test can judge it or only playing can.
+
+## Done on this branch
+
+- **1. Win screen** — scrollable times, personal bests marked, run best keyed by starting level.
+- **2. Late hits** — the ship is pulled back to where it met the obstacle; the collision was right
+  and the picture was a whole frame of travel ahead of it.
+- **3. Jump window** — HUD cue driven by the ship's own rule, plus lines on the wall where the
+  window opens and shuts, measured rather than authored.
+- **4 / old 5. Engine plume** — it existed and was reading the wrong signal, so it sat pinned at
+  full across most of the throttle in late levels. It follows the throttle now.
+- **6. Autofire** — one shot a press; holding is what rapid fire buys. Rebalances every shooting
+  level and still wants a playthrough from level 1.
+- **7. Warp wells** — dust drawn in, and the size bug behind four separate reports: the loader
+  carried its own copy of the defaults, so every well in the game was 6 by 6. Width is now a share
+  of the tube's perimeter, which also removes the second place it could be defined.
+- **13. Escape menu** — resume, restart level, restart run, quit, with confirms on the two that
+  throw a run away.
+- **5. Thrust bar** — upright on the right edge beside the speed readout.
+- **8. Wireframe style** — a per-level theme flag. Lines kept, wall discarded, so the track ahead is
+  visible through it. Two systems that exist to hide distance had to be answered: the fade now only
+  dims rather than hides, and chunks build as far as the style can see instead of a flat 450.
+  Fork and merge walls are dropped in this style, since a disc across the chamber hides the branches
+  that are the point of it. Bench at `levels/bench/wire.json`.
+
+Found and fixed along the way, not on the original list:
+
+- Keys and the doors they open are coloured as pairs; an ordered group lights whichever target's
+  turn it is. Both mechanics worked, were tested and were documented, and none of that made them
+  visible - a rule the player cannot see is not a mechanic.
+- An unlocked door carried on being drawn, so the way ahead looked shut and the ship flew through
+  a wall.
+- Gate sockets were never freed on a level change and leaked into the scene tree for the rest of
+  the run.
+- `play.ps1 -Summary` opens straight onto the results screen, because checking it otherwise meant
+  playing thirteen levels without dying.
+
+## The order, and why
+
+### 1. Win screen: congratulate, and scroll the level times
+*From item 8. Engine + HUD. The times list is testable; the rest is playtest.*
+
+First because it is the only **defect** in the list. A full run is 26 levels, so the summary is 27
+lines and a total. An 11-level run already overflowed its panel and ran off the bottom of the
+screen, so a player who finishes the game cannot see what they did — the one thing they earned. The
+other three parts of the finale sequence are features; this is something that does not work.
+
+### 2. Hits landing after the ship looks past the obstacle
+*New item. Core. Testable once the cause is confirmed.*
+
+Reported on **stationary** obstacles, which rules out the mover and gate timing already fixed. Second
+because it is a fairness problem: a hit the player cannot account for reads as the game cheating,
+and it undermines every other difficulty decision in the game.
+
+Most likely cause, to be measured rather than assumed. Collision is swept over the distance covered
+in a frame, `[before, now]`, and fires if the obstacle lies anywhere in that span — but the ship is
+**drawn at the end of the sweep**. At 190 u/s and 60 fps that span is over three units, and an
+obstacle is two long, so the ship can be drawn a full body length past something at the instant the
+hit registers. The collision is right and the picture is wrong.
+
+If that is it, the fix is presentational, not a hitbox change: report where in the sweep the hit
+happened and show the ship and the burst at the impact point for that frame. Worth confirming before
+touching `ShipHalfLength` (0.8) or obstacle `Length` (2), since shrinking a box that is already
+correct would make contact miss instead.
+
+### 3. Knowing when the jump is available on flat sections
+*New item. HUD, plus possibly wall markings. Small to medium.*
+
+Jumping is gated on the section being fully unrolled (`opening >= 0.5`), and the transition in and
+out is gradual, so there is a stretch where the player cannot tell whether the button will work. A
+HUD icon with up/down arrows, and/or markings on the walls where the jump window opens and closes.
+
+The gate is already a clean boolean in `ShipSim`, so the HUD side is cheap and the state is exact —
+no guessing at thresholds. Wall markings are the more useful half if they can be placed where the
+window actually starts, since that keeps the player's eyes on the tube.
+
+### 4. Check the engine plume against v0.2.2 before building anything
+*From item 5. Costs nothing.*
+
+`ShipView` already stretches the nozzles with speed, pushes the plumes back as they grow, and scales
+nozzle emission with it. Until `v0.2.2` that glow sat under the bloom threshold and the engines were
+effectively unlit, so the response may have been there and invisible. Look first: this either closes
+the item or turns it into "more pronounced", which is a different and smaller job.
+
+### 5. Thrust bar to vertical
+*From item 4. HUD, small.*
+
+Cheap, and it pairs with whatever comes out of (2) — the bar says what the throttle is doing
+numerically, the plume says it physically. Settle placement at the same time: a vertical bar wants a
+screen edge, and the left is taken by the shield pips, the right by the speed readout.
+
+### 6. Primary fire stops autofiring
+*From item 9. Core, small change, wide blast radius. Rebalances most of the game.*
+
+Early on purpose. It changes how every level with shooting in it plays, and doing it now means every
+later playtest validates it for free; leaving it late buys a second full pass through 26 levels.
+
+It is also the same complaint as before at its root — the fire interval was slowed from 0.15 to 0.32
+for exactly this reason, which treated the symptom. Decide the interval again at the same time,
+since a deliberate tap every third of a second may now feel sluggish rather than considered.
+
+Needs a playtest from level 1, not a spot check: sealed rings, breakable walls, ordered groups and
+keys were all authored assuming a held trigger.
+
+### 7. Warp wells: bigger, with particles, and fewer signs
+*From item 1. Renderer. Playtest only.*
+
+All three parts together: **bigger**, a **swirl of dust being pulled in**, and the **sign ring down
+to 4**. The size bump is no longer held back — the wireframe look is wanted for its own sake rather
+than as the way wells get taught, so it cannot be relied on to solve this.
+
+Wells are still easy to avoid and barely noticed after three passes, so this one should stop being
+timid about size. Around the tube is capped by the rule that two thirds of the wall stays flyable,
+but **length along the track, depth of the bore, and the size of the open throat are all free**, and
+previous passes only moved the first two by modest amounts. The particles are what make a well read
+as active rather than as a dark patch, and they follow an existing pattern — the renderer already
+drives particle bursts for breaking blocks.
+
+### 8. The see-through wireframe look
+*From item 2. Renderer + shader + theme, plus one authored level. The biggest item here.*
+
+Wanted as **an effect in its own right**, not only as a teaching aid for wells. That changes what it
+has to be: not a prototype that might be thrown away, but a second render style good enough to build
+levels around, with the wire level being a distinct experience rather than a tutorial.
+
+Two existing systems push back and need answering: the distance fade exists to hide what is far
+away, which is the opposite of the point; and the end-of-level wall is hidden by that fade, which is
+what the whole run-out design rests on.
+
+It still raises the priority of (10), fork funnels — a flat wall with holes in it would be
+conspicuous in a level built to be seen through.
+
+### Small follow-up: obstacles still appear at 450 in a wire level
+The track now builds much further in the wire style, but `ObstacleRenderer` keeps its own view
+distance, so blocks and wells pop in well inside the visible tube. One line to change; held back
+because obstacle views are individual nodes rather than batched chunks, so the cost is worth seeing
+before extending it.
+
+### 9. A level map on the HUD
+*From item 3. HUD + a testable projection in Core.*
+
+Deferred behind (6) deliberately: same goal, and if seeing through the tube works, an abstraction of
+the tube is redundant. If it does go ahead, the thing worth building is not a top-down map — at 190
+u/s anything the player looks away from the tube to read costs them what it was meant to buy. Route
+choice at a fork is the one decision made in advance and currently made blind, so a marker that
+lights up before a split may beat a map that is always there.
+
+### 10. Fork and merge funnels
+*From item 7. Renderer. User marked it lower priority.*
+
+Its priority depends on (6). The abruptness is structural: a fork is a flat disc across the chamber
+with the branch openings cut out by a shader, so the player flies at a wall with holes rather than
+into diverging tubes. The fix is the technique warp wells already use — displace the vertices into a
+throat instead of cutting a hole.
+
+### 11. A better ship model
+*From item 6. Renderer or asset work.*
+
+Late because it is the item most likely to be invisible in play. There is no ambient light, only a
+headlight on the camera, so detail that relies on shading goes black at grazing angles — that is why
+the wings went black once already. And at six units back the ship is small on screen.
+
+Settle first whether the complaint is *detail* or the ship reading as a cheap shape. If it is the
+latter, silhouette and motion buy more than geometry, and the cheap route gets most of it. A paused
+screenshot up close should decide it.
+
+### 12. The rest of the finale: autopilot, camera, victory tube
+*From item 8. The three parts that are not the win screen.*
+
+Last because it is the largest and the least load-bearing. The looping item-free tube is cheap and
+reuses everything. The autopilot should feed `ShipSim` synthetic input rather than add a second
+movement path. The camera is the real work: it is a fixed offset behind and above with a look-ahead
+target, and the floating-origin placement runs through it, so a front-right framing is a change
+rather than a parameter.
+
+### 13. A game menu on Escape
+*New item. HUD + input. Quit, restart, re-run; the existing prompts move into it.*
+
+Higher than it looks. **There is currently no way to quit the game** - nothing is bound to Escape,
+and the only exit is closing the window. That is a missing basic rather than a nicety, and it should
+probably jump most of the list below it.
+
+Notes for eval:
+- Wants: resume, restart this level, restart the run, quit. The retry and re-run prompts currently
+  live as hint text on the results and shields-down screens, and would move here, which also frees
+  those screens from explaining their own controls.
+- It needs pause semantics, and pause already exists (P) - the menu should use the same hold rather
+  than inventing a second one. Worth deciding whether the menu *is* the pause screen, which would
+  make P and Escape the same thing and leave one concept instead of two.
+- Escape is `ui_cancel` in Godot by default, so the binding is free but wants registering explicitly
+  alongside the rest in InputSetup rather than relying on the built-in.
+- Mostly untestable as UI, though "which options are offered in which state" is small enough to keep
+  honest by hand: mid-level, run over, and run complete each want a different set.
+
+## Standing constraints
+
+Any of this has to keep three guards passing, all of which exist because something shipped wrong:
+
+- `SplitSavingTests` — every fork saves 4% on its quick branch and spreads 10% between branches.
+- The chain-cycle check in `LevelLoaderTests` — the run is a line from level 1 to the finale, every
+  level reachable exactly once. A victory level would need thinking about here.
+- `RunOutTests` — nothing authored in the last 260 units of a level.

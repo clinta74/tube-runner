@@ -1,0 +1,82 @@
+{
+  "name": "Wireframe",
+  "speed": 110,
+  "segmentLength": 60,
+
+  // A bench for the see-through style, not part of the run. Play it with
+  //   ./play.ps1 -Level bench/wire.json
+  // It is laid out to show what the style is for rather than to be a fair level: a bend, a fork, a
+  // warp well and a second fork, each placed so the one after it is already in view. In the solid
+  // style none of that can be seen until it arrives.
+  "theme": {
+    "wire": true,
+    "seamLight": "#7ff0ff",
+    "far": "#000000",
+    "ship": "#ffffff",
+    "block": "#ff8a3a",
+    "target": "#ff3a6a",
+    "breakable": "#7cffb0",
+    "fadeStart": 60,
+    "fadeEnd": 700,
+    "glow": 0.5
+  },
+
+  "sections": {
+    "tube":         { "radius": 6 },
+    "wide":         { "radius": 8 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 260 },                                              //    0 -  260
+
+    // A long bend. In the solid style this is a wall that hides everything past it; here the whole
+    // curve is visible at once, which is the first thing worth looking at.
+    { "length": 420, "turn": 65 },                                  //  260 -  680
+
+    // A fork, with no chamber wall across it. Both branches are visible from well before the split,
+    // so the choice can be made on what is down each one rather than on a guess.
+    { "length": 140, "section": "chamber" },                        //  680 -  820
+    { "length": 440, "turn": 85, "split": {                         //  820 - 1260
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
+      ]
+    },
+    { "length": 160, "section": "tube" },                           // 1260 - 1420
+
+    // A well on the outside of a bend. With the wall see-through it can be seen cut into the far
+    // side of the tube from a long way back, which is the case the style was first suggested for.
+    { "length": 420, "section": "wide", "turn": -70, "warps": [     // 1420 - 1840
+      { "at": 240, "angle": 90 }
+    ] },
+
+    { "length": 260, "section": "tube", "pickups": [                // 1840 - 2100
+      { "at": 130, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    ] },
+
+    // A twist, to see whether a run of tight bends still reads when the walls are open. This is the
+    // stretch most likely to turn into noise: every bend past the first is drawn through the one in
+    // front of it.
+    { "length": 200, "turn": 80, "obstacles": [                     // 2100 - 2300
+      { "at": 110, "angle": 0, "width": 9 }
+    ] },
+    { "length": 200, "turn": -85, "climb": 14, "obstacles": [       // 2300 - 2500
+      { "at": 100, "angle": 180, "width": 9 }
+    ] },
+    { "length": 200, "turn": 75, "climb": -16 },                    // 2500 - 2700
+
+    { "length": 400 }                                               // 2700 - 3100  run-out
+  ]
+}

@@ -26,7 +26,11 @@ param(
     #   ffmpeg -i recordings/run-....avi -c:v libx264 -crf 20 -pix_fmt yuv420p run.mp4
     [switch]$Record,
     # Frame rate to record at.
-    [int]$RecordFps = 60
+    [int]$RecordFps = 60,
+    # Open straight onto the end-of-run results screen, filled with the levels this run would have
+    # covered. For checking the summary without playing the game to the end: the list only scrolls
+    # past a dozen levels, and splits are only kept for levels actually finished.
+    [switch]$Summary
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tools/godot.ps1')
@@ -52,6 +56,7 @@ if ($Record) {
 $gameArgs = @()
 if ($Level) { $gameArgs += "--level=res://levels/$Level" }
 if ($Start -ge 0) { $gameArgs += '--start=' + $Start.ToString([cultureinfo]::InvariantCulture) }
+if ($Summary) { $gameArgs += '--summary' }
 if ($gameArgs) { $godotArgs += @('--') + $gameArgs }
 
 & $godot @godotArgs

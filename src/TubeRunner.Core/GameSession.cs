@@ -47,7 +47,18 @@ public sealed record RunState(
 
 /// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
 /// <param name="Special">Fire the ring gun, if it has charges.</param>
-public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, bool Fire = false, float Throttle = 0f, bool Special = false);
+/// <param name="Fire">The gun was pressed this frame. One press, one shot.</param>
+/// <param name="FireHeld">
+/// The gun is being held down. On its own that does nothing: holding only fires while rapid fire is
+/// running, which is what rapid fire is for.
+/// </param>
+public readonly record struct ShipInput(
+    float Steer = 0f,
+    bool Jump = false,
+    bool Fire = false,
+    float Throttle = 0f,
+    bool Special = false,
+    bool FireHeld = false);
 
 /// <param name="Ship">Movement settings.</param>
 /// <param name="Shields">Shields at the start; the run ends when they run out.</param>
@@ -56,9 +67,17 @@ public readonly record struct ShipInput(float Steer = 0f, bool Jump = false, boo
 /// <param name="HitSlowdown">Speed multiplier right after a hit, easing back to 1 over the recovery.</param>
 /// <param name="ShotSpeed">Shot speed on top of the ship's own; ring shots too.</param>
 /// <param name="ShotRange">Distance a shot travels before it fades.</param>
-/// <param name="FireInterval">Seconds between shots while fire is held.</param>
+/// <param name="FireInterval">
+/// Shortest gap between shots. It was slowed to 0.32 when holding the trigger fired continuously,
+/// to stop a held button clearing everything; with one shot per press the ceiling is how fast a
+/// person can tap, so the cooldown can come back down and stop feeling sluggish.
+/// </param>
 /// <param name="RapidFireTime">Seconds a rapid-fire pickup lasts.</param>
-/// <param name="RapidFireFactor">Fire interval multiplier during rapid fire.</param>
+/// <param name="RapidFireFactor">
+/// Fire interval multiplier during rapid fire. Faster than it used to be, on purpose: the default
+/// gun lost the ability to be held at all, so the prize that gives it back should be worth finding.
+/// Nerf the default, buy the power-up.
+/// </param>
 /// <param name="RingChargesPerPickup">Ring gun shots each ring-gun pickup gives.</param>
 /// <param name="RamTime">Seconds an unstoppable pickup lasts.</param>
 /// <param name="RingRange">Distance a ring shot sweeps before it fades.</param>
@@ -82,7 +101,7 @@ public sealed record SessionSettings(
     float HitSlowdown = 0.45f,
     float ShotSpeed = 220f,
     float ShotRange = 300f,
-    float FireInterval = 0.32f,
+    float FireInterval = 0.18f,
     float RapidFireTime = 8f,
     float RapidFireFactor = 0.35f,
     int RingChargesPerPickup = 3,
@@ -272,7 +291,11 @@ public sealed class GameSession
         MoveRings(dt);
 
         _fireCooldown = Math.Max(0f, _fireCooldown - dt);
-        if (State == SessionState.Playing && input.Fire && _fireCooldown <= 0f) Fire();
+        // One press, one shot. Holding the trigger only fires while rapid fire is running - without
+        // that, a held button cleared every path in the game and there was no decision left in
+        // shooting at all. It also gives rapid fire something to actually be.
+        bool wantsShot = input.Fire || (input.FireHeld && RapidFireLeft > 0f);
+        if (State == SessionState.Playing && wantsShot && _fireCooldown <= 0f) Fire();
         if (State == SessionState.Playing && input.Special && RingCharges > 0) FireRing();
 
         if (State == SessionState.Playing && Ship.Position.S >= Track.Length - _settings.FinishRunOut)
@@ -311,6 +334,10 @@ public sealed class GameSession
             // Whatever the ship hits breaks apart, so it doesn't fly on through it. A plate is wall:
             // it stays, and flying into it again costs again.
             if (o.Kind != ObstacleKind.Plate) o.Destroyed = true;
+            // Stop where the two actually met, rather than wherever this frame's travel happened to
+            // end. The sweep can carry the ship a body length past an obstacle before the hit is
+            // noticed, and it is drawn where it ends up, so the hit appears to land on nothing.
+            Ship.StopAt(Math.Max(from, o.S - reach));
             if (!TakeHit()) return;
         }
     }
@@ -363,8 +390,13 @@ public sealed class GameSession
     // A gate is only there for half its cycle. Anything without a period is always solid.
     private bool IsSolid(Obstacle o) => o.IsSolidAt(Elapsed) && !IsUnlocked(o);
 
-    // A locked gate opens once every target keyed to it is gone, so shooting buys passage.
-    private bool IsUnlocked(Obstacle o)
+    /// <summary>
+    /// Whether a locked obstacle has had its keys shot and is no longer in the way. The view needs
+    /// this as much as the collision does: an unlocked door is not destroyed, just no longer solid,
+    /// so anything drawing obstacles by whether they are destroyed will leave a door standing that
+    /// the ship then flies straight through.
+    /// </summary>
+    public bool IsUnlocked(Obstacle o)
     {
         if (o.LockedBy is null) return false;
         foreach (var key in _obstacles)
@@ -374,8 +406,12 @@ public sealed class GameSession
         return true;
     }
 
-    // Within an ordered group, a target only breaks once everything earlier in it has gone.
-    private bool CanBreak(Obstacle o)
+    /// <summary>
+    /// Whether an obstacle's turn has come: within an ordered group, a target only breaks once
+    /// everything earlier in it has gone. Public because the view needs it too - a group where every
+    /// target looks the same is a puzzle with its answer hidden, not a puzzle.
+    /// </summary>
+    public bool CanBreak(Obstacle o)
     {
         if (o.Group is null) return true;
         foreach (var other in _obstacles)
@@ -417,10 +453,11 @@ public sealed class GameSession
             double reach = w.Length / 2f + _settings.ShipHalfLength;
             if (to < w.S - reach || from > w.S + reach) continue;
 
+            var shape = ShapeAt(w.S, w.Branch);
             float lateral = Ship.IsJumping
                 ? MathF.Abs(pos.X - w.X)
-                : TrackSpace.SurfaceDistance(ShapeAt(w.S, w.Branch), pos.Surface, pos.X, w.Surface, w.X);
-            if (lateral >= w.Width / 2f + _settings.ShipHalfWidth) continue;
+                : TrackSpace.SurfaceDistance(shape, pos.Surface, pos.X, w.Surface, w.X);
+            if (lateral >= w.WidthOn(shape) / 2f + _settings.ShipHalfWidth) continue;
 
             w.Used = true;
             Diving = w;

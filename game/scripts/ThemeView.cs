@@ -20,6 +20,7 @@ public static class ThemeView
         wall.SetShaderParameter("fade_start", theme.FadeStart);
         wall.SetShaderParameter("fade_end", theme.FadeEnd);
         wall.SetShaderParameter("glow", theme.Glow);
+        wall.SetShaderParameter("wire", theme.Wire);
     }
 
     // The shader's palette arrays are fixed-size; unused slots are never picked.

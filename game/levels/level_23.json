@@ -7,21 +7,31 @@
   // Narrow tubes at speed, with wells sitting on the fast line. A well is a hazard to steer around,
   // never a gap to thread - it takes about a third of the way round the tube, leaving two thirds
   // safe - so the narrower the bore, the more of the remaining wall the ship has to give up.
-  // Every well here is placed where the tube curves away from the ship, so it presents itself early
-  // and only goes edge-on once there is no time left. The signs do the rest.
+  //
+  // The one level drawn as a see-through wireframe, and this is the one that earns it. Everything
+  // here is about reading structure ahead of time: which way a bore bends, where a well is cut into
+  // the far side, which branch of the fork carries one. With the wall open all of that is visible
+  // from a long way back, so the level stops being about discovering hazards and becomes about
+  // committing to a line through hazards already seen.
+  //
+  // The fork's chamber walls are dropped in this style, so the two branches simply diverge in front
+  // of the player - which is what a fork always was and never looked like.
   "theme": {
+    "wire": true,
     "darks": ["#1d1526", "#17111e", "#251b30"],
     "lights": ["#8d6fb5", "#795c9e", "#a084c4"],
     "seamDark": "#0e0a13",
     "seamLight": "#dcb8ff",
     "far": "#060409",
-    "ship": "#dcb8ff",
-    "block": "#c9b8dd",
+    "ship": "#ffffff",
+    "block": "#ff8a3a",
     "target": "#ffcf3a",
     "breakable": "#7cffc4",
-    "fadeStart": 35,
-    "fadeEnd": 345,
-    "glow": 0.35
+    // Reaches much further than a solid level: the wire fade only dims lines to a quarter, and the
+    // track is built out to twice this, so this is what sets how far ahead the level can be read.
+    "fadeStart": 60,
+    "fadeEnd": 520,
+    "glow": 0.45
   },
 
   "sections": {

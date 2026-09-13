@@ -47,6 +47,14 @@ public sealed class ShipSim
 
     public bool IsJumping { get; private set; }
 
+    /// <summary>
+    /// Whether a jump can be started right now. Only on a fully unrolled section: in a tube, or
+    /// anywhere part way through opening out or closing back up, there is nowhere to jump to.
+    /// The HUD reads this rather than working it out again, so what it promises and what the ship
+    /// will actually do cannot drift apart.
+    /// </summary>
+    public bool CanJump => !IsJumping && Shape.Unroll >= 1f;
+
     /// <summary>Progress through the current jump, from 0 to 1.</summary>
     public float JumpProgress { get; private set; }
 
@@ -85,7 +93,7 @@ public sealed class ShipSim
             Throttle + Math.Clamp(throttle, -1f, 1f) * _settings.ThrottleRate * dt,
             ThrottleFloor,
             ThrottleCeiling);
-        if (jump && !IsJumping && Shape.Unroll >= 1f)
+        if (jump && CanJump)
         {
             IsJumping = true;
             JumpProgress = 0f;
@@ -141,6 +149,22 @@ public sealed class ShipSim
         Shape = _shapes.Get(_track.SectionAt(s, moved.Branch));
         IsJumping = false;
         JumpProgress = 0f;
+        Position = moved;
+    }
+
+    /// <summary>
+    /// Pulls the ship back to where it met something, on the frame it hit it.
+    ///
+    /// Collision is swept across a whole frame of travel - over three units at full speed, against
+    /// obstacles two units long - but the ship is drawn at the end of that sweep. Without this the
+    /// hit lands with the ship already drawn clear of the thing it hit, which reads as being struck
+    /// by nothing. Never moves the ship further back than where it began the frame.
+    /// </summary>
+    internal void StopAt(double s)
+    {
+        if (s >= Position.S) return;
+        var moved = _track.MoveTo(Position, s);
+        Shape = _shapes.Get(_track.SectionAt(s, moved.Branch));
         Position = moved;
     }
 

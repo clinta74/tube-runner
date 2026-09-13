@@ -280,6 +280,22 @@ clear the whole group a member at a time.
 the ship flies into it, whatever its turn. So put an ordered group **off the flight line** — out at an
 `angle`, or wide on an `x` — or the player will clear it by driving through it.
 
+**In an ordered group, the target whose turn it is burns at full and the rest sit dim**, and that
+updates after every shot. The useful thing to know is not which group a target belongs to but
+whether shooting it now will do anything, so a fixed marker saying "this one is third" would be
+worse: it tells the player something they have to hold in their head rather than something they can
+read off the wall at the moment it matters.
+
+A key that is also ordered keeps its pair colour while it waits, so the two signals stack instead of
+fighting — the colour says which door it opens, the brightness says whether it is next.
+
+**A key and the door it opens are drawn in the same colour**, so a target that opens something does
+not look like an ordinary target and a locked door does not look like an ordinary block. The door
+sits in the same hue but dark, as the shut version of the bright thing that opens it, and bursts
+apart when its last key goes. Colours are handed out in the order the pairs are met and there are
+four of them, so **keep the number of pairs open at once to four or fewer** — beyond that they start
+repeating, and telling which key opens which is the whole puzzle wherever pairs overlap.
+
 **Shots leave at the ship's own position across the surface**, and travel straight down the track.
 There is no aiming, so the player lines a target up by steering onto it. That is what makes an
 ordered group a puzzle worth having: they must steer to each one in turn, in the order you set,
@@ -323,10 +339,15 @@ bends down into a throat that opens through it. Fly into one and the ship falls 
 before being thrown back up the track. It costs **time, never a shield**, and a well stays armed —
 fly into the same one again and it takes you again.
 
-A ring of six warning signs is placed automatically 75 units back up the track: a yellow triangular
-plate with a dark border, carrying a black disc, held off the wall on a post, and pulsing. Six is
-enough that one faces the player whichever way round the tube they are flying. Nothing needs
-declaring for them.
+Dust is drawn down into every well: spawned in a shell around the mouth, pulled inwards and given a
+twist on the way, so it spirals in. This is what says the thing is live. Three passes at making
+wells bigger never quite finished the job, and the reason was that a well is a hole in a dark wall
+that holds perfectly still — nothing about it moved.
+
+A ring of four warning signs is placed automatically 75 units back up the track: a yellow triangular
+plate with a dark border, carrying a black disc, held off the wall on a post, and pulsing. Four is
+enough that one faces the player whichever way round the tube they are flying, now that the well
+does some of its own warning. Nothing needs declaring for them.
 
 Every part of that is there to stop a sign reading as an obstacle, which is worse than no sign at
 all — it gets dodged rather than heeded. Blocks sit flat on the wall and are solid, so the **post and
@@ -336,8 +357,8 @@ the gap under it** are most of what separates them at a glance, and **nothing el
 |---|---|---|
 | `at` | required | Distance of the mouth's center from the start of its piece (or of the track). |
 | `surface`, `x`, `angle`, `branch` | as obstacles | Where on the wall it sits; placed exactly like an obstacle. |
-| `width` | `14` | Opening across the surface. A little over a third of the way around a radius-6 tube. |
-| `length` | `40` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
+| `span` | `0.33` | How far round the tube the mouth reaches, as a share of the section's perimeter. At most 0.4. |
+| `length` | `52` | Opening along the track. Longer than it is wide, so a mouth met end-on still reads. |
 | `back` | `0` | How far it throws the ship back. 0 uses the game's default of 250. |
 | `count`, `spacing`, `xStep`, `angleStep` | | Repeats, as for obstacles. |
 
@@ -356,11 +377,17 @@ curve of the wall turns that patch back towards the ship: it stands out as a cle
 long way out and only goes edge-on once you are on top of it, which is exactly the right order for
 a hazard.
 
-**Keep a mouth to about a third of the way around the tube**, so two thirds of the circumference
-stays safe. A warp is something the player steers around, not a gap they thread: on a radius-6 tube
-(perimeter about 37.7) the default `width` of 14 is already at that share, so **grow a mouth along
-the track, not around it**. That is why `length` is the longer axis — it is the only one free, and
-the long-range read is what a small mouth loses.
+**A mouth is measured as a share of the way round, not in units.** A warp is something the player
+steers around rather than a gap they thread, so two thirds of the wall has to stay flyable — and an
+absolute width cannot hold that promise, because the same number is a third of a standard tube and
+nearly half of a narrow one. One authored well would behave like three different hazards depending
+on which section it landed in.
+
+At a third the arithmetic is tidy: half the arc is `pi x r / 3`, so **a well's radius across the
+surface comes out about equal to the tube's own radius**. A radius-10 tube gets a mouth about 10
+across the wall; a radius-6 tube gets about 6.
+
+`length` along the track is still in units, since nothing constrains it.
 
 **The wall is drawn down into the well**, rather than the opening being a hole with something else
 hung behind it. Vertices inside the mouth are displaced inwards along the surface normal, so the

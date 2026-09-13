@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Godot;
@@ -30,7 +31,7 @@ public partial class Main : Node3D
     /// <summary>Field of view at full speed effect; widening it sells the speed.</summary>
     [Export] public float MaxFov { get; set; } = 100f;
 
-    private readonly List<(string Level, float Time)> _splits = new();
+    private readonly List<(string Level, float Time, bool Best)> _splits = new();
     private BestTimes _bestTimes = null!;
     private Level _level = null!;
     private GameSession _session = null!;
@@ -48,12 +49,60 @@ public partial class Main : Node3D
     private double _startS;
     private double _levelStart;
     private bool _practice;
+    private bool _debugSummary;
     private bool _running;
     private bool _paused;
     private bool _levelDone;
     private float _bank;
     private float _shake;
     private float _endedFor;
+    private float _scrollHeld;
+    private float _scrollRepeat;
+    // Seconds for the camera to swing round at the end of a run, and where it ends up relative to
+    // the ship: ahead of it, out to the right, and a little above.
+    private const float OutroSwing = 2.2f;
+
+    // Close in on the ship's front right quarter: near enough that it fills the frame and its detail
+    // is worth having, and near enough that the view back past it does not reach the end of the
+    // built world. It sits a little closer than the camera does in play.
+    private const float OutroAhead = 4.5f;
+    private const float OutroSide = 2.4f;
+    private const float OutroLift = 1.1f;
+
+    /// <summary>
+    /// How much track the victory lap keeps behind the ship. The camera looks back at it, so what is
+    /// normally off-screen history is now the whole backdrop, and chunks being freed at the usual
+    /// distance would be freed in plain sight.
+    /// </summary>
+    private const float OutroBehind = 260f;
+
+    /// <summary>How much track the victory lap adds at a time, and how close to the end it gets first.</summary>
+    private const float OutroExtend = 2000f;
+
+    /// <summary>
+    /// Where the victory lap stops growing and starts over. The track holds a frame every unit, so
+    /// an endless lap is an endless list: about 190 KB a minute at the speed it cruises. This caps
+    /// it near half an hour, which is far longer than anyone reads a results screen.
+    /// </summary>
+    private const double OutroMaxLength = 100_000.0;
+
+    /// <summary>
+    /// How far into the victory track the ship starts. The camera looks back at it from ahead, so it
+    /// needs real track behind it - starting near the beginning put the edge of the world in shot.
+    /// </summary>
+    private const double OutroStart = 900.0;
+
+    private bool _outro;
+    private float _outroTime;
+    private float _outroBlend;
+    private int _finalScore;
+    private float _finalRun;
+    private float _trackViewBehind;
+    private readonly List<(string Label, Action Pick)> _menu = new();
+    private bool _menuOpen;
+    private bool _menuConfirming;
+    private int _menuIndex;
+    private string _menuTitle = "PAUSED";
 
     // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
     private int _lastBranch = -1;
@@ -79,7 +128,7 @@ public partial class Main : Node3D
         get
         {
             float total = 0f;
-            foreach (var (_, time) in _splits) total += time;
+            foreach (var split in _splits) total += split.Time;
             return total;
         }
     }
@@ -90,6 +139,7 @@ public partial class Main : Node3D
         _ship = GetNode<ShipView>("Ship");
         _camera = GetNode<Camera3D>("Camera3D");
         _track = GetNode<TrackRenderer>("TrackRenderer");
+        _trackViewBehind = _track.ViewBehind;
         _obstacles = GetNode<ObstacleRenderer>("ObstacleRenderer");
         _hud = GetNode<Hud>("Hud");
         _fx = GetNode<SpeedFx>("SpeedFx");
@@ -106,6 +156,7 @@ public partial class Main : Node3D
                 _startS = double.Parse(arg["--start=".Length..], CultureInfo.InvariantCulture);
                 _practice = true;
             }
+            if (arg == "--summary") _debugSummary = true;
         }
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
@@ -113,8 +164,9 @@ public partial class Main : Node3D
         LoadLevel(LevelPath, carry: null, startS: _startS);
 
         // A test run with --start skips the start screen, so recordings and quick checks just go.
-        _running = _practice;
-        if (!_running) _hud.ShowMessage(StartScreen);
+        _running = _practice || _debugSummary;
+        if (_debugSummary) FillDebugSummary();
+        else if (!_running) _hud.ShowMessage(StartScreen);
     }
 
     private const string StartScreen = """
@@ -123,12 +175,13 @@ public partial class Main : Node3D
         Steer            A / D   or   left / right
         Speed up, slow   W / S   or   up / down
         Jump             Space   (on flat sections)
-        Fire             Ctrl / J / Enter / left mouse
+        Fire             Ctrl / J / Enter / left mouse   (one shot a press)
         Ring gun         E / K / right mouse
         Retry level      R
         Pause            P
+        Menu, quit       Esc
 
-        Gamepad: stick to steer and set speed, A to jump, X to fire, Y for the ring gun
+        Gamepad: stick to steer and set speed, A to jump, X to fire, Y for the ring gun, Start for the menu
 
         Space to start
         """;
@@ -151,6 +204,9 @@ public partial class Main : Node3D
 
         _level = level;
         _levelEntry = carry;
+        // The victory lap widens this and nothing else does; put it back for an ordinary level.
+        _track.ViewBehind = _trackViewBehind;
+        _outro = false;
         _paused = false;
         _levelDone = false;
         _endedFor = 0f;
@@ -171,7 +227,7 @@ public partial class Main : Node3D
         _track.Reset();
         _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps, level.Next is null);
         _obstacles.Reset();
-        _obstacles.Init(_session, level.Theme);
+        _obstacles.Init(_session, level.Theme, JumpWindows.Find(level.Track));
         _fx.SetStreakColor(level.Theme.SeamLight.ToColor());
         _hud.Init(level.Name, _session.MaxShields, _session.ExtraShields, level.Theme.SeamLight.ToColor(),
             _bestTimes.Get(LevelId));
@@ -180,10 +236,50 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
-        if (Input.IsActionJustPressed(InputSetup.Restart))
+
+        // The menu holds everything still while it is up: the session is never stepped, so a run
+        // cannot end or advance behind it.
+        if (Input.IsActionJustPressed(InputSetup.Menu))
+        {
+            // Backing out of a question returns to the menu rather than dismissing everything, so
+            // Escape never means "yes" by accident.
+            if (_menuConfirming) OpenMenu();
+            else if (_menuOpen) CloseMenu();
+            else OpenMenu();
+        }
+        if (_menuOpen)
+        {
+            UpdateMenu();
+            DrawWorld(0f, steer: 0f);
+            return;
+        }
+
+        // R does nothing on the victory lap. The level being flown there is the victory track, which
+        // is not a level anyone can retry, and quietly turning "retry this level" into "throw the
+        // finished run away" would be a nasty thing for one key to do. Space starts a new run and
+        // Escape opens the menu; both say what they are.
+        if (!_outro && Input.IsActionJustPressed(InputSetup.Restart))
         {
             LoadLevel(LevelPath, _levelEntry, _levelStart);
             DrawWorld(dt, steer: 0f);
+            return;
+        }
+
+        // The victory lap: the ship flies itself while the results are up, and space starts a new run.
+        if (_outro)
+        {
+            if (WaitForContinue(dt)) return;
+            StepOutro(dt);
+            DrawWorld(dt, steer: 0f);
+            return;
+        }
+
+        // Sitting on the results screen with --summary: scroll it, draw the world behind it, and
+        // never step the session. Nothing here is a real run, so there is nothing to advance.
+        if (_debugSummary)
+        {
+            ScrollSummary(dt);
+            DrawWorld(0f, steer: 0f);
             return;
         }
 
@@ -219,9 +315,10 @@ public partial class Main : Node3D
         _session.Step(dt, new ShipInput(
             steer,
             Input.IsActionJustPressed(InputSetup.Jump),
-            Input.IsActionPressed(InputSetup.Fire),
+            Input.IsActionJustPressed(InputSetup.Fire),
             Input.GetAxis(InputSetup.ThrottleDown, InputSetup.ThrottleUp),
-            Input.IsActionJustPressed(InputSetup.Special)));
+            Input.IsActionJustPressed(InputSetup.Special),
+            Input.IsActionPressed(InputSetup.Fire)));
 
         // The next level may have just loaded; draw its first frame so none goes out blank.
         if (HandleEvents())
@@ -286,7 +383,13 @@ public partial class Main : Node3D
         _bank = Mathf.Lerp(_bank, steer, 1f - Mathf.Exp(-8f * dt));
         var shipPos = shipWorld.RelativeTo(origin).ToGodot() + snapOffset;
         _ship.LookAtFromPosition(shipPos, shipPos + forward, up.Rotated(forward, -0.4f * _bank));
-        _ship.UpdateState(dt, _bank, _session.Ship.Throttle, _fx.Intensity, _session.RamLeft, _session.RecoveryLeft);
+        // Where the throttle sits in its own range, which is what the engines follow. Measured
+        // against the ship's full range rather than whatever a thrust zone has narrowed it to, so
+        // the plume and the thrust bar are reading the same thing.
+        var limits = _session.Ship.Settings;
+        float thrust = Mathf.InverseLerp(limits.MinThrottle, limits.MaxThrottle, _session.Ship.Throttle);
+        _ship.UpdateState(dt, _bank, _session.Ship.Throttle, thrust, _fx.Intensity,
+            _session.RamLeft, _session.RecoveryLeft);
 
         // The camera follows the ship's section-space pose along its path, so it stays level on
         // open planes and rolls with the ship around tubes and through jumps.
@@ -301,6 +404,18 @@ public partial class Main : Node3D
         {
             float left = 1f - _session.DiveProgress;
             target = target.Lerp(shipPos, 1f - left * left * left);
+        }
+
+        // The victory lap swings the camera round to the ship's front right and holds it there,
+        // eased in from wherever the run left it rather than cutting.
+        if (_outro)
+        {
+            var over = FrameOnPath(pos.S + OutroAhead)
+                .PointOnSection(ridePoint + new System.Numerics.Vector2(OutroSide, OutroLift))
+                .RelativeTo(origin).ToGodot() + snapOffset;
+            float swing = _outroBlend * _outroBlend * (3f - 2f * _outroBlend);
+            camPos = camPos.Lerp(over, swing);
+            target = target.Lerp(shipPos, swing);
         }
         _camera.LookAtFromPosition(camPos, target, up);
         _camera.Fov = Mathf.Lerp(BaseFov, MaxFov, _fx.Intensity);
@@ -361,7 +476,8 @@ public partial class Main : Node3D
                     _levelDone = true;
                     break;
                 case SessionEvent.GameOver:
-                    _hud.ShowMessage($"SHIELDS DOWN\n{Summary()}\nSpace to run it again   R to retry this level");
+                    // The level that just ended the run is not in the splits: it was not finished.
+                    ShowRunSummary("SHIELDS DOWN", "Up / down to scroll     Space to run it again     Esc for options");
                     break;
             }
         }
@@ -373,15 +489,16 @@ public partial class Main : Node3D
     {
         _levelDone = false;
         float time = _session.Elapsed;
-        _splits.Add((_level.Name, time));
+        // Recorded before the split is kept, so the summary can mark which levels were personal bests.
         bool best = !_practice && _bestTimes.Record(LevelId, time);
+        _splits.Add((_level.Name, time, best));
 
         if (_level.Next is null)
         {
             if (!_practice) _bestTimes.Record(RunKey, SplitTotal);
             if (!_practice) SaveBestTimes();
-            _hud.ShowMessage($"RUN COMPLETE\n{Summary()}\nSpace to run it again");
-            return false;
+            EnterOutro();
+            return true;
         }
 
         if (best) SaveBestTimes();
@@ -390,14 +507,209 @@ public partial class Main : Node3D
         return true;
     }
 
-    // The run's splits, with its total and the best total to beat.
-    private string Summary()
+    // The run's splits, with its total and the best total to beat. A full run is 26 levels, so the
+    // list is handed over as rows the HUD can scroll rather than as one block of text.
+    private void ShowRunSummary(string headline, string hint)
     {
-        var lines = new List<string>();
-        foreach (var (level, time) in _splits) lines.Add($"{level}   {time:0.00}s");
-        string bestRun = _bestTimes.Get(RunKey) is float best ? $"   (best {best:0.00}s)" : "";
-        lines.Add($"TOTAL   {SplitTotal:0.00}s{bestRun}");
-        return string.Join("\n", lines);
+        var rows = new List<string>();
+        foreach (var (level, time, best) in _splits)
+        {
+            rows.Add($"{level}   {time:0.00}s{(best ? "   NEW BEST" : "")}");
+        }
+
+        int count = _splits.Count;
+        string subline = count == 0
+            ? "no zones cleared"
+            : _runStart.GetFile() == "level_01.json"
+                ? $"{count} zone{(count == 1 ? "" : "s")}, start to finish"
+                : $"{count} zone{(count == 1 ? "" : "s")} cleared";
+
+        string bestRun = _bestTimes.Get(RunKey) is float best2 ? $"   (best {best2:0.00}s)" : "";
+        _hud.ShowSummary(headline, subline, rows, $"TOTAL   {SplitTotal:0.00}s{bestRun}", hint);
+    }
+
+    /// <summary>
+    /// A finished run does not stop. The ship carries on into an empty tube and flies itself while
+    /// the results are up, with the camera swung round to watch it go past. Ending on a frozen frame
+    /// of whatever happened to be on screen is a poor way to finish twenty-six levels.
+    /// </summary>
+    private void EnterOutro()
+    {
+        _outroTime = 0f;
+        _outroBlend = 0f;
+        // Taken before the victory level replaces the session: these are the run's numbers, and the
+        // lap that follows is a fresh session on a fresh track with nothing to do with them.
+        _finalScore = _session.Score;
+        _finalRun = SplitTotal;
+        LoadVictoryLap();
+    }
+
+    // Loading a level clears whatever message is up, so the summary goes back on afterwards.
+    private void LoadVictoryLap()
+    {
+        LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: OutroStart);
+        _track.ViewBehind = OutroBehind;
+        _running = true;
+        _outro = true;
+        _hud.Freeze(_finalScore, _finalRun);
+        ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
+    }
+
+    // Flying itself: a slow weave around the tube. The ship is fed input like on any other frame
+    // rather than being moved directly, so there is one movement path in the game and the victory
+    // lap obeys the same rules the run did.
+    private void StepOutro(float dt)
+    {
+        _outroTime += dt;
+        _outroBlend = Mathf.Min(1f, _outroBlend + dt / OutroSwing);
+        // Throttle held all the way down: the run is over, so the lap is a cruise rather than a
+        // sprint, and a slower ship is one the camera can actually look at.
+        _session.Step(dt, new ShipInput(Steer: 0.55f * Mathf.Sin(_outroTime * 0.55f), Throttle: -1f));
+
+        // The track grows ahead of the ship instead of the lap looping. Looping cannot be made
+        // seamless: each wall segment picks its palette and checker size from a hash of its index,
+        // so coming back round to an earlier stretch changes the pattern even though the geometry
+        // matches. Chunks behind are already freed as the ship goes, so this only ever costs the
+        // track's own frames.
+        var track = _level.Track;
+        if (track.Length - _session.Ship.Position.S < OutroExtend && track.Length < OutroMaxLength)
+        {
+            track.Append(new TrackPiece(OutroExtend, track.SectionAt(track.Length)));
+        }
+
+        // Growing for ever is not free - the track keeps a frame every unit - so past a point it
+        // stops extending, the lap runs out, and this loads it fresh. That costs one seam in the
+        // wall pattern somewhere around half an hour in, against memory that would otherwise climb
+        // for as long as the screen is left up.
+        if (_session.State != SessionState.Playing) LoadVictoryLap();
+    }
+
+    // What the menu offers depends on where the run is: there is nothing to resume once it is over,
+    // and nothing to restart a run from if one was never really started.
+    private void OpenMenu()
+    {
+        _menuTitle = "PAUSED";
+        _menuConfirming = false;
+        _menu.Clear();
+        // Always first, and always the one selected on opening: the default pick has to be the one
+        // that changes nothing, since Escape is also what people hit by accident.
+        _menu.Add((_session.State == SessionState.Playing && _running ? "Resume" : "Back", CloseMenu));
+        // Not offered on the victory lap: the level being flown there is the victory track, and
+        // restarting it would hand the player a tube with nothing in it and no way out.
+        if (!_outro)
+        {
+            _menu.Add(("Restart this level", () =>
+            {
+                CloseMenu();
+                LoadLevel(LevelPath, _levelEntry, _levelStart);
+            }));
+        }
+        // The two that throw away a whole run ask first. They sit next to things picked in a hurry.
+        _menu.Add(("Restart the run", () => Confirm("Start the run over?", "Yes, start over", () =>
+        {
+            CloseMenu();
+            RestartRun();
+        })));
+        _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
+
+        _menuIndex = 0;
+        _menuOpen = true;
+        _shake = 0f;
+        RefreshMenu();
+    }
+
+    // A yes/no question in place of the menu, with "no" selected. Backing out reopens the menu.
+    private void Confirm(string question, string yes, Action act)
+    {
+        _menuTitle = question;
+        _menuConfirming = true;
+        _menu.Clear();
+        _menu.Add(("No, go back", OpenMenu));
+        _menu.Add((yes, act));
+        _menuIndex = 0;
+        RefreshMenu();
+    }
+
+    private void RefreshMenu() => _hud.ShowMenu(_menuTitle, _menu.ConvertAll(o => o.Label), _menuIndex);
+
+    private void CloseMenu()
+    {
+        _menuOpen = false;
+        _menuConfirming = false;
+        _hud.HideMenu();
+    }
+
+    private void UpdateMenu()
+    {
+        int move = Input.IsActionJustPressed(InputSetup.ThrottleUp) ? -1
+            : Input.IsActionJustPressed(InputSetup.ThrottleDown) ? 1
+            : 0;
+        if (move != 0)
+        {
+            _menuIndex = (_menuIndex + move + _menu.Count) % _menu.Count;
+            RefreshMenu();
+        }
+
+        if (Input.IsActionJustPressed(InputSetup.Jump) || Input.IsActionJustPressed(InputSetup.Fire))
+        {
+            // Taken before the call: picking one can load a level and rebuild the menu underneath.
+            var pick = _menu[_menuIndex].Pick;
+            pick();
+        }
+    }
+
+    /// <summary>
+    /// Fills the results screen with the levels this run would have covered, so it can be looked at
+    /// without playing to the end of the game. The scrolling only engages past a dozen rows, and
+    /// splits are only kept for levels actually finished, so checking it honestly meant a very long
+    /// sitting. Debug only: reached with --summary, and nothing here is a real run.
+    /// </summary>
+    private void FillDebugSummary()
+    {
+        string dir = LevelPath.GetBaseDir();
+        string path = LevelPath;
+        for (int i = 0; i < 40; i++)
+        {
+            Level level;
+            try
+            {
+                level = LevelLoader.Parse(FileAccess.GetFileAsString(path));
+            }
+            catch (LevelFormatException)
+            {
+                break;
+            }
+
+            // Spread of plausible times, with a best every few levels so both looks are visible.
+            _splits.Add((level.Name, 38f + i * 11 % 47 + i * 0.37f, i % 4 == 0));
+            if (level.Next is null) break;
+            path = dir.PathJoin(level.Next);
+        }
+        ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
+    }
+
+    // Up and down walk the results list. They are the throttle keys, which are free here because
+    // the ship is no longer flying, so nothing new has to be learned to read your own run.
+    private void ScrollSummary(float dt)
+    {
+        int dir = Input.IsActionPressed(InputSetup.ThrottleUp) ? -1
+            : Input.IsActionPressed(InputSetup.ThrottleDown) ? 1
+            : 0;
+        if (dir == 0)
+        {
+            _scrollHeld = 0f;
+            return;
+        }
+
+        // One row on the press, then a steady walk once it is clearly being held.
+        if (_scrollHeld <= 0f) _hud.ScrollSummary(dir);
+        _scrollHeld += dt;
+        if (_scrollHeld < 0.4f) return;
+
+        _scrollRepeat -= dt;
+        if (_scrollRepeat > 0f) return;
+        _hud.ScrollSummary(dir);
+        _scrollRepeat = 0.07f;
     }
 
     // Camera shake: strong after a hit, plus a faint rumble at high speed.
@@ -414,13 +726,21 @@ public partial class Main : Node3D
     // After a run ends, jump or fire starts a fresh run from the level it began with.
     private bool WaitForContinue(float dt)
     {
+        if (_hud.HasSummary) ScrollSummary(dt);
         _endedFor += dt;
         if (_endedFor < 1f) return false;
         if (!Input.IsActionJustPressed(InputSetup.Jump) && !Input.IsActionJustPressed(InputSetup.Fire)) return false;
 
+        RestartRun();
+        return true;
+    }
+
+    // Back to the level the run began on, with the splits, the score and the clock all starting
+    // again. Loading a level clears the frozen numbers the victory lap was holding.
+    private void RestartRun()
+    {
         _splits.Clear();
         LoadLevel(_runStart, carry: null, startS: _startS);
-        return true;
     }
 
     private void SaveBestTimes()

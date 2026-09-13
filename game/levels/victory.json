@@ -1,0 +1,46 @@
+{
+  "name": "Victory",
+  "speed": 105,
+  "segmentLength": 60,
+
+  // Where the ship goes when a run is finished: a long, empty, dead straight flat run that it flies
+  // by itself while the results are up. Not part of the run and not reachable by playing - Main
+  // loads it by name when the last level ends - so it sits outside the level_NN naming and the
+  // guards that walk the chain.
+  //
+  // Straight and open on purpose, both because of where the camera goes. It swings out to the
+  // ship's front right for the lap, and on a tube that turns or climbs that offset carries it
+  // through the wall and back every bend. Flat planes have no side wall to pass through, and with
+  // nothing bending there is nothing for the offset to fight.
+  //
+  // Nothing in it at all. No obstacles, pickups, wells or splits. The player is reading their own
+  // times and watching the ship fly, and neither leaves attention for dodging.
+  "theme": {
+    "darks": ["#101a2c", "#0d1624", "#141f33"],
+    "lights": ["#5f7fb0", "#51709e", "#6e8dc0"],
+    "seamDark": "#070c14",
+    "seamLight": "#bcd9ff",
+    "far": "#03060a",
+    "ship": "#ffffff",
+    "block": "#c3d2e2",
+    "target": "#ff5a7a",
+    "breakable": "#7cffc4",
+    "fadeStart": 50,
+    "fadeEnd": 460,
+    "glow": 0.35
+  },
+
+  // Only the opening stretch. Main adds more ahead of the ship as it flies, so the lap never has to
+  // wrap round - each wall segment picks its look from its own index, so coming back to an earlier
+  // stretch would change the pattern under an unbroken piece of geometry. The ship starts well in,
+  // because the camera watches it from ahead and needs track behind it to look at.
+  "sections": {
+    "flat": { "radius": 7, "opening": 1 }
+  },
+
+  "start": "flat",
+  "track": [
+    { "length": 2000 },
+    { "length": 2000 }
+  ]
+}

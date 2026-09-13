@@ -67,15 +67,52 @@ public class WarpTests
               "start": "tube",
               "track": [
                 { "length": 100 },
-                { "length": 300, "warps": [ { "at": 50, "width": 8, "back": 120 } ] }
+                { "length": 300, "warps": [ { "at": 50, "span": 0.25, "back": 120 } ] }
               ]
             }
             """);
 
         var warp = Assert.Single(level.Warps);
         Assert.Equal(150.0, warp.S);
-        Assert.Equal(8f, warp.Width);
+        Assert.Equal(0.25f, warp.Span);
         Assert.Equal(120f, warp.Back);
+    }
+
+    [Fact]
+    public void AWarpWithNothingDeclared_GetsTheGameSDefaults()
+    {
+        // This is the test that was missing. The loader used to carry its own copy of these, and its
+        // copy won: every well in the game was a sixth of its intended size, through four rounds of
+        // raising a default that never reached a level.
+        var level = LevelLoader.Parse("""
+            {
+              "sections": { "tube": { "radius": 6 } },
+              "start": "tube",
+              "track": [ { "length": 400, "warps": [ { "at": 200 } ] } ]
+            }
+            """);
+
+        var loaded = Assert.Single(level.Warps);
+        var expected = new Warp { S = 0 };
+        Assert.Equal(expected.Span, loaded.Span);
+        Assert.Equal(expected.Length, loaded.Length);
+    }
+
+    [Fact]
+    public void AWellSpansTheSameShareOfEveryTube()
+    {
+        // The point of a share: one authored number used to be a third of the way round a standard
+        // tube and nearly half of a narrow one, so the same well was three different hazards.
+        var warp = new Warp { S = 100 };
+        float wide = warp.WidthOn(new ProfileShape(CrossSection.Circle(7.5f)));
+        float narrow = warp.WidthOn(new ProfileShape(CrossSection.Circle(4.8f)));
+
+        Assert.Equal(0.33f, wide / new ProfileShape(CrossSection.Circle(7.5f)).Perimeter, precision: 3);
+        Assert.Equal(0.33f, narrow / new ProfileShape(CrossSection.Circle(4.8f)).Perimeter, precision: 3);
+        Assert.True(wide > narrow, "a wider tube should get a wider mouth");
+
+        // And the tidy consequence: at a third, a well's radius is about the tube's own radius.
+        Assert.Equal(6f, warp.WidthOn(new ProfileShape(CrossSection.Circle(6f))) / 2f, precision: 0);
     }
 
     [Theory]

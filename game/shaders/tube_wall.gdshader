@@ -24,6 +24,20 @@ uniform float fade_start = 30.0;
 uniform float fade_end = 320.0;
 // Extra brightness on light cells and seams; above 0 they bloom.
 uniform float glow = 0.0;
+// Draw the tube as a see-through wireframe instead of a solid wall.
+uniform bool wire = false;
+
+// Spacing of the wire grid: rings this many units apart along the track, and this many rails around.
+const float WIRE_RINGS = 10.0;
+const float WIRE_RAILS = 16.0;
+
+// A line at every whole number of v, held to about a pixel wide however far away it is. Without the
+// derivative the far end of a long tube turns into a solid sheet of aliasing.
+float wire_line(float v) {
+	float w = max(fwidth(v), 1e-5);
+	float d = abs(fract(v + 0.5) - 0.5) / w;
+	return 1.0 - smoothstep(0.5, 1.5, d);
+}
 
 // Checker cells around the tube; must be even so the pattern meets itself at the seam.
 const float AROUND[4] = float[4](8.0, 10.0, 12.0, 16.0);
@@ -55,6 +69,26 @@ void fragment() {
 	float seg = float(segment_index);
 	float local = UV.y;
 
+	// Wireframe: keep the lines and throw the wall away, so the track ahead can be seen through it -
+	// splits diverging, a well cut into the far side, the shape of a bend long before it arrives.
+	// Discard rather than blending, so there is no transparency to sort and a near line still hides
+	// what is behind it. `wire` is a uniform, so this branch is uniform and the derivatives inside it
+	// are well defined.
+	if (wire) {
+		float mask = max(wire_line(local / WIRE_RINGS), wire_line(UV.x * WIRE_RAILS));
+		if (mask < 0.04) discard;
+
+		vec3 lit = to_linear(seam_light) * (1.0 + glow);
+		// A well's rim burns brighter, which is all the marking it needs once the wall is gone.
+		float rim = (UV2.x - 0.06) / 0.05;
+		lit *= 1.0 + 2.5 * exp(-rim * rim) * step(0.001, UV2.x);
+
+		// Distance dims the lines rather than hiding them: seeing a long way is the whole point of
+		// this style, so the fade only takes them down to a quarter and reaches much further out.
+		float dim = mix(1.0, 0.25, smoothstep(fade_start, fade_end * 2.0, length(VERTEX)));
+		ALBEDO = lit * mask * dim;
+	} else {
+
 	float x = UV.x * AROUND[pick(seg, 1.0, 4)] + local * TWIST[pick(seg, 2.0, 4)];
 	float y = local / ALONG[pick(seg, 3.0, 4)];
 	float t = checker(vec2(x, y), softness);
@@ -75,21 +109,25 @@ void fragment() {
 	// the rim, 1 at the throat. After the distance fade, so the dark never washes back out.
 	float well = UV2.x;
 
-	// The wall carries no normals and the shader is unshaded, so the inward curve has nothing to
-	// light it: take a geometric normal from the screen derivatives instead. Held outside any branch,
-	// because derivatives in non-uniform control flow are undefined. Wall turning away from the eye
-	// loses light, which is what gives the throat its form rather than a flat dark patch.
+	// The round-over where the wall turns into the hole. The wall carries no normals and the shader
+	// is unshaded, so the curve is lit from a geometric normal taken off the screen derivatives.
+	// Held outside any branch, because derivatives in non-uniform control flow are undefined.
+	//
+	// Only the rim is shaded. Shading further in was a mistake: past the round-over a well should be
+	// a void, and lighting the inside of a void turns it into a lump - which is exactly how it read,
+	// helped by abs() here throwing away the sign so a bowl and a bulge shaded identically.
 	vec3 gn = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
 	float facing = abs(dot(gn, normalize(-VERTEX)));
-	col *= mix(1.0, 0.30 + 0.70 * facing, smoothstep(0.0, 0.20, well));
+	col *= mix(1.0, 0.35 + 0.65 * facing, smoothstep(0.0, 0.09, well));
 
-	// Then to black just inside the rim, so the lit wall ends against a hole.
-	col = mix(col, vec3(0.0), smoothstep(0.05, 0.40, well));
+	// Into black quickly, so what lies past the round-over is a hole and not a lit cave.
+	col = mix(col, vec3(0.0), smoothstep(0.04, 0.17, well));
 
-	// A thin bright band riding the rim itself draws the lip as a hard edge against that dark. Gated
-	// so it vanishes on flat wall, where the band's tail would otherwise wash the whole tube.
-	float lip = (well - 0.08) / 0.05;
-	col += to_linear(seam_light) * (1.0 + 2.0 * glow) * 0.85 * exp(-lip * lip) * smoothstep(0.0, 0.03, well);
+	// A tight bright ring on the rim itself, which is what makes an edge read as an edge. Gated so
+	// it vanishes on flat wall, where the band's tail would otherwise wash the whole tube.
+	float lip = (well - 0.05) / 0.03;
+	col += to_linear(seam_light) * (1.0 + 2.0 * glow) * 1.15 * exp(-lip * lip) * smoothstep(0.0, 0.02, well);
 
 	ALBEDO = col;
+	}
 }

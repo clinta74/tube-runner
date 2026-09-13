@@ -10,7 +10,17 @@ public partial class Hud : CanvasLayer
     private const float TitleSeconds = 3f;
     private const int Margin = 28;
 
+    // Level rows visible at once. Chosen to leave room for the headline, footer and hint on a
+    // short window rather than to fill a tall one.
+    private const int SummaryRows = 12;
+
     private readonly List<ColorRect> _pips = new();
+    private readonly List<string> _summaryRows = new();
+    private string _summaryHead = "";
+    private string _summarySub = "";
+    private string _summaryFoot = "";
+    private string _summaryHint = "";
+    private int _summaryTop;
     private Label _score = null!;
     private Label _time = null!;
     private Label _speed = null!;
@@ -18,6 +28,12 @@ public partial class Hud : CanvasLayer
     private Label _message = null!;
     private ColorRect _flash = null!;
     private ColorRect _messageBack = null!;
+    private ColorRect _menuBack = null!;
+    private Label _menu = null!;
+    private Control _jumpCue = null!;
+    private Label _jumpLabel = null!;
+    private Polygon2D _jumpUp = null!;
+    private Polygon2D _jumpDown = null!;
     private Control _thrustBar = null!;
     private ColorRect _thrustTrack = null!;
     private ColorRect _thrustFill = null!;
@@ -31,6 +47,8 @@ public partial class Hud : CanvasLayer
     private float _titleLeft;
     private float _flashLeft;
     private float? _best;
+    private int? _frozenScore;
+    private float _frozenRun;
 
     public override void _Ready()
     {
@@ -49,7 +67,14 @@ public partial class Hud : CanvasLayer
         // Small enough that an end-of-run list of splits fits.
         _message = AddLabel(34, Control.LayoutPreset.Center, HorizontalAlignment.Center);
 
+        // The menu sits above the message, with its own panel, so opening it does not disturb a run
+        // summary underneath - closing it puts the results back exactly as they were.
+        _menuBack = new ColorRect { Color = new Color(0f, 0f, 0f, 0.86f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        AddChild(_menuBack);
+        _menu = AddLabel(40, Control.LayoutPreset.Center, HorizontalAlignment.Center);
+
         BuildThrustBar();
+        BuildJumpCue();
 
         _shieldBar = new HBoxContainer();
         _shieldBar.AddThemeConstantOverride("separation", 10);
@@ -63,8 +88,9 @@ public partial class Hud : CanvasLayer
     {
         _accent = accent;
         _best = best;
+        _frozenScore = null;
         // A level starting clears whatever screen was up: the retry prompt, or the run summary.
-        _message.Text = "";
+        ShowMessage("");
         _title.Text = levelName.ToUpperInvariant();
         _titleLeft = TitleSeconds;
         BuildPips(shields, extras);
@@ -93,8 +119,11 @@ public partial class Hud : CanvasLayer
     }
 
     // Width of the thrust bar, and how tall its blocked ends are drawn.
-    private const int ThrustWidth = 260;
-    private const int ThrustHeight = 16;
+    // Upright, because more thrust reading as higher is one less thing to learn. It sits on the
+    // right edge beside the speed readout, so how hard the engines are working and how fast that is
+    // actually going are in one place.
+    private const int ThrustWidth = 18;
+    private const int ThrustHeight = 220;
 
     // A bar showing where the throttle sits in its range, with the ends a thrust zone has closed off
     // drawn over it. Without this the zones are invisible: the player feels the ship refuse to slow
@@ -106,14 +135,14 @@ public partial class Hud : CanvasLayer
         AddChild(_thrustBar);
         // Anchored by hand rather than with a preset. Setting a preset and then overwriting Position
         // fights the anchors, and the bar ends up somewhere off screen.
-        _thrustBar.AnchorLeft = 0.5f;
-        _thrustBar.AnchorRight = 0.5f;
-        _thrustBar.AnchorTop = 1f;
-        _thrustBar.AnchorBottom = 1f;
-        _thrustBar.OffsetLeft = -ThrustWidth / 2f;
-        _thrustBar.OffsetRight = ThrustWidth / 2f;
-        _thrustBar.OffsetTop = -(Margin + ThrustHeight);
-        _thrustBar.OffsetBottom = -Margin;
+        _thrustBar.AnchorLeft = 1f;
+        _thrustBar.AnchorRight = 1f;
+        _thrustBar.AnchorTop = 0.5f;
+        _thrustBar.AnchorBottom = 0.5f;
+        _thrustBar.OffsetLeft = -(Margin + ThrustWidth);
+        _thrustBar.OffsetRight = -Margin;
+        _thrustBar.OffsetTop = -ThrustHeight / 2f;
+        _thrustBar.OffsetBottom = ThrustHeight / 2f;
 
         _thrustTrack = AddRect(new Color(1f, 1f, 1f, 0.16f));
         _thrustFill = AddRect(Colors.White);
@@ -128,39 +157,108 @@ public partial class Hud : CanvasLayer
         }
     }
 
+    private const int JumpWidth = 190;
+    private const int JumpHeight = 30;
+
+    // Whether a jump is legal right now. It is only possible on a fully unrolled section, and the
+    // way in and out of one is gradual, so without this there is a stretch where the player cannot
+    // tell whether the button will do anything. Drawn as arrows because the thing it offers is the
+    // crossing between floor and ceiling, not an action in the abstract.
+    private void BuildJumpCue()
+    {
+        _jumpCue = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        AddChild(_jumpCue);
+        _jumpCue.AnchorLeft = 0.5f;
+        _jumpCue.AnchorRight = 0.5f;
+        _jumpCue.AnchorTop = 1f;
+        _jumpCue.AnchorBottom = 1f;
+        _jumpCue.OffsetLeft = -JumpWidth / 2f;
+        _jumpCue.OffsetRight = JumpWidth / 2f;
+        // Where the thrust bar used to sit, now that it has moved to the edge.
+        _jumpCue.OffsetTop = -(Margin + JumpHeight);
+        _jumpCue.OffsetBottom = -Margin;
+
+        // Real triangles rather than characters: the default font is not guaranteed to carry arrow
+        // glyphs, and a pair of tofu boxes would say nothing at all.
+        _jumpUp = Arrow(up: true, x: 6f);
+        _jumpDown = Arrow(up: false, x: JumpWidth - 32f);
+
+        _jumpLabel = new Label
+        {
+            Text = "JUMP",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            LabelSettings = new LabelSettings
+            {
+                FontSize = 24,
+                OutlineSize = 5,
+                OutlineColor = new Color(0f, 0f, 0f, 0.8f),
+            },
+        };
+        _jumpCue.AddChild(_jumpLabel);
+        _jumpLabel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+
+        Polygon2D Arrow(bool up, float x)
+        {
+            var poly = new Polygon2D
+            {
+                Polygon = up
+                    ? new[] { new Vector2(13f, 0f), new Vector2(26f, 24f), new Vector2(0f, 24f) }
+                    : new[] { new Vector2(0f, 0f), new Vector2(26f, 0f), new Vector2(13f, 24f) },
+                Position = new Vector2(x, 3f),
+            };
+            _jumpCue.AddChild(poly);
+            return poly;
+        }
+    }
+
+    private void UpdateJumpCue(GameSession session)
+    {
+        _jumpCue.Visible = session.Ship.CanJump;
+        if (!_jumpCue.Visible) return;
+
+        _jumpLabel.Modulate = _accent;
+        _jumpUp.Color = _accent;
+        _jumpDown.Color = _accent;
+    }
+
     private void UpdateThrustBar(GameSession session)
     {
         var ship = session.Ship.Settings;
         float span = Mathf.Max(0.001f, ship.MaxThrottle - ship.MinThrottle);
-        float At(float throttle) => Mathf.Clamp((throttle - ship.MinThrottle) / span, 0f, 1f) * ThrustWidth;
+        // Height above the foot of the bar, so low throttle is low on screen.
+        float At(float throttle) => Mathf.Clamp((throttle - ship.MinThrottle) / span, 0f, 1f) * ThrustHeight;
 
         _thrustTrack.Position = Vector2.Zero;
         _thrustTrack.Size = new Vector2(ThrustWidth, ThrustHeight);
 
-        // The fill runs from the bottom of the range to where the throttle currently sits.
+        // Godot counts y downwards, so the fill is placed by its top edge and grown towards the foot.
+        float fill = At(session.Ship.Throttle);
         _thrustFill.Color = _accent;
-        _thrustFill.Position = new Vector2(0f, 3f);
-        _thrustFill.Size = new Vector2(At(session.Ship.Throttle), ThrustHeight - 6f);
+        _thrustFill.Position = new Vector2(3f, ThrustHeight - fill);
+        _thrustFill.Size = new Vector2(ThrustWidth - 6f, fill);
 
         // Whatever a zone has taken off each end, drawn over the top of it. The bar itself is always
         // there - the throttle is in play every second of the game - but these only appear when
         // something is actually closing the range.
         float low = At(session.Ship.ThrottleFloor);
         float high = At(session.Ship.ThrottleCeiling);
-        _thrustBlockedLow.Position = Vector2.Zero;
-        _thrustBlockedLow.Size = new Vector2(low, ThrustHeight);
+        _thrustBlockedLow.Position = new Vector2(0f, ThrustHeight - low);
+        _thrustBlockedLow.Size = new Vector2(ThrustWidth, low);
         _thrustBlockedLow.Visible = low > 0.5f;
-        _thrustBlockedHigh.Position = new Vector2(high, 0f);
-        _thrustBlockedHigh.Size = new Vector2(ThrustWidth - high, ThrustHeight);
-        _thrustBlockedHigh.Visible = high < ThrustWidth - 0.5f;
+        _thrustBlockedHigh.Position = Vector2.Zero;
+        _thrustBlockedHigh.Size = new Vector2(ThrustWidth, ThrustHeight - high);
+        _thrustBlockedHigh.Visible = high < ThrustHeight - 0.5f;
     }
 
     /// <param name="runTime">Time from earlier levels of this run; the level's own time is added.</param>
     public void Update(GameSession session, float dt, float runTime)
     {
         UpdateThrustBar(session);
+        UpdateJumpCue(session);
 
-        // Keep the backing panel wrapped around whatever the message currently says.
+        // Keep the backing panels wrapped around whatever their labels currently say.
         _messageBack.Visible = _message.Text.Length > 0;
         if (_messageBack.Visible)
         {
@@ -168,10 +266,28 @@ public partial class Hud : CanvasLayer
             _messageBack.GlobalPosition = rect.Position - new Vector2(30f, 20f);
             _messageBack.Size = rect.Size + new Vector2(60f, 40f);
         }
+        _menuBack.Visible = _menu.Text.Length > 0;
+        if (_menuBack.Visible)
+        {
+            var rect = _menu.GetGlobalRect();
+            _menuBack.GlobalPosition = rect.Position - new Vector2(48f, 32f);
+            _menuBack.Size = rect.Size + new Vector2(96f, 64f);
+        }
 
-        _score.Text = $"SCORE  {session.Score}";
-        _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}" +
-            $"\nRUN   {runTime + session.Elapsed:0.00}";
+        // A finished run holds its numbers. The victory lap is a fresh session flying a fresh track,
+        // so left alone the score would climb on distance the player never earned and the clock
+        // would start again from nothing, both over the top of the results they are reading.
+        if (_frozenScore is int final)
+        {
+            _score.Text = $"SCORE  {final}";
+            _time.Text = $"RUN   {_frozenRun:0.00}";
+        }
+        else
+        {
+            _score.Text = $"SCORE  {session.Score}";
+            _time.Text = $"TIME  {session.Elapsed:0.00}\nBEST  {(_best is float best ? best.ToString("0.00") : "--")}" +
+                $"\nRUN   {runTime + session.Elapsed:0.00}";
+        }
         var status = new List<string>(4);
         if (session.RamLeft > 0f) status.Add($"UNSTOPPABLE  {session.RamLeft:0.0}s");
         if (session.RapidFireLeft > 0f) status.Add($"RAPID FIRE  {session.RapidFireLeft:0.0}s");
@@ -200,9 +316,87 @@ public partial class Hud : CanvasLayer
 
     public void SetBest(float best) => _best = best;
 
+    /// <summary>Holds the score and run time at what the run ended on, for the victory lap.</summary>
+    public void Freeze(int score, float runTime)
+    {
+        _frozenScore = score;
+        _frozenRun = runTime;
+    }
+
     public void Flash() => _flashLeft = 1f;
 
-    public void ShowMessage(string text) => _message.Text = text;
+    public void ShowMessage(string text)
+    {
+        _summaryRows.Clear();
+        _message.Text = text;
+    }
+
+    /// <summary>Whether a scrollable summary is up, so the caller knows to feed it scroll input.</summary>
+    public bool HasSummary => _summaryRows.Count > 0;
+
+    /// <summary>Shows the menu under <paramref name="title"/>, with <paramref name="selected"/> marked.</summary>
+    public void ShowMenu(string title, IReadOnlyList<string> options, int selected)
+    {
+        var lines = new List<string> { title, "" };
+        for (int i = 0; i < options.Count; i++)
+        {
+            // Marked on both sides, because a marker only on the left shifts the text and the whole
+            // list jitters sideways as the selection moves.
+            lines.Add(i == selected ? $">   {options[i]}   <" : $"    {options[i]}    ");
+        }
+        lines.Add("");
+        lines.Add("Up / down to choose     Space to pick     Esc to go back");
+        _menu.Text = string.Join("\n", lines);
+    }
+
+    public void HideMenu() => _menu.Text = "";
+
+    /// <summary>
+    /// Shows a run's results: a headline, a window onto <paramref name="rows"/> that can be
+    /// scrolled, then a footer and a hint. A full run is 26 levels, so the list cannot simply be
+    /// printed - it is longer than the screen, and the player would lose the end of what they earned.
+    /// </summary>
+    public void ShowSummary(string headline, string subline, IReadOnlyList<string> rows, string footer, string hint)
+    {
+        _summaryHead = headline;
+        _summarySub = subline;
+        _summaryRows.Clear();
+        _summaryRows.AddRange(rows);
+        _summaryFoot = footer;
+        _summaryHint = hint;
+        _summaryTop = 0;
+        RenderSummary();
+    }
+
+    /// <summary>Scrolls the summary by <paramref name="delta"/> rows, stopping at either end.</summary>
+    public void ScrollSummary(int delta)
+    {
+        if (!HasSummary) return;
+        int top = Mathf.Clamp(_summaryTop + delta, 0, Mathf.Max(0, _summaryRows.Count - SummaryRows));
+        if (top == _summaryTop) return;
+        _summaryTop = top;
+        RenderSummary();
+    }
+
+    private void RenderSummary()
+    {
+        int top = Mathf.Clamp(_summaryTop, 0, Mathf.Max(0, _summaryRows.Count - SummaryRows));
+        int shown = Mathf.Min(SummaryRows, _summaryRows.Count);
+        int below = _summaryRows.Count - top - shown;
+
+        var lines = new List<string> { _summaryHead };
+        if (_summarySub.Length > 0) lines.Add(_summarySub);
+        lines.Add("");
+        // Spelled out rather than drawn with arrows: the default font is not guaranteed to have
+        // them, and a row of tofu boxes on the results screen would be a poor way to find that out.
+        lines.Add(top > 0 ? $"{top} more above" : " ");
+        for (int i = 0; i < shown; i++) lines.Add(_summaryRows[top + i]);
+        lines.Add(below > 0 ? $"{below} more below" : " ");
+        lines.Add("");
+        lines.Add(_summaryFoot);
+        lines.Add(_summaryHint);
+        _message.Text = string.Join("\n", lines);
+    }
 
     private Label AddLabel(int size, Control.LayoutPreset preset, HorizontalAlignment align)
     {
