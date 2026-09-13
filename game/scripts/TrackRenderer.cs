@@ -21,6 +21,10 @@ public partial class TrackRenderer : Node3D
     private const float ThroatFraction = 0.62f;
     private const int SurfaceSegments = 48;
     private const int CapSegments = 96;
+    // Rings across a fork or merge wall, so it can be drawn into the branch mouths rather than left
+    // flat, and how far into a branch the deepest part of it reaches.
+    private const int CapRings = 10;
+    private const float FunnelReach = 26f;
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
     private static readonly float[] WingSteps = { 0.02f, 0.1f, 0.35f, 1f };
     private static readonly int StripVertices = SurfaceSegments + 1 + 2 * WingSteps.Length;
@@ -296,25 +300,45 @@ public partial class TrackRenderer : Node3D
         var chamber = new ProfileShape(_track.SectionAt(s));
         var origin = frame.Position;
 
+        var split = spec.Split;
+        // A fork opens downstream and a merge upstream, so the funnel leans whichever way the
+        // branches go from here.
+        float lean = spec.Along <= 0f ? 1f : -1f;
+
+        // A grid rather than a fan, so every vertex can be drawn into the nearest branch mouth. Flat,
+        // this was a disc with holes punched through it and the player flew at a wall; drawn in, the
+        // chamber necks down into each opening the way a tube that forks actually would.
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
-        st.SetUV(Vector2.Zero);
-        st.AddVertex(Vector3.Zero);
-        for (int i = 0; i <= CapSegments; i++)
+        int stride = CapSegments + 1;
+        for (int r = 0; r <= CapRings; r++)
         {
-            var p = chamber.PointAt(Surface.Floor, chamber.Perimeter * i / CapSegments);
-            st.SetUV(new Vector2(p.X, p.Y));
-            st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
+            float t = (float)r / CapRings;
+            for (int i = 0; i <= CapSegments; i++)
+            {
+                var p = chamber.PointAt(Surface.Floor, chamber.Perimeter * i / CapSegments) * t;
+                double at = s + lean * FunnelDepth(split, spec.Along, p);
+                // The UV stays the flat section position: that is what the shader cuts the holes
+                // against, and it must not move with the vertex.
+                st.SetUV(new Vector2(p.X, p.Y));
+                st.AddVertex(_track.FrameAt(at).PointOnSection(p).RelativeTo(origin).ToGodot());
+            }
         }
-        for (int i = 1; i <= CapSegments; i++)
+        for (int r = 0; r < CapRings; r++)
         {
-            st.AddIndex(0);
-            st.AddIndex(i);
-            st.AddIndex(i + 1);
+            for (int i = 0; i < CapSegments; i++)
+            {
+                int a = r * stride + i;
+                st.AddIndex(a);
+                st.AddIndex(a + stride);
+                st.AddIndex(a + 1);
+                st.AddIndex(a + 1);
+                st.AddIndex(a + stride);
+                st.AddIndex(a + stride + 1);
+            }
         }
 
         var holes = new Vector4[Track.MaxBranches];
-        var split = spec.Split;
         for (int b = 0; b < (split?.BranchCount ?? 0); b++)
         {
             var c = split!.OffsetAt(b, spec.Along);
@@ -335,6 +359,26 @@ public partial class TrackRenderer : Node3D
         var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
         AddChild(node);
         return new Placed(node, origin);
+    }
+
+    // How far into a branch the chamber is drawn at this point in the section: deepest inside an
+    // opening, falling away with distance from the nearest one, and nothing at all on the end wall
+    // of a level, which has no branches to funnel into.
+    private static float FunnelDepth(TrackSplit? split, float along, System.Numerics.Vector2 p)
+    {
+        if (split is null) return 0f;
+
+        float deepest = 0f;
+        for (int b = 0; b < split.BranchCount; b++)
+        {
+            var c = split.OffsetAt(b, along);
+            var section = split.Section(b);
+            float qx = (p.X - c.X) / section.HalfWidth;
+            float qy = (p.Y - c.Y) / section.HalfHeight;
+            float q = MathF.Sqrt(qx * qx + qy * qy);
+            deepest = MathF.Max(deepest, FunnelReach * MathF.Exp(-1.8f * MathF.Max(0f, q - 1f)));
+        }
+        return deepest;
     }
 
     // Surface X positions across one strip: left wing, the surface itself, right wing.
