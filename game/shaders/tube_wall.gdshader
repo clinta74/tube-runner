@@ -75,21 +75,24 @@ void fragment() {
 	// the rim, 1 at the throat. After the distance fade, so the dark never washes back out.
 	float well = UV2.x;
 
-	// The wall carries no normals and the shader is unshaded, so the inward curve has nothing to
-	// light it: take a geometric normal from the screen derivatives instead. Held outside any branch,
-	// because derivatives in non-uniform control flow are undefined. Wall turning away from the eye
-	// loses light, which is what gives the throat its form rather than a flat dark patch.
+	// The round-over where the wall turns into the hole. The wall carries no normals and the shader
+	// is unshaded, so the curve is lit from a geometric normal taken off the screen derivatives.
+	// Held outside any branch, because derivatives in non-uniform control flow are undefined.
+	//
+	// Only the rim is shaded. Shading further in was a mistake: past the round-over a well should be
+	// a void, and lighting the inside of a void turns it into a lump - which is exactly how it read,
+	// helped by abs() here throwing away the sign so a bowl and a bulge shaded identically.
 	vec3 gn = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
 	float facing = abs(dot(gn, normalize(-VERTEX)));
-	col *= mix(1.0, 0.30 + 0.70 * facing, smoothstep(0.0, 0.20, well));
+	col *= mix(1.0, 0.35 + 0.65 * facing, smoothstep(0.0, 0.09, well));
 
-	// Then to black just inside the rim, so the lit wall ends against a hole.
-	col = mix(col, vec3(0.0), smoothstep(0.05, 0.40, well));
+	// Into black quickly, so what lies past the round-over is a hole and not a lit cave.
+	col = mix(col, vec3(0.0), smoothstep(0.04, 0.17, well));
 
-	// A thin bright band riding the rim itself draws the lip as a hard edge against that dark. Gated
-	// so it vanishes on flat wall, where the band's tail would otherwise wash the whole tube.
-	float lip = (well - 0.08) / 0.05;
-	col += to_linear(seam_light) * (1.0 + 2.0 * glow) * 0.85 * exp(-lip * lip) * smoothstep(0.0, 0.03, well);
+	// A tight bright ring on the rim itself, which is what makes an edge read as an edge. Gated so
+	// it vanishes on flat wall, where the band's tail would otherwise wash the whole tube.
+	float lip = (well - 0.05) / 0.03;
+	col += to_linear(seam_light) * (1.0 + 2.0 * glow) * 1.15 * exp(-lip * lip) * smoothstep(0.0, 0.02, well);
 
 	ALBEDO = col;
 }

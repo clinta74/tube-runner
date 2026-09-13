@@ -75,9 +75,13 @@ public partial class TrackRenderer : Node3D
         foreach (var w in warps ?? Array.Empty<Warp>())
         {
             var shape = _shapes.Get(track.SectionAt(w.S, w.Branch));
+            // Roughly a hemisphere: as deep as the mouth is wide across, so it reads as a hole in a
+            // surface. It used to bore three times its half-width, which was nine units when a mouth
+            // was small and became nineteen once the mouth scaled with the tube - deeper than the
+            // tube's own radius, so the player was looking down a cave at its lit far end.
             float halfWidth = w.WidthOn(shape) / 2f;
             _warpCuts.Add(new WarpCut(w.S, shape.Loop(w.Surface, w.X), shape.Perimeter,
-                w.Length / 2f, halfWidth, 3f * halfWidth, w.Branch));
+                w.Length / 2f, halfWidth, 1.1f * halfWidth, w.Branch));
         }
 
         // Walls where each split forks and merges, plus one closing off the end of the track so a
