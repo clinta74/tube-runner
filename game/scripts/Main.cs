@@ -48,6 +48,7 @@ public partial class Main : Node3D
     private double _startS;
     private double _levelStart;
     private bool _practice;
+    private bool _debugSummary;
     private bool _running;
     private bool _paused;
     private bool _levelDone;
@@ -108,6 +109,7 @@ public partial class Main : Node3D
                 _startS = double.Parse(arg["--start=".Length..], CultureInfo.InvariantCulture);
                 _practice = true;
             }
+            if (arg == "--summary") _debugSummary = true;
         }
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
@@ -115,8 +117,9 @@ public partial class Main : Node3D
         LoadLevel(LevelPath, carry: null, startS: _startS);
 
         // A test run with --start skips the start screen, so recordings and quick checks just go.
-        _running = _practice;
-        if (!_running) _hud.ShowMessage(StartScreen);
+        _running = _practice || _debugSummary;
+        if (_debugSummary) FillDebugSummary();
+        else if (!_running) _hud.ShowMessage(StartScreen);
     }
 
     private const string StartScreen = """
@@ -186,6 +189,15 @@ public partial class Main : Node3D
         {
             LoadLevel(LevelPath, _levelEntry, _levelStart);
             DrawWorld(dt, steer: 0f);
+            return;
+        }
+
+        // Sitting on the results screen with --summary: scroll it, draw the world behind it, and
+        // never step the session. Nothing here is a real run, so there is nothing to advance.
+        if (_debugSummary)
+        {
+            ScrollSummary(dt);
+            DrawWorld(0f, steer: 0f);
             return;
         }
 
@@ -413,6 +425,36 @@ public partial class Main : Node3D
 
         string bestRun = _bestTimes.Get(RunKey) is float best2 ? $"   (best {best2:0.00}s)" : "";
         _hud.ShowSummary(headline, subline, rows, $"TOTAL   {SplitTotal:0.00}s{bestRun}", hint);
+    }
+
+    /// <summary>
+    /// Fills the results screen with the levels this run would have covered, so it can be looked at
+    /// without playing to the end of the game. The scrolling only engages past a dozen rows, and
+    /// splits are only kept for levels actually finished, so checking it honestly meant a very long
+    /// sitting. Debug only: reached with --summary, and nothing here is a real run.
+    /// </summary>
+    private void FillDebugSummary()
+    {
+        string dir = LevelPath.GetBaseDir();
+        string path = LevelPath;
+        for (int i = 0; i < 40; i++)
+        {
+            Level level;
+            try
+            {
+                level = LevelLoader.Parse(FileAccess.GetFileAsString(path));
+            }
+            catch (LevelFormatException)
+            {
+                break;
+            }
+
+            // Spread of plausible times, with a best every few levels so both looks are visible.
+            _splits.Add((level.Name, 38f + i * 11 % 47 + i * 0.37f, i % 4 == 0));
+            if (level.Next is null) break;
+            path = dir.PathJoin(level.Next);
+        }
+        ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again");
     }
 
     // Up and down walk the results list. They are the throttle keys, which are free here because
