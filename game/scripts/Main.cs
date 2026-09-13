@@ -325,7 +325,13 @@ public partial class Main : Node3D
         _bank = Mathf.Lerp(_bank, steer, 1f - Mathf.Exp(-8f * dt));
         var shipPos = shipWorld.RelativeTo(origin).ToGodot() + snapOffset;
         _ship.LookAtFromPosition(shipPos, shipPos + forward, up.Rotated(forward, -0.4f * _bank));
-        _ship.UpdateState(dt, _bank, _session.Ship.Throttle, _fx.Intensity, _session.RamLeft, _session.RecoveryLeft);
+        // Where the throttle sits in its own range, which is what the engines follow. Measured
+        // against the ship's full range rather than whatever a thrust zone has narrowed it to, so
+        // the plume and the thrust bar are reading the same thing.
+        var limits = _session.Ship.Settings;
+        float thrust = Mathf.InverseLerp(limits.MinThrottle, limits.MaxThrottle, _session.Ship.Throttle);
+        _ship.UpdateState(dt, _bank, _session.Ship.Throttle, thrust, _fx.Intensity,
+            _session.RamLeft, _session.RecoveryLeft);
 
         // The camera follows the ship's section-space pose along its path, so it stays level on
         // open planes and rolls with the ship around tubes and through jumps.

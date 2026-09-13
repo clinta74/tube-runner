@@ -65,10 +65,15 @@ public partial class ShipView : Node3D
         _shellMaterial.Emission = _accentColor;
     }
 
+    /// <param name="thrust">
+    /// Where the throttle sits in its own range, 0 to 1. This is what the engines follow: it spans
+    /// the same ground whatever speed the level runs at, where the speed effect does not.
+    /// </param>
     /// <param name="bank">Smoothed steer in [-1, 1], the same value the whole ship rolls by.</param>
     /// <param name="throttle">Ship throttle; below 1 means easing off.</param>
     /// <param name="intensity">Speed effect in [0, 1], driving the engines.</param>
-    public void UpdateState(float dt, float bank, float throttle, float intensity, float ramLeft, float recoveryLeft)
+    public void UpdateState(float dt, float bank, float throttle, float thrust, float intensity,
+        float ramLeft, float recoveryLeft)
     {
         _time += dt;
         _flashLeft = Mathf.Max(0f, _flashLeft - dt);
@@ -98,14 +103,24 @@ public partial class ShipView : Node3D
             _fins[i].RotationDegrees = new Vector3(0f, 0f, Side(i) * -(22f + 30f * brake));
         }
 
-        // Engines stretch and brighten with speed; the plume grows backwards from the nozzle.
-        float stretch = 1f + 1.1f * intensity;
+        // Engines stretch and brighten with how hard they are being driven, which is mostly the
+        // throttle rather than how fast the track happens to be.
+        //
+        // They used to run off the speed effect alone, and that maps absolute speed onto a fixed
+        // window: at the back of the game a ship is over the top of it by a tenth of the way up the
+        // throttle, so the engines sat pinned at full for the whole of the range the player actually
+        // uses. The one place they should have been most expressive was the one place they were
+        // frozen. A little of the speed effect is kept, so a genuinely fast level still reads as one.
+        float drive = Mathf.Clamp(0.75f * thrust + 0.25f * intensity, 0f, 1f);
+
+        float stretch = 1f + 1.1f * drive;
         foreach (var nozzle in _nozzles) nozzle.Scale = new Vector3(1f, stretch, 1f);
         for (int i = 0; i < _plumes.Count; i++)
         {
-            float length = 0.25f + 1.9f * intensity;
-            float width = 0.5f + 0.2f * intensity;
-            _plumes[i].Visible = intensity > 0.02f;
+            float length = 0.25f + 1.9f * drive;
+            float width = 0.5f + 0.2f * drive;
+            // Always lit: the throttle floor is half speed, so an idling ship is still under power
+            // and should look like it rather than like a dead one.
             _plumes[i].Scale = new Vector3(width, length, width);
             _plumes[i].Position = new Vector3(Side(i) * 0.28f, -0.01f, 1.14f + 0.35f * length);
         }
@@ -113,7 +128,7 @@ public partial class ShipView : Node3D
         // there is real speed on. Any hotter and the two nozzles bloom into one white mass that
         // swallows the back of the ship. This tracks the threshold in main.tscn: it was tuned to 1.0
         // and left behind when that moved, which quietly put the thrusters out altogether.
-        _nozzleMaterial.EmissionEnergyMultiplier = 0.9f + 2.1f * intensity;
+        _nozzleMaterial.EmissionEnergyMultiplier = 0.9f + 2.1f * drive;
 
         // Unstoppable burns the hull hot; otherwise it sits at the theme's glow.
         if (ramLeft > 0f)
