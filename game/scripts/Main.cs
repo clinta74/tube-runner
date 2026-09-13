@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Godot;
@@ -57,6 +58,9 @@ public partial class Main : Node3D
     private float _endedFor;
     private float _scrollHeld;
     private float _scrollRepeat;
+    private readonly List<(string Label, Action Pick)> _menu = new();
+    private bool _menuOpen;
+    private int _menuIndex;
 
     // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
     private int _lastBranch = -1;
@@ -132,8 +136,9 @@ public partial class Main : Node3D
         Ring gun         E / K / right mouse
         Retry level      R
         Pause            P
+        Menu, quit       Esc
 
-        Gamepad: stick to steer and set speed, A to jump, X to fire, Y for the ring gun
+        Gamepad: stick to steer and set speed, A to jump, X to fire, Y for the ring gun, Start for the menu
 
         Space to start
         """;
@@ -185,6 +190,21 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+
+        // The menu holds everything still while it is up: the session is never stepped, so a run
+        // cannot end or advance behind it.
+        if (Input.IsActionJustPressed(InputSetup.Menu))
+        {
+            if (_menuOpen) CloseMenu();
+            else OpenMenu();
+        }
+        if (_menuOpen)
+        {
+            UpdateMenu();
+            DrawWorld(0f, steer: 0f);
+            return;
+        }
+
         if (Input.IsActionJustPressed(InputSetup.Restart))
         {
             LoadLevel(LevelPath, _levelEntry, _levelStart);
@@ -376,7 +396,7 @@ public partial class Main : Node3D
                     break;
                 case SessionEvent.GameOver:
                     // The level that just ended the run is not in the splits: it was not finished.
-                    ShowRunSummary("SHIELDS DOWN", "Up / down to scroll     Space to run it again     R to retry");
+                    ShowRunSummary("SHIELDS DOWN", "Up / down to scroll     Space to run it again     Esc for options");
                     break;
             }
         }
@@ -396,7 +416,7 @@ public partial class Main : Node3D
         {
             if (!_practice) _bestTimes.Record(RunKey, SplitTotal);
             if (!_practice) SaveBestTimes();
-            ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again");
+            ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
             return false;
         }
 
@@ -427,6 +447,58 @@ public partial class Main : Node3D
         _hud.ShowSummary(headline, subline, rows, $"TOTAL   {SplitTotal:0.00}s{bestRun}", hint);
     }
 
+    // What the menu offers depends on where the run is: there is nothing to resume once it is over,
+    // and nothing to restart a run from if one was never really started.
+    private void OpenMenu()
+    {
+        _menu.Clear();
+        // Always first, and always the one selected on opening: the default pick has to be the one
+        // that changes nothing, since Escape is also what people hit by accident.
+        _menu.Add((_session.State == SessionState.Playing && _running ? "Resume" : "Back", CloseMenu));
+        _menu.Add(("Restart this level", () =>
+        {
+            CloseMenu();
+            LoadLevel(LevelPath, _levelEntry, _levelStart);
+        }));
+        _menu.Add(("Restart the run", () =>
+        {
+            CloseMenu();
+            _splits.Clear();
+            LoadLevel(_runStart, carry: null, startS: _startS);
+        }));
+        _menu.Add(("Quit", () => GetTree().Quit()));
+
+        _menuIndex = 0;
+        _menuOpen = true;
+        _shake = 0f;
+        _hud.ShowMenu(_menu.ConvertAll(o => o.Label), _menuIndex);
+    }
+
+    private void CloseMenu()
+    {
+        _menuOpen = false;
+        _hud.HideMenu();
+    }
+
+    private void UpdateMenu()
+    {
+        int move = Input.IsActionJustPressed(InputSetup.ThrottleUp) ? -1
+            : Input.IsActionJustPressed(InputSetup.ThrottleDown) ? 1
+            : 0;
+        if (move != 0)
+        {
+            _menuIndex = (_menuIndex + move + _menu.Count) % _menu.Count;
+            _hud.ShowMenu(_menu.ConvertAll(o => o.Label), _menuIndex);
+        }
+
+        if (Input.IsActionJustPressed(InputSetup.Jump) || Input.IsActionJustPressed(InputSetup.Fire))
+        {
+            // Taken before the call: picking one can load a level and rebuild the menu underneath.
+            var pick = _menu[_menuIndex].Pick;
+            pick();
+        }
+    }
+
     /// <summary>
     /// Fills the results screen with the levels this run would have covered, so it can be looked at
     /// without playing to the end of the game. The scrolling only engages past a dozen rows, and
@@ -454,7 +526,7 @@ public partial class Main : Node3D
             if (level.Next is null) break;
             path = dir.PathJoin(level.Next);
         }
-        ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again");
+        ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again     Esc for options");
     }
 
     // Up and down walk the results list. They are the throttle keys, which are free here because

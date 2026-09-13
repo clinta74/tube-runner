@@ -17,6 +17,7 @@ public static class InputSetup
     public const string Special = "special";
     public const string Restart = "restart";
     public const string Pause = "pause";
+    public const string Menu = "menu";
 
     public static void Register()
     {
@@ -30,8 +31,11 @@ public static class InputSetup
             new InputEventJoypadMotion { Axis = JoyAxis.TriggerRight, AxisValue = 1f });
         Add(Special, KeyEvent(Key.E), KeyEvent(Key.K), Button(JoyButton.Y),
             new InputEventMouseButton { ButtonIndex = MouseButton.Right });
-        Add(Restart, KeyEvent(Key.R), Button(JoyButton.Start));
+        Add(Restart, KeyEvent(Key.R));
+        // Pause is a capture tool: it freezes the world and puts nothing on screen, so a screenshot
+        // is of the game rather than of a menu over it. Escape is the player-facing one.
         Add(Pause, KeyEvent(Key.P), Button(JoyButton.Back));
+        Add(Menu, KeyEvent(Key.Escape), Button(JoyButton.Start));
     }
 
     private static void Add(string action, params InputEvent[] events)

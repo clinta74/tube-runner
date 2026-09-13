@@ -28,6 +28,8 @@ public partial class Hud : CanvasLayer
     private Label _message = null!;
     private ColorRect _flash = null!;
     private ColorRect _messageBack = null!;
+    private ColorRect _menuBack = null!;
+    private Label _menu = null!;
     private Control _thrustBar = null!;
     private ColorRect _thrustTrack = null!;
     private ColorRect _thrustFill = null!;
@@ -58,6 +60,12 @@ public partial class Hud : CanvasLayer
         AddChild(_messageBack);
         // Small enough that an end-of-run list of splits fits.
         _message = AddLabel(34, Control.LayoutPreset.Center, HorizontalAlignment.Center);
+
+        // The menu sits above the message, with its own panel, so opening it does not disturb a run
+        // summary underneath - closing it puts the results back exactly as they were.
+        _menuBack = new ColorRect { Color = new Color(0f, 0f, 0f, 0.86f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        AddChild(_menuBack);
+        _menu = AddLabel(40, Control.LayoutPreset.Center, HorizontalAlignment.Center);
 
         BuildThrustBar();
 
@@ -170,13 +178,20 @@ public partial class Hud : CanvasLayer
     {
         UpdateThrustBar(session);
 
-        // Keep the backing panel wrapped around whatever the message currently says.
+        // Keep the backing panels wrapped around whatever their labels currently say.
         _messageBack.Visible = _message.Text.Length > 0;
         if (_messageBack.Visible)
         {
             var rect = _message.GetGlobalRect();
             _messageBack.GlobalPosition = rect.Position - new Vector2(30f, 20f);
             _messageBack.Size = rect.Size + new Vector2(60f, 40f);
+        }
+        _menuBack.Visible = _menu.Text.Length > 0;
+        if (_menuBack.Visible)
+        {
+            var rect = _menu.GetGlobalRect();
+            _menuBack.GlobalPosition = rect.Position - new Vector2(48f, 32f);
+            _menuBack.Size = rect.Size + new Vector2(96f, 64f);
         }
 
         _score.Text = $"SCORE  {session.Score}";
@@ -220,6 +235,23 @@ public partial class Hud : CanvasLayer
 
     /// <summary>Whether a scrollable summary is up, so the caller knows to feed it scroll input.</summary>
     public bool HasSummary => _summaryRows.Count > 0;
+
+    /// <summary>Shows the menu, with <paramref name="selected"/> marked.</summary>
+    public void ShowMenu(IReadOnlyList<string> options, int selected)
+    {
+        var lines = new List<string> { "PAUSED", "" };
+        for (int i = 0; i < options.Count; i++)
+        {
+            // Marked on both sides, because a marker only on the left shifts the text and the whole
+            // list jitters sideways as the selection moves.
+            lines.Add(i == selected ? $">   {options[i]}   <" : $"    {options[i]}    ");
+        }
+        lines.Add("");
+        lines.Add("Up / down to choose     Space to pick     Esc to go back");
+        _menu.Text = string.Join("\n", lines);
+    }
+
+    public void HideMenu() => _menu.Text = "";
 
     /// <summary>
     /// Shows a run's results: a headline, a window onto <paramref name="rows"/> that can be
