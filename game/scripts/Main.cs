@@ -60,7 +60,9 @@ public partial class Main : Node3D
     private float _scrollRepeat;
     private readonly List<(string Label, Action Pick)> _menu = new();
     private bool _menuOpen;
+    private bool _menuConfirming;
     private int _menuIndex;
+    private string _menuTitle = "PAUSED";
 
     // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
     private int _lastBranch = -1;
@@ -195,7 +197,10 @@ public partial class Main : Node3D
         // cannot end or advance behind it.
         if (Input.IsActionJustPressed(InputSetup.Menu))
         {
-            if (_menuOpen) CloseMenu();
+            // Backing out of a question returns to the menu rather than dismissing everything, so
+            // Escape never means "yes" by accident.
+            if (_menuConfirming) OpenMenu();
+            else if (_menuOpen) CloseMenu();
             else OpenMenu();
         }
         if (_menuOpen)
@@ -451,6 +456,8 @@ public partial class Main : Node3D
     // and nothing to restart a run from if one was never really started.
     private void OpenMenu()
     {
+        _menuTitle = "PAUSED";
+        _menuConfirming = false;
         _menu.Clear();
         // Always first, and always the one selected on opening: the default pick has to be the one
         // that changes nothing, since Escape is also what people hit by accident.
@@ -460,23 +467,39 @@ public partial class Main : Node3D
             CloseMenu();
             LoadLevel(LevelPath, _levelEntry, _levelStart);
         }));
-        _menu.Add(("Restart the run", () =>
+        // The two that throw away a whole run ask first. They sit next to things picked in a hurry.
+        _menu.Add(("Restart the run", () => Confirm("Start the run over?", "Yes, start over", () =>
         {
             CloseMenu();
             _splits.Clear();
             LoadLevel(_runStart, carry: null, startS: _startS);
-        }));
-        _menu.Add(("Quit", () => GetTree().Quit()));
+        })));
+        _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
 
         _menuIndex = 0;
         _menuOpen = true;
         _shake = 0f;
-        _hud.ShowMenu(_menu.ConvertAll(o => o.Label), _menuIndex);
+        RefreshMenu();
     }
+
+    // A yes/no question in place of the menu, with "no" selected. Backing out reopens the menu.
+    private void Confirm(string question, string yes, Action act)
+    {
+        _menuTitle = question;
+        _menuConfirming = true;
+        _menu.Clear();
+        _menu.Add(("No, go back", OpenMenu));
+        _menu.Add((yes, act));
+        _menuIndex = 0;
+        RefreshMenu();
+    }
+
+    private void RefreshMenu() => _hud.ShowMenu(_menuTitle, _menu.ConvertAll(o => o.Label), _menuIndex);
 
     private void CloseMenu()
     {
         _menuOpen = false;
+        _menuConfirming = false;
         _hud.HideMenu();
     }
 
@@ -488,7 +511,7 @@ public partial class Main : Node3D
         if (move != 0)
         {
             _menuIndex = (_menuIndex + move + _menu.Count) % _menu.Count;
-            _hud.ShowMenu(_menu.ConvertAll(o => o.Label), _menuIndex);
+            RefreshMenu();
         }
 
         if (Input.IsActionJustPressed(InputSetup.Jump) || Input.IsActionJustPressed(InputSetup.Fire))

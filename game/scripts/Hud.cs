@@ -236,10 +236,10 @@ public partial class Hud : CanvasLayer
     /// <summary>Whether a scrollable summary is up, so the caller knows to feed it scroll input.</summary>
     public bool HasSummary => _summaryRows.Count > 0;
 
-    /// <summary>Shows the menu, with <paramref name="selected"/> marked.</summary>
-    public void ShowMenu(IReadOnlyList<string> options, int selected)
+    /// <summary>Shows the menu under <paramref name="title"/>, with <paramref name="selected"/> marked.</summary>
+    public void ShowMenu(string title, IReadOnlyList<string> options, int selected)
     {
-        var lines = new List<string> { "PAUSED", "" };
+        var lines = new List<string> { title, "" };
         for (int i = 0; i < options.Count; i++)
         {
             // Marked on both sides, because a marker only on the left shifts the text and the whole
