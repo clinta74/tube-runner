@@ -78,6 +78,8 @@ public partial class ObstacleRenderer : Node3D
     private readonly Dictionary<string, int> _keyGroups = new();
     private readonly Dictionary<string, StandardMaterial3D> _keyMaterials = new();
     private readonly Dictionary<string, StandardMaterial3D> _doorMaterials = new();
+    private readonly Dictionary<string, StandardMaterial3D> _waitingMaterials = new();
+    private Color _targetColor;
     private float _themeGlow;
     private StandardMaterial3D _socketMaterial = null!;
     private StandardMaterial3D _targetMaterial = null!;
@@ -160,9 +162,11 @@ public partial class ObstacleRenderer : Node3D
         // door is just another block, which makes the whole mechanic guesswork - and where a stretch
         // has two pairs interleaved, knowing which key opens which is the entire puzzle.
         _themeGlow = theme.Glow;
+        _targetColor = theme.Target.ToColor();
         _keyGroups.Clear();
         _keyMaterials.Clear();
         _doorMaterials.Clear();
+        _waitingMaterials.Clear();
         // Obstacles arrive sorted by distance, so this walks the level in the order it is flown.
         foreach (var o in session.Obstacles)
         {
@@ -251,6 +255,7 @@ public partial class ObstacleRenderer : Node3D
         foreach (var (o, view) in _views)
         {
             if (o.Hits > 0 && view.HitsShown != o.HitsTaken) ShowDamage(o, view);
+            if (o.Kind == ObstacleKind.Target && o.Group is not null) ShowTurn(o, view);
         }
 
         UpdateShots(origin);
@@ -468,6 +473,33 @@ public partial class ObstacleRenderer : Node3D
         return new View(root, center, forward, up, Spins: false, _plateMaterial);
     }
 
+    // In an ordered group, the one whose turn it is burns at full while the rest sit dim and wait.
+    // The useful thing to know is not which group a target belongs to but whether shooting it now
+    // will do anything - and unlike a fixed marker, this answers that again after every shot.
+    private void ShowTurn(Obstacle o, View view)
+    {
+        bool ready = _session.CanBreak(o);
+        if (view.ReadyShown == ready) return;
+        view.ReadyShown = ready;
+        if (view.Node is MeshInstance3D mesh) mesh.MaterialOverride = TurnMaterial(o, ready);
+    }
+
+    private StandardMaterial3D TurnMaterial(Obstacle o, bool ready)
+    {
+        string group = o.Group!;
+        bool key = _keyGroups.ContainsKey(group);
+        // A key keeps its pair colour while it waits, so the two signals stack rather than fight:
+        // the colour says which door it opens, the brightness says whether it is next.
+        if (ready) return key ? KeyMaterial(group) : _targetMaterial;
+
+        string cacheKey = key ? group : "";
+        if (_waitingMaterials.TryGetValue(cacheKey, out var material)) return material;
+        var color = key ? PairColor(group) : _targetColor;
+        material = Glowing(color.Darkened(0.55f), 0.5f + _themeGlow);
+        _waitingMaterials[cacheKey] = material;
+        return material;
+    }
+
     // Breakable blocks darken with each hit.
     private void ShowDamage(Obstacle o, View view)
     {
@@ -667,6 +699,9 @@ public partial class ObstacleRenderer : Node3D
     private sealed record View(Node3D Node, Vector3d Center, Vector3 Forward, Vector3 Up, bool Spins, Material BurstMaterial)
     {
         public int HitsShown { get; set; }
+
+        /// <summary>Whether this was last drawn as ready to break; null before it has been decided.</summary>
+        public bool? ReadyShown { get; set; }
 
         /// <summary>The obstacle this shows, when it is one that moves; null for anything fixed.</summary>
         public Obstacle? Obstacle { get; init; }

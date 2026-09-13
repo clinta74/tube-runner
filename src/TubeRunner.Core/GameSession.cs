@@ -406,8 +406,12 @@ public sealed class GameSession
         return true;
     }
 
-    // Within an ordered group, a target only breaks once everything earlier in it has gone.
-    private bool CanBreak(Obstacle o)
+    /// <summary>
+    /// Whether an obstacle's turn has come: within an ordered group, a target only breaks once
+    /// everything earlier in it has gone. Public because the view needs it too - a group where every
+    /// target looks the same is a puzzle with its answer hidden, not a puzzle.
+    /// </summary>
+    public bool CanBreak(Obstacle o)
     {
         if (o.Group is null) return true;
         foreach (var other in _obstacles)

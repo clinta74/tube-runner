@@ -280,6 +280,15 @@ clear the whole group a member at a time.
 the ship flies into it, whatever its turn. So put an ordered group **off the flight line** — out at an
 `angle`, or wide on an `x` — or the player will clear it by driving through it.
 
+**In an ordered group, the target whose turn it is burns at full and the rest sit dim**, and that
+updates after every shot. The useful thing to know is not which group a target belongs to but
+whether shooting it now will do anything, so a fixed marker saying "this one is third" would be
+worse: it tells the player something they have to hold in their head rather than something they can
+read off the wall at the moment it matters.
+
+A key that is also ordered keeps its pair colour while it waits, so the two signals stack instead of
+fighting — the colour says which door it opens, the brightness says whether it is next.
+
 **A key and the door it opens are drawn in the same colour**, so a target that opens something does
 not look like an ordinary target and a locked door does not look like an ordinary block. The door
 sits in the same hue but dark, as the shut version of the bright thing that opens it, and bursts
