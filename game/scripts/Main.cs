@@ -30,7 +30,7 @@ public partial class Main : Node3D
     /// <summary>Field of view at full speed effect; widening it sells the speed.</summary>
     [Export] public float MaxFov { get; set; } = 100f;
 
-    private readonly List<(string Level, float Time)> _splits = new();
+    private readonly List<(string Level, float Time, bool Best)> _splits = new();
     private BestTimes _bestTimes = null!;
     private Level _level = null!;
     private GameSession _session = null!;
@@ -54,6 +54,8 @@ public partial class Main : Node3D
     private float _bank;
     private float _shake;
     private float _endedFor;
+    private float _scrollHeld;
+    private float _scrollRepeat;
 
     // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
     private int _lastBranch = -1;
@@ -79,7 +81,7 @@ public partial class Main : Node3D
         get
         {
             float total = 0f;
-            foreach (var (_, time) in _splits) total += time;
+            foreach (var split in _splits) total += split.Time;
             return total;
         }
     }
@@ -361,7 +363,8 @@ public partial class Main : Node3D
                     _levelDone = true;
                     break;
                 case SessionEvent.GameOver:
-                    _hud.ShowMessage($"SHIELDS DOWN\n{Summary()}\nSpace to run it again   R to retry this level");
+                    // The level that just ended the run is not in the splits: it was not finished.
+                    ShowRunSummary("SHIELDS DOWN", "Up / down to scroll     Space to run it again     R to retry");
                     break;
             }
         }
@@ -373,14 +376,15 @@ public partial class Main : Node3D
     {
         _levelDone = false;
         float time = _session.Elapsed;
-        _splits.Add((_level.Name, time));
+        // Recorded before the split is kept, so the summary can mark which levels were personal bests.
         bool best = !_practice && _bestTimes.Record(LevelId, time);
+        _splits.Add((_level.Name, time, best));
 
         if (_level.Next is null)
         {
             if (!_practice) _bestTimes.Record(RunKey, SplitTotal);
             if (!_practice) SaveBestTimes();
-            _hud.ShowMessage($"RUN COMPLETE\n{Summary()}\nSpace to run it again");
+            ShowRunSummary("RUN COMPLETE", "Up / down to scroll     Space to run it again");
             return false;
         }
 
@@ -390,14 +394,49 @@ public partial class Main : Node3D
         return true;
     }
 
-    // The run's splits, with its total and the best total to beat.
-    private string Summary()
+    // The run's splits, with its total and the best total to beat. A full run is 26 levels, so the
+    // list is handed over as rows the HUD can scroll rather than as one block of text.
+    private void ShowRunSummary(string headline, string hint)
     {
-        var lines = new List<string>();
-        foreach (var (level, time) in _splits) lines.Add($"{level}   {time:0.00}s");
-        string bestRun = _bestTimes.Get(RunKey) is float best ? $"   (best {best:0.00}s)" : "";
-        lines.Add($"TOTAL   {SplitTotal:0.00}s{bestRun}");
-        return string.Join("\n", lines);
+        var rows = new List<string>();
+        foreach (var (level, time, best) in _splits)
+        {
+            rows.Add($"{level}   {time:0.00}s{(best ? "   NEW BEST" : "")}");
+        }
+
+        int count = _splits.Count;
+        string subline = count == 0
+            ? "no zones cleared"
+            : _runStart.GetFile() == "level_01.json"
+                ? $"{count} zone{(count == 1 ? "" : "s")}, start to finish"
+                : $"{count} zone{(count == 1 ? "" : "s")} cleared";
+
+        string bestRun = _bestTimes.Get(RunKey) is float best2 ? $"   (best {best2:0.00}s)" : "";
+        _hud.ShowSummary(headline, subline, rows, $"TOTAL   {SplitTotal:0.00}s{bestRun}", hint);
+    }
+
+    // Up and down walk the results list. They are the throttle keys, which are free here because
+    // the ship is no longer flying, so nothing new has to be learned to read your own run.
+    private void ScrollSummary(float dt)
+    {
+        int dir = Input.IsActionPressed(InputSetup.ThrottleUp) ? -1
+            : Input.IsActionPressed(InputSetup.ThrottleDown) ? 1
+            : 0;
+        if (dir == 0)
+        {
+            _scrollHeld = 0f;
+            return;
+        }
+
+        // One row on the press, then a steady walk once it is clearly being held.
+        if (_scrollHeld <= 0f) _hud.ScrollSummary(dir);
+        _scrollHeld += dt;
+        if (_scrollHeld < 0.4f) return;
+
+        _scrollRepeat -= dt;
+        if (_scrollRepeat > 0f) return;
+        _hud.ScrollSummary(dir);
+        _scrollRepeat = 0.07f;
     }
 
     // Camera shake: strong after a hit, plus a faint rumble at high speed.
@@ -414,6 +453,7 @@ public partial class Main : Node3D
     // After a run ends, jump or fire starts a fresh run from the level it began with.
     private bool WaitForContinue(float dt)
     {
+        if (_hud.HasSummary) ScrollSummary(dt);
         _endedFor += dt;
         if (_endedFor < 1f) return false;
         if (!Input.IsActionJustPressed(InputSetup.Jump) && !Input.IsActionJustPressed(InputSetup.Fire)) return false;

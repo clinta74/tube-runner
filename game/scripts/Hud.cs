@@ -10,7 +10,17 @@ public partial class Hud : CanvasLayer
     private const float TitleSeconds = 3f;
     private const int Margin = 28;
 
+    // Level rows visible at once. Chosen to leave room for the headline, footer and hint on a
+    // short window rather than to fill a tall one.
+    private const int SummaryRows = 12;
+
     private readonly List<ColorRect> _pips = new();
+    private readonly List<string> _summaryRows = new();
+    private string _summaryHead = "";
+    private string _summarySub = "";
+    private string _summaryFoot = "";
+    private string _summaryHint = "";
+    private int _summaryTop;
     private Label _score = null!;
     private Label _time = null!;
     private Label _speed = null!;
@@ -64,7 +74,7 @@ public partial class Hud : CanvasLayer
         _accent = accent;
         _best = best;
         // A level starting clears whatever screen was up: the retry prompt, or the run summary.
-        _message.Text = "";
+        ShowMessage("");
         _title.Text = levelName.ToUpperInvariant();
         _titleLeft = TitleSeconds;
         BuildPips(shields, extras);
@@ -202,7 +212,61 @@ public partial class Hud : CanvasLayer
 
     public void Flash() => _flashLeft = 1f;
 
-    public void ShowMessage(string text) => _message.Text = text;
+    public void ShowMessage(string text)
+    {
+        _summaryRows.Clear();
+        _message.Text = text;
+    }
+
+    /// <summary>Whether a scrollable summary is up, so the caller knows to feed it scroll input.</summary>
+    public bool HasSummary => _summaryRows.Count > 0;
+
+    /// <summary>
+    /// Shows a run's results: a headline, a window onto <paramref name="rows"/> that can be
+    /// scrolled, then a footer and a hint. A full run is 26 levels, so the list cannot simply be
+    /// printed - it is longer than the screen, and the player would lose the end of what they earned.
+    /// </summary>
+    public void ShowSummary(string headline, string subline, IReadOnlyList<string> rows, string footer, string hint)
+    {
+        _summaryHead = headline;
+        _summarySub = subline;
+        _summaryRows.Clear();
+        _summaryRows.AddRange(rows);
+        _summaryFoot = footer;
+        _summaryHint = hint;
+        _summaryTop = 0;
+        RenderSummary();
+    }
+
+    /// <summary>Scrolls the summary by <paramref name="delta"/> rows, stopping at either end.</summary>
+    public void ScrollSummary(int delta)
+    {
+        if (!HasSummary) return;
+        int top = Mathf.Clamp(_summaryTop + delta, 0, Mathf.Max(0, _summaryRows.Count - SummaryRows));
+        if (top == _summaryTop) return;
+        _summaryTop = top;
+        RenderSummary();
+    }
+
+    private void RenderSummary()
+    {
+        int top = Mathf.Clamp(_summaryTop, 0, Mathf.Max(0, _summaryRows.Count - SummaryRows));
+        int shown = Mathf.Min(SummaryRows, _summaryRows.Count);
+        int below = _summaryRows.Count - top - shown;
+
+        var lines = new List<string> { _summaryHead };
+        if (_summarySub.Length > 0) lines.Add(_summarySub);
+        lines.Add("");
+        // Spelled out rather than drawn with arrows: the default font is not guaranteed to have
+        // them, and a row of tofu boxes on the results screen would be a poor way to find that out.
+        lines.Add(top > 0 ? $"{top} more above" : " ");
+        for (int i = 0; i < shown; i++) lines.Add(_summaryRows[top + i]);
+        lines.Add(below > 0 ? $"{below} more below" : " ");
+        lines.Add("");
+        lines.Add(_summaryFoot);
+        lines.Add(_summaryHint);
+        _message.Text = string.Join("\n", lines);
+    }
 
     private Label AddLabel(int size, Control.LayoutPreset preset, HorizontalAlignment align)
     {
