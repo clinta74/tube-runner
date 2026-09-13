@@ -4,6 +4,35 @@ Work queued on the `level-options` branch, taken from playtesting `v0.2.2`. Orde
 unblocks or invalidates what, not by size. Each entry says whether it is engine work or authoring,
 and whether a test can judge it or only playing can.
 
+## Done on this branch
+
+- **1. Win screen** — scrollable times, personal bests marked, run best keyed by starting level.
+- **2. Late hits** — the ship is pulled back to where it met the obstacle; the collision was right
+  and the picture was a whole frame of travel ahead of it.
+- **3. Jump window** — HUD cue driven by the ship's own rule, plus lines on the wall where the
+  window opens and shuts, measured rather than authored.
+- **4 / old 5. Engine plume** — it existed and was reading the wrong signal, so it sat pinned at
+  full across most of the throttle in late levels. It follows the throttle now.
+- **6. Autofire** — one shot a press; holding is what rapid fire buys. Rebalances every shooting
+  level and still wants a playthrough from level 1.
+- **7. Warp wells** — dust drawn in, and the size bug behind four separate reports: the loader
+  carried its own copy of the defaults, so every well in the game was 6 by 6. Width is now a share
+  of the tube's perimeter, which also removes the second place it could be defined.
+- **13. Escape menu** — resume, restart level, restart run, quit, with confirms on the two that
+  throw a run away.
+
+Found and fixed along the way, not on the original list:
+
+- Keys and the doors they open are coloured as pairs; an ordered group lights whichever target's
+  turn it is. Both mechanics worked, were tested and were documented, and none of that made them
+  visible - a rule the player cannot see is not a mechanic.
+- An unlocked door carried on being drawn, so the way ahead looked shut and the ship flew through
+  a wall.
+- Gate sockets were never freed on a level change and leaked into the scene tree for the rest of
+  the run.
+- `play.ps1 -Summary` opens straight onto the results screen, because checking it otherwise meant
+  playing thirteen levels without dying.
+
 ## The order, and why
 
 ### 1. Win screen: congratulate, and scroll the level times
