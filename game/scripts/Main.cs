@@ -134,7 +134,7 @@ public partial class Main : Node3D
         Steer            A / D   or   left / right
         Speed up, slow   W / S   or   up / down
         Jump             Space   (on flat sections)
-        Fire             Ctrl / J / Enter / left mouse
+        Fire             Ctrl / J / Enter / left mouse   (one shot a press)
         Ring gun         E / K / right mouse
         Retry level      R
         Pause            P
@@ -258,9 +258,10 @@ public partial class Main : Node3D
         _session.Step(dt, new ShipInput(
             steer,
             Input.IsActionJustPressed(InputSetup.Jump),
-            Input.IsActionPressed(InputSetup.Fire),
+            Input.IsActionJustPressed(InputSetup.Fire),
             Input.GetAxis(InputSetup.ThrottleDown, InputSetup.ThrottleUp),
-            Input.IsActionJustPressed(InputSetup.Special)));
+            Input.IsActionJustPressed(InputSetup.Special),
+            Input.IsActionPressed(InputSetup.Fire)));
 
         // The next level may have just loaded; draw its first frame so none goes out blank.
         if (HandleEvents())
