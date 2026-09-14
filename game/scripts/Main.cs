@@ -339,6 +339,7 @@ public partial class Main : Node3D
         float speed = _running && _session.State == SessionState.Playing ? ship.ForwardSpeed : 0f;
         _fx.Update(speed, dt);
         _audio.SetSpeed(speed);
+        _audio.SetMusic(_session.Momentum, _session.RamLeft, _running && _session.State == SessionState.Playing);
 
         var track = _level.Track;
         var split = pos.Branch >= 0 ? track.SplitAt(pos.S) : null;

@@ -213,53 +213,156 @@ public class MechanicTests
     }
 
     [Fact]
-    public void ThrustZone_RaisesTheFloorAndDragsTheThrottleUpToIt()
+    public void ThrustZone_CutsOnlyTheBottomFifthOfTheRange()
     {
-        var zone = new ThrustZone { S = 400, Length = 200f, MinThrottle = 1.3f };
+        var zone = new ThrustZone { S = 400, Length = 200f };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
+        var ship = Settings.Ship;
+        float cut = ship.MinThrottle + 0.2f * (ship.MaxThrottle - ship.MinThrottle);
 
         // Held all the way down on the way in, so the throttle is at the ship's own floor.
         Fly(game, to: 250, new ShipInput(Throttle: -1f));
-        Assert.Equal(Settings.Ship.MinThrottle, game.Ship.Throttle, precision: 2);
+        Assert.Equal(ship.MinThrottle, game.Ship.Throttle, precision: 2);
 
-        // Inside, the floor rises and the ship is carried up to it whether it likes it or not.
+        // Inside, only the slowest fifth is gone: a crawling ship is lifted to the cut and no further,
+        // and the top of the range is untouched.
         Fly(game, to: 420, new ShipInput(Throttle: -1f));
         Assert.True(zone.Entered);
-        Assert.Equal(1.3f, game.Ship.ThrottleFloor, precision: 2);
-        Assert.Equal(1.3f, game.Ship.Throttle, precision: 2);
+        Assert.Equal(cut, game.Ship.ThrottleFloor, precision: 2);
+        Assert.Equal(cut, game.Ship.Throttle, precision: 2);
+        Assert.Equal(ship.MaxThrottle, game.Ship.ThrottleCeiling, precision: 2);
         Assert.Equal(3, game.Shields);   // it costs control, never a shield
     }
 
     [Fact]
-    public void ThrustZone_LowersTheCeilingAndHoldsTheThrottleDown()
+    public void CeilingZone_CutsTheTopThreeQuartersAndBringsAFastShipDown()
     {
-        var zone = new ThrustZone { S = 400, Length = 200f, MaxThrottle = 0.8f };
+        var zone = new ThrustZone { S = 400, Length = 200f, Kind = ThrustZoneKind.Ceiling };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
+        var ship = Settings.Ship;
+        float cap = ship.MaxThrottle - 0.75f * (ship.MaxThrottle - ship.MinThrottle);
 
-        // Wide open the whole way, so the throttle is pinned at the ship's ceiling before the zone.
+        // Wide open on the way in, so the throttle is at the ship's own ceiling.
         Fly(game, to: 250, new ShipInput(Throttle: 1f));
-        Assert.True(game.Ship.Throttle > 1f);
+        Assert.Equal(ship.MaxThrottle, game.Ship.Throttle, precision: 2);
 
         Fly(game, to: 420, new ShipInput(Throttle: 1f));
-        Assert.Equal(0.8f, game.Ship.ThrottleCeiling, precision: 2);
-        Assert.Equal(0.8f, game.Ship.Throttle, precision: 2);
+        Assert.Equal(cap, game.Ship.ThrottleCeiling, precision: 2);
+        Assert.Equal(cap, game.Ship.Throttle, precision: 2);
+        Assert.Equal(ship.MinThrottle, game.Ship.ThrottleFloor, precision: 2);   // the slow end stays open
         Assert.Equal(3, game.Shields);
+    }
+
+    [Fact]
+    public void CeilingZone_LeavesAThrottleBelowTheCapWhereItWas()
+    {
+        var zone = new ThrustZone { S = 400, Length = 200f, Kind = ThrustZoneKind.Ceiling };
+        var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
+
+        Fly(game, to: 250, new ShipInput(Throttle: -1f));
+        float before = game.Ship.Throttle;
+        Fly(game, to: 450);
+
+        Assert.NotNull(game.InThrustZone);
+        Assert.Equal(before, game.Ship.Throttle);
+    }
+
+    [Fact]
+    public void ThrustZone_LeavesAThrottleAboveTheCutWhereItWas()
+    {
+        // The complaint this answers: zones used to drag every ship into the middle of the range.
+        var zone = new ThrustZone { S = 400, Length = 200f };
+        var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
+        float before = game.Ship.Throttle;
+
+        Fly(game, to: 450);
+
+        Assert.NotNull(game.InThrustZone);
+        Assert.Equal(before, game.Ship.Throttle);
     }
 
     [Fact]
     public void ThrustZone_GivesTheRangeBackOnTheWayOut()
     {
-        var zone = new ThrustZone { S = 300, Length = 120f, MinThrottle = 1.4f };
+        var zone = new ThrustZone { S = 300, Length = 120f };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
 
-        Fly(game, to: 320);
+        Fly(game, to: 320, new ShipInput(Throttle: -1f));
         Assert.NotNull(game.InThrustZone);
+        float held = game.Ship.ThrottleFloor;
 
         Fly(game, to: 600, new ShipInput(Throttle: -1f));
 
         Assert.Null(game.InThrustZone);
         Assert.Equal(Settings.Ship.MinThrottle, game.Ship.ThrottleFloor, precision: 2);
-        Assert.True(game.Ship.Throttle < 1.4f, "the throttle should be free to come down again");
+        Assert.True(game.Ship.Throttle < held, "the throttle should be free to come down again");
+    }
+
+    [Fact]
+    public void Unstoppable_WarnsOnceWithASecondLeft_ThenSaysItEnded()
+    {
+        var pickup = new Pickup { Kind = PickupKind.Unstoppable, S = 50 };
+        var game = new GameSession(Track(), [], Settings, Start, [pickup]);
+        int warnings = 0, ends = 0;
+        float leftAtWarning = -1f;
+
+        Fly(game, to: 1000, step: g =>
+        {
+            if (g.Events.Contains(SessionEvent.UnstoppableEnding))
+            {
+                warnings++;
+                leftAtWarning = g.RamLeft;
+            }
+            if (g.Events.Contains(SessionEvent.UnstoppableEnded))
+            {
+                ends++;
+                Assert.Equal(0f, g.RamLeft);
+            }
+        });
+
+        Assert.Equal(1, warnings);
+        Assert.Equal(1, ends);
+        Assert.InRange(leftAtWarning, GameSession.RamWarning - 0.05f, GameSession.RamWarning);
+    }
+
+    [Fact]
+    public void Momentum_BuildsWhileFlyingClean()
+    {
+        var game = Game([]);
+
+        Fly(game, to: 1500);
+
+        Assert.True(game.Momentum > 0f);
+        Assert.Equal(game.Elapsed / Settings.MomentumBuildTime, game.Momentum, precision: 2);
+    }
+
+    [Fact]
+    public void Momentum_TakesAKnockOnAHit()
+    {
+        // Started well up, so the knock is measured rather than clamped at zero.
+        var block = new Obstacle { Kind = ObstacleKind.Block, S = 400, Width = 40f };
+        var carry = new RunState(3, 0, 0f, 0, 0f, 1f, 0, Momentum: 0.8f);
+        var game = new GameSession(Track(), [block], Settings, Start, null, carry);
+        float before = 0f, atHit = -1f;
+
+        Fly(game, to: 500, step: g =>
+        {
+            if (g.Events.Contains(SessionEvent.Hit)) atHit = g.Momentum;
+            else if (atHit < 0f) before = g.Momentum;
+        });
+
+        Assert.Equal(2, game.Shields);
+        Assert.InRange(atHit, before - Settings.MomentumHitLoss - 0.01f, before - Settings.MomentumHitLoss + 0.01f);
+    }
+
+    [Fact]
+    public void Momentum_CarriesIntoTheNextLevel()
+    {
+        var carry = new RunState(3, 0, 0f, 0, 0f, 1f, 0, Momentum: 0.6f);
+        var game = new GameSession(Track(), [], Settings, Start, null, carry);
+
+        Assert.Equal(0.6f, game.Momentum);
+        Assert.Equal(0.6f, game.Carry.Momentum);
     }
 
     [Fact]
@@ -350,7 +453,7 @@ public class MechanicTests
                     { "at": 400, "kind": "target", "group": "a", "order": 2 },
                     { "at": 500, "lockedBy": "a" }
                   ],
-                  "thrustZones": [ { "at": 550, "length": 80, "min": 1.2, "max": 1.6 } ]
+                  "thrustZones": [ { "at": 550, "length": 80 } ]
                 }
               ]
             }
@@ -366,22 +469,39 @@ public class MechanicTests
         Assert.Equal("a", level.Obstacles[4].LockedBy);
         var zone = Assert.Single(level.ThrustZones);
         Assert.Equal(550.0, zone.S);
-        Assert.Equal(1.2f, zone.MinThrottle);
-        Assert.Equal(1.6f, zone.MaxThrottle);
+        Assert.Equal(80f, zone.Length);
+        Assert.Equal(ThrustZoneKind.Floor, zone.Kind);   // the default
     }
 
     [Fact]
-    public void Loader_RejectsAThrustZoneThatChangesNothing()
+    public void Loader_ReadsACeilingZone()
     {
-        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse("""
+        var level = LevelLoader.Parse("""
             {
               "sections": { "tube": { "radius": 6 } },
               "start": "tube",
-              "track": [ { "length": 300, "thrustZones": [ { "at": 100 } ] } ]
+              "track": [ { "length": 300, "thrustZones": [ { "at": 150, "length": 300, "kind": "ceiling" } ] } ]
+            }
+            """);
+
+        Assert.Equal(ThrustZoneKind.Ceiling, Assert.Single(level.ThrustZones).Kind);
+    }
+
+    [Theory]
+    // Zones no longer carry their own range. A level still written that way must fail to load, not
+    // quietly fly with a different limit from the one its author chose. Likewise a kind it can't read.
+    [InlineData("""{ "at": 100, "min": 1.3 }""")]
+    [InlineData("""{ "at": 100, "max": 0.85 }""")]
+    [InlineData("""{ "at": 100, "kind": "fast" }""")]
+    public void Loader_RejectsAThrustZoneItCannotRead(string zone)
+    {
+        Assert.Throws<LevelFormatException>(() => LevelLoader.Parse($$"""
+            {
+              "sections": { "tube": { "radius": 6 } },
+              "start": "tube",
+              "track": [ { "length": 300, "thrustZones": [ {{zone}} ] } ]
             }
             """));
-
-        Assert.Contains("does nothing", e.Message);
     }
 
     [Fact]

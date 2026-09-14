@@ -35,10 +35,13 @@ public partial class Hud : CanvasLayer
     private Polygon2D _jumpUp = null!;
     private Polygon2D _jumpDown = null!;
     private Control _thrustBar = null!;
-    private ColorRect _thrustTrack = null!;
+    private Panel _thrustTrack = null!;
+    private StyleBoxFlat _thrustFrame = null!;
     private ColorRect _thrustFill = null!;
-    private ColorRect _thrustBlockedLow = null!;
-    private ColorRect _thrustBlockedHigh = null!;
+    private ColorRect _thrustBlocked = null!;
+    private ColorRect _thrustCut = null!;
+    private ColorRect _thrustBlockedTop = null!;
+    private ColorRect _thrustCutTop = null!;
     private HBoxContainer _shieldBar = null!;
     private static readonly Color ExtraShieldColor = new(1f, 0.82f, 0.25f);
 
@@ -122,8 +125,8 @@ public partial class Hud : CanvasLayer
     // Upright, because more thrust reading as higher is one less thing to learn. It sits on the
     // right edge beside the speed readout, so how hard the engines are working and how fast that is
     // actually going are in one place.
-    private const int ThrustWidth = 18;
-    private const int ThrustHeight = 220;
+    private const int ThrustWidth = 30;
+    private const int ThrustHeight = 340;
 
     // A bar showing where the throttle sits in its range, with the ends a thrust zone has closed off
     // drawn over it. Without this the zones are invisible: the player feels the ship refuse to slow
@@ -144,10 +147,25 @@ public partial class Hud : CanvasLayer
         _thrustBar.OffsetTop = -ThrustHeight / 2f;
         _thrustBar.OffsetBottom = ThrustHeight / 2f;
 
-        _thrustTrack = AddRect(new Color(1f, 1f, 1f, 0.16f));
+        // A dark backing with a rim, so the whole range reads over any wall. A faint strip vanished
+        // against the brighter themes and left only the fill, with no sense of how much range there was.
+        _thrustFrame = new StyleBoxFlat { BgColor = new Color(0f, 0f, 0f, 0.55f), BorderColor = new Color(1f, 1f, 1f, 0.7f) };
+        _thrustFrame.SetBorderWidthAll(2);
+        _thrustTrack = new Panel { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _thrustTrack.AddThemeStyleboxOverride("panel", _thrustFrame);
+        _thrustBar.AddChild(_thrustTrack);
         _thrustFill = AddRect(Colors.White);
-        _thrustBlockedLow = AddRect(new Color(1f, 0.35f, 0.2f, 0.55f));
-        _thrustBlockedHigh = AddRect(new Color(1f, 0.35f, 0.2f, 0.55f));
+        // Hatched rather than filled, so the whole bar stays readable: the closed-off part is ghosted
+        // and struck through, not painted over. The fill still shows through the gaps, so the player
+        // can see where the throttle sits even when it is sitting at the cut.
+        var hatch = new ShaderMaterial { Shader = new Shader { Code = HatchShader } };
+        _thrustBlocked = AddRect(Colors.White);
+        _thrustBlocked.Material = hatch;
+        _thrustBlockedTop = AddRect(Colors.White);
+        _thrustBlockedTop.Material = hatch;
+        // A solid line at each cut itself, so the new limit reads at a glance.
+        _thrustCut = AddRect(new Color(1f, 0.45f, 0.25f));
+        _thrustCutTop = AddRect(new Color(1f, 0.45f, 0.25f));
 
         ColorRect AddRect(Color color)
         {
@@ -157,8 +175,19 @@ public partial class Hud : CanvasLayer
         }
     }
 
-    private const int JumpWidth = 190;
-    private const int JumpHeight = 30;
+    // Diagonal stripes in screen space. The gaps darken what is underneath rather than hiding it.
+    private const string HatchShader = """
+        shader_type canvas_item;
+        void fragment() {
+            float band = mod(FRAGCOORD.x + FRAGCOORD.y, 10.0);
+            float stripe = step(band, 3.5);
+            COLOR = mix(vec4(0.0, 0.0, 0.0, 0.3), vec4(1.0, 0.4, 0.22, 0.7), stripe);
+        }
+        """;
+
+    private const int JumpWidth = 300;
+    private const int JumpHeight = 48;
+    private const float JumpArrow = 40f;
 
     // Whether a jump is legal right now. It is only possible on a fully unrolled section, and the
     // way in and out of one is gradual, so without this there is a stretch where the player cannot
@@ -180,8 +209,8 @@ public partial class Hud : CanvasLayer
 
         // Real triangles rather than characters: the default font is not guaranteed to carry arrow
         // glyphs, and a pair of tofu boxes would say nothing at all.
-        _jumpUp = Arrow(up: true, x: 6f);
-        _jumpDown = Arrow(up: false, x: JumpWidth - 32f);
+        _jumpUp = Arrow(up: true, x: 8f);
+        _jumpDown = Arrow(up: false, x: JumpWidth - JumpArrow - 8f);
 
         _jumpLabel = new Label
         {
@@ -191,8 +220,8 @@ public partial class Hud : CanvasLayer
             MouseFilter = Control.MouseFilterEnum.Ignore,
             LabelSettings = new LabelSettings
             {
-                FontSize = 24,
-                OutlineSize = 5,
+                FontSize = 38,
+                OutlineSize = 8,
                 OutlineColor = new Color(0f, 0f, 0f, 0.8f),
             },
         };
@@ -201,12 +230,13 @@ public partial class Hud : CanvasLayer
 
         Polygon2D Arrow(bool up, float x)
         {
+            float w = JumpArrow, h = JumpHeight - 10f;
             var poly = new Polygon2D
             {
                 Polygon = up
-                    ? new[] { new Vector2(13f, 0f), new Vector2(26f, 24f), new Vector2(0f, 24f) }
-                    : new[] { new Vector2(0f, 0f), new Vector2(26f, 0f), new Vector2(13f, 24f) },
-                Position = new Vector2(x, 3f),
+                    ? new[] { new Vector2(w / 2f, 0f), new Vector2(w, h), new Vector2(0f, h) }
+                    : new[] { new Vector2(0f, 0f), new Vector2(w, 0f), new Vector2(w / 2f, h) },
+                Position = new Vector2(x, 5f),
             };
             _jumpCue.AddChild(poly);
             return poly;
@@ -232,24 +262,32 @@ public partial class Hud : CanvasLayer
 
         _thrustTrack.Position = Vector2.Zero;
         _thrustTrack.Size = new Vector2(ThrustWidth, ThrustHeight);
+        _thrustFrame.BorderColor = new Color(_accent, 0.75f);
 
         // Godot counts y downwards, so the fill is placed by its top edge and grown towards the foot.
         float fill = At(session.Ship.Throttle);
         _thrustFill.Color = _accent;
-        _thrustFill.Position = new Vector2(3f, ThrustHeight - fill);
-        _thrustFill.Size = new Vector2(ThrustWidth - 6f, fill);
+        _thrustFill.Position = new Vector2(5f, ThrustHeight - fill);
+        _thrustFill.Size = new Vector2(ThrustWidth - 10f, fill);
 
-        // Whatever a zone has taken off each end, drawn over the top of it. The bar itself is always
+        // Whatever a zone has taken off either end, drawn over the bar. The bar itself is always
         // there - the throttle is in play every second of the game - but these only appear when
         // something is actually closing the range.
         float low = At(session.Ship.ThrottleFloor);
+        _thrustBlocked.Position = new Vector2(0f, ThrustHeight - low);
+        _thrustBlocked.Size = new Vector2(ThrustWidth, low);
+        _thrustBlocked.Visible = low > 0.5f;
+        _thrustCut.Position = new Vector2(-4f, ThrustHeight - low - 1.5f);
+        _thrustCut.Size = new Vector2(ThrustWidth + 8f, 3f);
+        _thrustCut.Visible = _thrustBlocked.Visible;
+
         float high = At(session.Ship.ThrottleCeiling);
-        _thrustBlockedLow.Position = new Vector2(0f, ThrustHeight - low);
-        _thrustBlockedLow.Size = new Vector2(ThrustWidth, low);
-        _thrustBlockedLow.Visible = low > 0.5f;
-        _thrustBlockedHigh.Position = Vector2.Zero;
-        _thrustBlockedHigh.Size = new Vector2(ThrustWidth, ThrustHeight - high);
-        _thrustBlockedHigh.Visible = high < ThrustHeight - 0.5f;
+        _thrustBlockedTop.Position = Vector2.Zero;
+        _thrustBlockedTop.Size = new Vector2(ThrustWidth, ThrustHeight - high);
+        _thrustBlockedTop.Visible = high < ThrustHeight - 0.5f;
+        _thrustCutTop.Position = new Vector2(-4f, ThrustHeight - high - 1.5f);
+        _thrustCutTop.Size = new Vector2(ThrustWidth + 8f, 3f);
+        _thrustCutTop.Visible = _thrustBlockedTop.Visible;
     }
 
     /// <param name="runTime">Time from earlier levels of this run; the level's own time is added.</param>

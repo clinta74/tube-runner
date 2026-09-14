@@ -614,7 +614,7 @@ public partial class ObstacleRenderer : Node3D
         var (center, forward, up) = Pose(mark.S, -1, mark.Surface, 0f, 0.07f);
         var node = new MeshInstance3D
         {
-            Mesh = new BoxMesh { Size = new Vector3(96f, 0.14f, 1.8f) },
+            Mesh = new BoxMesh { Size = new Vector3(96f, 0.2f, 4f) },
             MaterialOverride = mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial,
         };
         AddChild(node);

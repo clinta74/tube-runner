@@ -1,16 +1,32 @@
 namespace TubeRunner.Core;
 
+/// <summary>Which end of the throttle range a thrust zone closes off.</summary>
+public enum ThrustZoneKind
+{
+    /// <summary>Takes away the slow end: the player cannot crawl through.</summary>
+    Floor,
+
+    /// <summary>Takes away the fast end: the player is held back.</summary>
+    Ceiling,
+}
+
 /// <summary>
-/// A stretch of track that narrows the throttle range instead of costing a shield.
+/// A stretch of track that closes off one end of the throttle range instead of costing a shield.
 ///
 /// It replaces an earlier idea - a zone that took a shield for being flown too fast - which was
 /// wrong twice over. It punished the one thing the rest of the game rewards, and it did it with no
 /// warning a player could act on: there was nothing on screen saying how close to the limit they
 /// were, so the first they knew of it was the hit.
 ///
-/// Narrowing the range is a cost you can see coming and steer by. Raising <see cref="MinThrottle"/>
-/// is the sharper edge of it: being forced to carry speed through something tight is a real price,
-/// where being forced to slow down is mostly just slower. The cost is control, not shields.
+/// Each kind makes a fixed cut, set in <see cref="SessionSettings"/>, rather than carrying its own
+/// numbers. Zones used to author their own floor and ceiling, and a floor of 1.3 dragged every ship
+/// to the middle of its range on the way in - which took the throttle away rather than narrowing it.
+/// A floor cut is small, so it only stops crawling; a ceiling cut is large, because holding a player
+/// back is only felt when it really holds them back.
+///
+/// A zone should cover its whole section. One that ends part way through a narrow bore gives the
+/// range back while the walls are still telling the player to be careful, and a limit that changes
+/// in the middle of something is harder to read than one that matches what the tube is doing.
 /// </summary>
 public sealed class ThrustZone
 {
@@ -23,17 +39,7 @@ public sealed class ThrustZone
     /// <summary>Extent along the track.</summary>
     public float Length { get; init; } = 120f;
 
-    /// <summary>
-    /// Lowest throttle allowed inside, as a multiple of the track's speed, or null to leave the
-    /// ship's own floor alone. Raising this forces the player to carry speed they may not want.
-    /// </summary>
-    public float? MinThrottle { get; init; }
-
-    /// <summary>
-    /// Highest throttle allowed inside, or null to leave the ship's own ceiling alone. Lowering this
-    /// takes away the option to hurry, which is the gentler half of the mechanic.
-    /// </summary>
-    public float? MaxThrottle { get; init; }
+    public ThrustZoneKind Kind { get; init; } = ThrustZoneKind.Floor;
 
     /// <summary>Whether the ship has been inside it at least once.</summary>
     public bool Entered { get; internal set; }
