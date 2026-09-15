@@ -48,7 +48,8 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 25 | **Long Odds** | Endurance: the longest level, and almost nothing given | All | ✅ |
 | 26 | **Finale** | No new ideas, just the hardest mix | All | ✅ |
 
-File names match these numbers, and the run goes all the way through to the finale.
+File names match these numbers - 8b is `level_08b.json`, added between 8 and 9 without renumbering, since best
+times are keyed by file name - and the run goes all the way through to the finale.
 
 ## Levels 10-26: blocks of four
 
@@ -188,16 +189,16 @@ how obstacles are arranged.
 
 | # | Level | Speed | Coverage | Travel | Shapes | Jumps | Shooting | Pickups | Length |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | First Loop | 70 flat | Gaps and half-rings | High: over the top and back | Round only | – | Optional | 1 shield | 1500 |
-| 2 | Power Up | 80 flat | First **sealed** rings | Medium | Round, one oval | – | Required | All five | 1900 |
-| 3 | Throttle | 85 → 120 | Sealed rings, spirals | Medium | Round, oval | – | Required | Shield, rapid, ring | 2300 |
-| 4 | Ovals | 95 → 125 | Half-blocked by shape | High: sides, then floor/ceiling | Wide and tall ovals | – | Required | Shield, rapid, ring | 2100 |
-| 5 | Flatlands | 90 → 100 | Wide gaps | Low: strafing | Round → flat | 2, unhurried | Light | Shield, full shields | 2100 |
-| 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 2750 |
-| 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4650 |
-| 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4350 |
-| 8b | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4560 |
-| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4920 |
+| 1 | First Loop | 70 flat | Gaps and half-rings | High: over the top and back | Round only | – | Optional | 1 shield | 1646 |
+| 2 | Power Up | 80 flat | First **sealed** rings | Medium | Round, one oval | – | Required | All five | 2046 |
+| 3 | Throttle | 85 → 120 | Sealed rings, spirals | Medium | Round, oval | – | Required | Shield, rapid, ring | 2496 |
+| 4 | Ovals | 95 → 125 | Half-blocked by shape | High: sides, then floor/ceiling | Wide and tall ovals | – | Required | Shield, rapid, ring | 2376 |
+| 5 | Flatlands | 90 → 100 | Wide gaps | Low: strafing | Round → flat | 2, unhurried | Light | Shield, full shields | 2296 |
+| 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 3146 |
+| 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4926 |
+| 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4496 |
+| 8b | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4556 |
+| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 5116 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
 they answer. Their rarer prizes — the extra shield, and shields inside a split — sit off the fast
