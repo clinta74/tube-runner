@@ -163,6 +163,7 @@ public partial class Main : Node3D
                 _practice = true;
             }
             if (arg == "--summary") _debugSummary = true;
+            if (arg == "--no-update-check") _noUpdateCheck = true;
         }
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
@@ -172,8 +173,39 @@ public partial class Main : Node3D
         // A test run with --start skips the start screen, so recordings and quick checks just go.
         _running = _practice || _debugSummary;
         if (_debugSummary) FillDebugSummary();
-        else if (!_running) _hud.ShowMessage(StartScreen);
+        else if (!_running) _hud.ShowMessage(StartScreenMessage());
+
+        _updates = new UpdateChecker();
+        AddChild(_updates);
+        _updates.UpdateFound += OnUpdateFound;
+        // Not on a test run: those exist to look at one level, and a notice over it is in the way.
+        if (!_noUpdateCheck && !_practice && !_debugSummary) _updates.Start();
     }
+
+    // The start screen, with this build's version and, once the check has found one, the newer release.
+    private string StartScreenMessage()
+    {
+        // A raw string keeps the source file's own line endings, and on a Windows checkout those are
+        // CRLF. The label breaks the line at both halves, so every line was drawn double-spaced and the
+        // screen ran off the top and bottom of the window - taking the title and "Space to start" with it.
+        var text = StartScreen.ReplaceLineEndings("\n");
+        var version = UpdateChecker.CurrentVersion;
+        if (!version.IsDevelopment) text += $"\n\nv{version}";
+        if (_update is not null) text += $"\n\nVersion {_update.Version} is out     Esc to get it";
+        return text;
+    }
+
+    private void OnUpdateFound(ReleaseInfo release)
+    {
+        _update = release;
+        // Only the start screen is redrawn with it. Mid-run the notice waits in the menu rather than
+        // appearing over the tube.
+        if (!_running && !_menuOpen) _hud.ShowMessage(StartScreenMessage());
+    }
+
+    private UpdateChecker _updates = null!;
+    private ReleaseInfo? _update;
+    private bool _noUpdateCheck;
 
     private const string StartScreen = """
         TUBE RUNNER
@@ -617,6 +649,16 @@ public partial class Main : Node3D
             CloseMenu();
             RestartRun();
         })));
+        if (_update is not null)
+        {
+            var release = _update;
+            _menu.Add(($"Get version {release.Version}", () =>
+            {
+                // Checked when it was read to be this game's own release page on GitHub.
+                OS.ShellOpen(release.Url);
+                CloseMenu();
+            }));
+        }
         _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
 
         _menuIndex = 0;
