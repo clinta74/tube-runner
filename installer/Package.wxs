@@ -1,0 +1,50 @@
+<!--
+  Installs per user by default: perUserOrMachine with Windows Installer's single-package authoring
+  puts ProgramFiles64Folder at %LOCALAPPDATA%\Programs and needs no admin rights or UAC prompt.
+
+  Saves (best times) live in Godot's user folder, %APPDATA%\Godot\app_userdata\Tube Runner, not in
+  the install folder, so an upgrade or an uninstall leaves them where they are.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Tube Runner"
+           Manufacturer="clinta74"
+           Version="$(var.GameVersion)"
+           UpgradeCode="5E8C2B7A-3D41-4F6B-9A2E-7C1D0F8B6E24"
+           Scope="perUserOrMachine"
+           Compressed="yes">
+    <!-- Never change the UpgradeCode above: it is how a new version finds the copy already installed. -->
+
+    <!-- A new version replaces the old one outright; an older one refuses rather than downgrading. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Tube Runner is already installed." />
+
+    <!-- One file: the cabinet goes inside the MSI rather than beside it. -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- The same icon the game uses, for the installed-apps list and the Start menu shortcut. -->
+    <Icon Id="TubeRunner.ico" SourceFile="$(var.GameIcon)" />
+    <Property Id="ARPPRODUCTICON" Value="TubeRunner.ico" />
+
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/clinta74/tube-runner" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/clinta74/tube-runner/releases" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Tube Runner">
+        <!-- Everything the export produced: the exe with its data built in, and the .NET folder. -->
+        <Files Include="$(var.GameBuild)\**" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut">
+        <Shortcut Id="TubeRunnerShortcut"
+                  Name="Tube Runner"
+                  Target="[INSTALLFOLDER]TubeRunner.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="TubeRunner.ico" />
+        <!-- A shortcut can't be a component's key path, so a registry value stands in for it. -->
+        <RegistryValue Root="HKCU" Key="Software\clinta74\Tube Runner" Name="StartMenuShortcut"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+  </Package>
+</Wix>

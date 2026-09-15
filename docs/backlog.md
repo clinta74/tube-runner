@@ -234,7 +234,15 @@ when they start to struggle. Notes for eval:
   warning beep lost under the lead defeats the point of it.
 
 ### Windows installer
-*New item. Build/CI. Testable only by installing on a clean machine.*
+*Built on the `installer` branch, not yet run.* An MSI with its cabinet embedded, from WiX 5.0.2
+(`installer/TubeRunner.wixproj` and `Package.wxs`, built by `installer.ps1` through `dotnet build`,
+so nothing extra to install). Per-user install to `%LOCALAPPDATA%\Programs\Tube Runner` with no admin
+prompt, a Start menu shortcut, uninstall from Windows settings, major upgrades that replace the old
+version and refuse downgrades. The release workflow attaches `TubeRunner-<version>.msi` beside the
+zip. Still to do: build and install it once, check an upgrade over an older install keeps best
+times, and give the game an icon (it has Godot's).
+
+Original notes:
 
 The release today is a zip of the exported game. An installer wants a Start menu entry, an
 uninstaller, and a per-user install so it needs no admin rights. Notes for eval:

@@ -1,0 +1,3 @@
+# WiX build output; the finished MSI goes to builds/.
+bin/
+obj/
