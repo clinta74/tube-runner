@@ -36,7 +36,7 @@ Found and fixed along the way, not on the original list:
   a wall.
 - Gate sockets were never freed on a level change and leaked into the scene tree for the rest of
   the run.
-- `play.ps1 -Summary` opens straight onto the results screen, because checking it otherwise meant
+- `tube play --summary` opens straight onto the results screen, because checking it otherwise meant
   playing thirteen levels without dying.
 
 ## The order, and why
@@ -235,7 +235,7 @@ when they start to struggle. Notes for eval:
 
 ### Windows installer
 *Built on the `installer` branch, not yet run.* An MSI with its cabinet embedded, from WiX 5.0.2
-(`installer/TubeRunner.wixproj` and `Package.wxs`, built by `installer.ps1` through `dotnet build`,
+(`installer/TubeRunner.wixproj` and `Package.wxs`, built by `tube installer` through `dotnet build`,
 so nothing extra to install). Per-user install to `%LOCALAPPDATA%\Programs\Tube Runner` with no admin
 prompt, a Start menu shortcut, uninstall from Windows settings, major upgrades that replace the old
 version and refuse downgrades. The release workflow attaches `TubeRunner-<version>.msi` beside the
@@ -255,7 +255,17 @@ uninstaller, and a per-user install so it needs no admin rights. Notes for eval:
   anyway" is acceptable for now.
 
 ### Checking for updates
-*New item. Game + CI. Depends on the installer for the smooth version of it.*
+*Built on the `update-check` branch.* `tube export --version x.y.z` stamps the version into the game's
+assembly (the `GameVersion` MSBuild property, from the environment); the release workflow passes the
+tag. An unstamped build reads 0.0.0 and never checks, so development runs stay offline. At launch
+`UpdateChecker` asks GitHub's latest-release API once, with an 8 s timeout, and says nothing on any
+failure. `Updates` in Core (tested) reads the answer, ignores drafts and pre-releases, compares
+versions numerically, and only accepts this repository's own release page as the link. A newer
+release shows on the start screen and as "Get version x.y.z" in the Escape menu, which opens the page.
+Test runs (`--start`, `--summary`) and `--no-update-check` skip it. Not done: downloading and running
+the new installer in place.
+
+Original notes:
 
 - The game compares its own version against the latest GitHub release
   (`api.github.com/repos/<owner>/<repo>/releases/latest`) and says so on the title or menu screen,

@@ -1,8 +1,8 @@
 <!--
-  The Windows installer: an MSI with its cabinet embedded, so it is one file. Built by installer.ps1
+  The Windows installer: an MSI with its cabinet embedded, so it is one file. Built by `tube installer`
   from the export in builds/windows:
-    ./export.ps1
-    ./installer.ps1
+    tube export
+    tube installer
 
   WiX 5.0.2 on purpose. It comes from NuGet through `dotnet build`, so nothing else needs installing,
   and from 6.0 on WiX asks users to accept its Open Source Maintenance Fee terms.

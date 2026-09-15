@@ -30,7 +30,7 @@
   },
 
   // Obstacle "at" values are measured from the start of their piece.
-  // The distances in the comments are for `play.ps1 -Start`.
+  // The distances in the comments are for `tube play --start`.
   "start": "tube",
   "track": [
     { "length": 260, "pickups": [                                   //    0 -  260

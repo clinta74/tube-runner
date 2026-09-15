@@ -4,7 +4,7 @@
   "segmentLength": 60,
 
   // A bench for the see-through style, not part of the run. Play it with
-  //   ./play.ps1 -Level bench/wire.json
+  //   tube play --level bench/wire.json
   // It is laid out to show what the style is for rather than to be a fair level: a bend, a fork, a
   // warp well and a second fork, each placed so the one after it is already in view. In the solid
   // style none of that can be seen until it arrives.
