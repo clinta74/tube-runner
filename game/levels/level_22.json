@@ -40,14 +40,14 @@
   "start": "tube",
   "track": [
     // The block's refill: a single shield.
-    { "length": 240, "pickups": [                                   //    0 -  240
-      { "at": 120, "kind": "shield" }
+    { "length": 320, "pickups": [                                   //    0 -  320
+      { "at": 290, "kind": "shield" }
     ] },
 
     // FREE LOOK at the pairing. A wide chamber, then a fork whose quick branch is clean - no well
     // anywhere. This is the fork the player already knows, so the next one can break the pattern.
-    { "length": 120, "section": "chamber", "speed": 150 },          //  240 -  360
-    { "length": 420, "turn": 80, "split": {                         //  360 -  780
+    { "length": 120, "section": "chamber", "speed": 150 },          //  320 -  440
+    { "length": 420, "turn": 80, "split": {                         //  440 -  860
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [140, -30, 0], [280, -30, 0], [420, -8, 0]] },
@@ -59,15 +59,15 @@
         { "at": 140, "branch": 1, "angle": 0, "count": 3, "spacing": 60, "angleStep": 90 }
       ]
     },
-    { "length": 140, "section": "tube" },                           //  780 -  920
+    { "length": 140, "section": "tube" },                           //  860 - 1000
 
     // Now the gamble. Same shape, but the quick branch carries a well on its outer wall - where the
     // tube curves away from the ship, so it is presented rather than seen edge-on. The signs are
     // visible before the fork, so this is a choice and not an ambush.
-    { "length": 120, "section": "chamber", "speed": 155, "pickups": [    //  920 - 1040
+    { "length": 120, "section": "chamber", "speed": 155, "pickups": [    // 1000 - 1120
       { "at": 60, "kind": "rapid-fire" }
     ] },
-    { "length": 440, "turn": 85, "split": {                         // 1040 - 1480
+    { "length": 440, "turn": 85, "split": {                         // 1120 - 1560
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
@@ -82,9 +82,9 @@
         { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
       ]
     },
-    { "length": 160, "section": "tube" },                           // 1480 - 1640
+    { "length": 160, "section": "tube" },                           // 1560 - 1720
 
-    { "length": 280, "section": "oval", "speed": 160, "pickups": [  // 1640 - 1920
+    { "length": 280, "section": "oval", "speed": 160, "pickups": [  // 1720 - 2000
       { "at": 140, "kind": "shield", "angle": 180 }
     ], "obstacles": [
       { "at": 220, "kind": "target", "angle": 90 }
@@ -95,8 +95,8 @@
     // A three-way needs room for three openings side by side at the fork. Three branches of radius 6
     // want 36 units of width and a halfWidth-14 chamber offers 28, so this one widens out and the
     // branches themselves are narrower - which suits it, being the tightest choice in the level.
-    { "length": 140, "section": "wide-chamber", "speed": 160 },     // 1920 - 2060
-    { "length": 480, "turn": 100, "split": {                        // 2060 - 2540
+    { "length": 140, "section": "wide-chamber", "speed": 160 },     // 2000 - 2140
+    { "length": 480, "turn": 100, "split": {                        // 2140 - 2620
         "section": "branch-mid",
         "branches": [
           // Only the fork and merge openings are checked, so these stay tucked in; the mid-split
@@ -118,17 +118,17 @@
         { "at": 150, "branch": 2, "angle": 180, "count": 2, "spacing": 60 }
       ]
     },
-    { "length": 160, "section": "chamber" },                        // 2540 - 2700
-    { "length": 140, "section": "tube" },                           // 2700 - 2840
+    { "length": 160, "section": "chamber" },                        // 2620 - 2780
+    { "length": 140, "section": "tube" },                           // 2780 - 2920
 
     // A well on the main line, to say the mechanic is not only a branch thing.
-    { "length": 380, "turn": -60, "speed": 165, "warps": [          // 2700 - 3080
+    { "length": 380, "turn": -60, "speed": 165, "warps": [          // 2920 - 3300
       { "at": 220, "angle": 90 }
     ], "obstacles": [
       { "at": 100, "angle": 180, "width": 9 }
     ] },
 
-    { "length": 240, "pickups": [                                   // 3080 - 3320
+    { "length": 240, "pickups": [                                   // 3300 - 3540
       { "at": 120, "kind": "ring-gun" }
     ], "obstacles": [
       { "at": 180, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
@@ -136,8 +136,8 @@
 
     // Run for home: a last fork, both branches carrying a well, so there is no clean way through -
     // only a choice of which risk. The long way's well sits where the wall curves most.
-    { "length": 140, "section": "chamber", "speed": 170 },          // 3320 - 3460
-    { "length": 440, "turn": -90, "split": {                        // 3460 - 3900
+    { "length": 140, "section": "chamber", "speed": 170 },          // 3540 - 3680
+    { "length": 440, "turn": -90, "split": {                        // 3680 - 4120
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]], "section": "branch-tight" },
@@ -153,6 +153,12 @@
         { "at": 180, "branch": 1, "kind": "target", "angle": 180 }
       ]
     },
-    { "length": 300, "section": "tube" }                            // 3900 - 4200
+
+    // Handover to Highwire: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4120 - 4240
+    { "length": 220 },                                              // 4240 - 4460
+    { "length": 56, "turn": -10.111111 }                            // 4460 - 4516
   ]
 }

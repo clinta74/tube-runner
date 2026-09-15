@@ -36,10 +36,10 @@
 
   "start": "tube",
   "track": [
-    { "length": 200, "turn": 25 },                                  //    0 -  200
+    { "length": 280, "turn": 25 },                                  //    0 -  280
 
     // The widest bore in the level, fast, with a few easy targets to feel good about.
-    { "length": 400, "section": "wide", "speed": 155, "turn": -45, "climb": 10, "obstacles": [   //  200 -  600
+    { "length": 320, "section": "wide", "speed": 155, "turn": -45, "climb": 10, "obstacles": [   //  280 -  600
       { "at": 120, "kind": "target", "angle": 0, "count": 3, "spacing": 90, "angleStep": 120 }
     ] },
 
@@ -127,6 +127,11 @@
     { "length": 190, "turn": 70, "climb": -16, "obstacles": [       // 3820 - 4010
       { "at": 95, "angle": 90, "count": 3, "angleStep": 60 }
     ] },
-    { "length": 280 }                                               // 4010 - 4290
+
+    // Handover to Shoal: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4010 - 4130
+    { "length": 276 }                                               // 4130 - 4406
   ]
 }

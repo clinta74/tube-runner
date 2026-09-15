@@ -40,7 +40,7 @@
 
     // Straight in: movers and gates on the same stretch, no free look.
     { "length": 380, "turn": 35, "obstacles": [                     //  180 -  560
-      { "at": 90,  "period": 2.3, "angle": 0, "width": 20, "height": 3 },
+      { "at": 100, "period": 2.3, "angle": 0, "width": 20, "height": 3 },
       { "at": 190, "sweep": 10, "sweepTime": 3.2, "width": 8, "angle": 120 },
       { "at": 300, "period": 2.3, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
     ] },
@@ -115,29 +115,33 @@
     { "length": 140, "section": "tube" },                           // 3320 - 3460
 
     // Fast straight into a blind limited bend, the trap from 14 and 15, with a mover waiting in it.
-    { "length": 380, "section": "tube", "speed": 165 },             // 2740 - 3120
-    { "length": 320, "section": "narrow", "turn": 70, "thrustZones": [   // 3120 - 3440
+    { "length": 380, "section": "tube", "speed": 165 },             // 3460 - 3840
+    { "length": 320, "section": "narrow", "turn": 70, "thrustZones": [   // 3840 - 4160
       { "at": 160, "length": 320 }
     ], "obstacles": [
       { "at": 200, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 180 }
     ] },
 
-    { "length": 220, "section": "tube", "speed": 150, "pickups": [  // 3440 - 3660
+    { "length": 220, "section": "tube", "speed": 150, "pickups": [  // 4160 - 4380
       { "at": 110, "kind": "shield", "angle": 90 }
     ] },
 
     // Run for home: a twist with a gate, a mover and a fixed block at each bend. No limits - the
     // level stops asking for restraint exactly when there is no track left to spend it on.
-    { "length": 200, "speed": 165, "turn": 75, "obstacles": [       // 3660 - 3860
+    { "length": 200, "speed": 165, "turn": 75, "obstacles": [       // 4380 - 4580
       { "at": 105, "period": 2.0, "angle": 0, "width": 20, "height": 3 }
     ] },
-    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 3860 - 4060
+    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 4580 - 4780
       { "at": 100, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 180 }
     ] },
-    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 4060 - 4260
+    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 4780 - 4980
       { "at": 100, "angle": 90, "count": 3, "angleStep": 60 }
     ] },
 
-    { "length": 260 }                                               // 4260 - 4520
+    // Handover to Scarlands: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4980 - 5100
+    { "length": 276 }                                               // 5100 - 5376
   ]
 }

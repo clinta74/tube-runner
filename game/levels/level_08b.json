@@ -26,6 +26,7 @@
   },
 
   "sections": {
+    "handover": { "radius": 5.5 },
     "tube": { "radius": 6 }
   },
 
@@ -33,13 +34,13 @@
   // The distances in the comments are for `tube play --start`.
   "start": "tube",
   "track": [
-    { "length": 260, "pickups": [                                   //    0 -  260
-      { "at": 150, "kind": "shield", "angle": 180 }
-    ] },
+    { "length": 260 },                                              //    0 -  260
 
     // A vertical loop. It swings right going up over the top and back left coming down, so the way
     // out runs beside the way in instead of through it, pointing the same way it came in.
-    { "length": 160, "climb": 90 },                                 //  260 -  420
+    { "length": 160, "climb": 90, "pickups": [                      //  260 -  420
+      { "at": 30, "kind": "shield", "angle": 180 }
+    ] },
     { "length": 160, "climb": 90, "turn": 30, "obstacles": [        //  420 -  580
       { "at": 80, "kind": "target", "angle": 0 }
     ] },
@@ -90,6 +91,11 @@
     { "length": 160, "climb": -90, "turn": 30 },                    // 3840 - 4000
     { "length": 160, "climb": -90 },                                // 4000 - 4160
 
-    { "length": 400 }                                               // 4160 - 4560  run-out
+    // Handover to Neon Run: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "handover" },                       // 4160 - 4280
+    { "length": 200 },                                              // 4280 - 4480
+    { "length": 76, "turn": -25.333333 }                            // 4480 - 4556
   ]
 }

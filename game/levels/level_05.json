@@ -21,21 +21,22 @@
   },
 
   "sections": {
+    "handover": { "radius": 6 },
     "tube": { "radius": 6.5 },
     "flat": { "radius": 6.5, "opening": 1 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 250, "obstacles": [                                 //    0 - 250
-      { "at": 140, "kind": "target", "angle": 90 }
+    { "length": 320, "obstacles": [                                 //    0 -  320
+      { "at": 290, "kind": "target", "angle": 90 }
     ] },
 
     // Open out into flat planes. Opening and rejoining pieces are straight.
-    { "length": 300, "section": "flat", "speed": 100 },             //  250 - 550
+    { "length": 230, "section": "flat", "speed": 100 },             //  320 -  550
 
     // Room to strafe: a gap to line up, targets out wide, then the first wall to jump.
-    { "length": 400, "obstacles": [                                 //  550 - 950
+    { "length": 400, "obstacles": [                                 //  550 -  950
       { "at": 60, "x": -10, "width": 10 },
       { "at": 60, "x": 10, "width": 10 },
       { "at": 160, "kind": "target", "x": -14 },
@@ -60,7 +61,10 @@
       { "at": 110, "angle": 0, "count": 4, "spacing": 35, "angleStep": 60 }
     ] },
 
-    // Empty run-out; see level 4. Nothing may be authored in the last 260 units.
-    { "length": 400 }                                               // 1900 - 2300
+    // Handover to Over and Under: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "handover" },                       // 1900 - 2020
+    { "length": 276 }                                               // 2020 - 2296
   ]
 }

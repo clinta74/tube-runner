@@ -40,7 +40,7 @@
     { "length": 420, "turn": 40, "warps": [                         //  180 -  600
       { "at": 260, "angle": -90 }
     ], "obstacles": [
-      { "at": 90,  "kind": "target", "angle": 90, "group": "k1" },
+      { "at": 100, "kind": "target", "angle": 90, "group": "k1" },
       { "at": 200, "kind": "plate", "angle": 0, "width": 12, "height": 3 },
       { "at": 350, "lockedBy": "k1", "angle": 180, "width": 24, "height": 3 }
     ] },
@@ -120,6 +120,10 @@
       { "at": 100, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
     ] },
 
-    { "length": 260 }                                               // 4320 - 4580
+    // Handover to Roulette: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4320 - 4440
+    { "length": 276 }                                               // 4440 - 4716
   ]
 }

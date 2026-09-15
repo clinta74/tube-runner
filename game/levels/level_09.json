@@ -20,6 +20,7 @@
   },
 
   "sections": {
+    "handover": { "radius": 6 },
     "tube":     { "radius": 5.5 },
     "oval":     { "halfWidth": 9, "halfHeight": 4 },
     "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
@@ -33,17 +34,17 @@
   // The distances in the comments are for `tube play --start`.
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 - 200
-    { "length": 150, "turn": -50, "obstacles": [                    //  200 - 350
-      { "at": 60, "angle": 0, "count": 4, "spacing": 50, "angleStep": 60 },
-      { "at": 100, "kind": "target", "angle": 180, "count": 3, "spacing": 50 }
+    { "length": 200 },                                              //    0 -  200
+    { "length": 150, "turn": -50, "obstacles": [                    //  200 -  350
+      { "at": 80, "angle": 0, "count": 4, "spacing": 50, "angleStep": 60 },
+      { "at": 120, "kind": "target", "angle": 180, "count": 3, "spacing": 50 }
     ] },
-    { "length": 150, "turn": 50, "climb": -12, "pickups": [         //  350 - 500
+    { "length": 150, "turn": 50, "climb": -12, "pickups": [         //  350 -  500
       { "at": 60, "kind": "shield" }
     ] },
 
     // Flat: a gap, a jump to the ceiling, a zigzag up there, and a jump back.
-    { "length": 100, "section": "flat", "speed": 125 },             //  500 - 600
+    { "length": 100, "section": "flat", "speed": 125 },             //  500 -  600
     { "length": 500, "pickups": [                                   //  600 - 1100
       { "at": 280, "kind": "shield", "surface": "ceiling", "x": -10 }
     ], "obstacles": [
@@ -143,6 +144,11 @@
     { "length": 150, "turn": -70, "climb": 16, "obstacles": [       // 4570 - 4720
       { "at": 80, "angle": 90, "count": 3, "angleStep": 60 }
     ] },
-    { "length": 200 }                                               // 4720 - 4920
+
+    // Handover to Clockwork: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "handover" },                       // 4720 - 4840
+    { "length": 276 }                                               // 4840 - 5116
   ]
 }

@@ -40,7 +40,7 @@
 
     // Warm-up: nothing clever, just get moving and shoot a little.
     { "length": 200, "turn": 30, "obstacles": [                     //  200 -  400
-      { "at": 70, "kind": "target" },
+      { "at": 80, "kind": "target" },
       { "at": 120, "kind": "target", "angle": 60 },
       { "at": 165, "angle": 180 }
     ] },
@@ -160,6 +160,12 @@
     ], "warps": [
       { "at": 170, "angle": 90 }
     ] },
-    { "length": 250 }                                               // 4100 - 4350
+
+    // Handover to Loop the Loop: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4100 - 4220
+    { "length": 260 },                                              // 4220 - 4480
+    { "length": 16, "climb": 9 }                                    // 4480 - 4496
   ]
 }

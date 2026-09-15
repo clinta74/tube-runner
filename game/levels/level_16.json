@@ -32,11 +32,11 @@
 
   "start": "tube",
   "track": [
-    { "length": 220 },                                              //    0 -  220
+    { "length": 280 },                                              //    0 -  280
 
     // FREE LOOK. One block, sliding slowly, in a wide bore with room to go round either side. Long
     // sweep time so its rhythm can be watched rather than guessed.
-    { "length": 300, "section": "wide", "obstacles": [              //  220 -  520
+    { "length": 240, "section": "wide", "obstacles": [              //  280 -  520
       { "at": 160, "sweep": 11, "sweepTime": 4.5, "width": 8 }
     ] },
 
@@ -99,6 +99,11 @@
       { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 90 }
     ] },
 
-    { "length": 260 }                                               // 3440 - 3700
+    // Handover to Undertow: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 3440 - 3560
+    { "length": 180 },                                              // 3560 - 3740
+    { "length": 96, "turn": 8.842105 }                              // 3740 - 3836
   ]
 }

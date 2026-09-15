@@ -21,6 +21,7 @@
   },
 
   "sections": {
+    "handover": { "radius": 6.5 },
     "tube": { "radius": 6 },
     "wide": { "halfWidth": 9.5, "halfHeight": 4.2 },
     "tall": { "halfWidth": 4.2, "halfHeight": 9.5 }
@@ -28,19 +29,19 @@
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 - 200
+    { "length": 280 },                                              //    0 -  280
 
     // Wide oval: floor and ceiling are blocked, so run along the sides.
-    { "length": 150, "section": "wide", "speed": 105 },             //  200 - 350
-    { "length": 300, "turn": 30, "obstacles": [                     //  350 - 650
+    { "length": 150, "section": "wide", "speed": 105 },             //  280 -  430
+    { "length": 300, "turn": 30, "obstacles": [                     //  430 -  730
       { "at": 60, "angle": 0, "count": 4, "spacing": 70, "width": 6 },
       { "at": 95, "angle": 180, "count": 4, "spacing": 70, "width": 6 },
       { "at": 200, "kind": "target", "angle": 90 }
     ] },
 
     // Tall oval: the sides are blocked instead, so run along floor and ceiling.
-    { "length": 150, "section": "tall" },                           //  650 - 800
-    { "length": 300, "turn": -40, "pickups": [                      //  800 - 1100
+    { "length": 150, "section": "tall" },                           //  730 -  880
+    { "length": 300, "turn": -40, "pickups": [                      //  880 - 1180
       { "at": 150, "kind": "shield" }
     ], "obstacles": [
       { "at": 60, "angle": 90, "count": 4, "spacing": 70, "width": 6 },
@@ -48,25 +49,26 @@
     ] },
 
     // Wide again, with a sealed ring to shoot through.
-    { "length": 150, "section": "wide", "speed": 115, "pickups": [  // 1100 - 1250
+    { "length": 150, "section": "wide", "speed": 115, "pickups": [  // 1180 - 1330
       { "at": 20, "kind": "rapid-fire" }
     ] },
-    { "length": 250, "climb": 15, "obstacles": [                    // 1250 - 1500
+    { "length": 250, "climb": 15, "obstacles": [                    // 1330 - 1580
       { "at": 80, "hits": 1, "angle": 0, "count": 8, "angleStep": 45, "width": 5 },
       { "at": 180, "hits": 2, "angle": 22.5, "count": 8, "angleStep": 45, "width": 5 }
     ] },
 
-    { "length": 150, "section": "tube" },                           // 1500 - 1650
-    { "length": 250, "turn": 45, "speed": 125, "pickups": [         // 1650 - 1900
+    { "length": 150, "section": "tube" },                           // 1580 - 1730
+    { "length": 250, "turn": 45, "speed": 125, "pickups": [         // 1730 - 1980
       { "at": 20, "kind": "ring-gun" }
     ], "obstacles": [
       { "at": 70, "angle": 0, "count": 6, "spacing": 35, "angleStep": 60 },
       { "at": 160, "kind": "target", "angle": 0, "count": 8, "angleStep": 45 }
     ] },
 
-    // Empty run-out. A level finishes 260 units before its track ends, so the wall closing it is
-    // still deep in the fade when the next level takes over - which means anything left in here is
-    // shown to the player and then snatched away. It has to stay clear.
-    { "length": 400 }                                               // 1900 - 2300
+    // Handover to Flatlands: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "handover" },                       // 1980 - 2100
+    { "length": 276 }                                               // 2100 - 2376
   ]
 }

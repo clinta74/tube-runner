@@ -33,13 +33,13 @@
   "track": [
     // The refill that opens the block. Nothing else here: a new mechanic is about to be taught, and
     // learning one on a last shield is how a run dies to unfairness rather than difficulty.
-    { "length": 220, "pickups": [                                   //    0 -  220
-      { "at": 120, "kind": "full-shields" }
+    { "length": 320, "pickups": [                                   //    0 -  320
+      { "at": 290, "kind": "full-shields" }
     ] },
 
     // FREE LOOK. One gate, on a straight, with nothing else going on. It is a quarter of the way
     // round the tube, so it can simply be flown around - the point is to watch it open and shut.
-    { "length": 260, "section": "wide", "obstacles": [              //  220 -  480
+    { "length": 160, "section": "wide", "obstacles": [              //  320 -  480
       { "at": 130, "period": 2.4, "angle": 90, "width": 9, "height": 3 }
     ] },
 
@@ -107,6 +107,10 @@
       { "at": 90, "period": 2.4, "angle": 90, "width": 18, "height": 3 }
     ] },
 
-    { "length": 240 }                                               // 3360 - 3600
+    // Handover to Metronome: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 3360 - 3480
+    { "length": 276 }                                               // 3480 - 3756
   ]
 }

@@ -83,6 +83,29 @@ Each piece continues from the end of the previous one.
 
 Keep curves gentle: a turn tighter than about 1° per unit length will fold the tube wall.
 
+### Joining the next level
+
+The next level takes over with no pause: at a level's finish, 260 units before its track ends, the
+next level is loaded and the ship placed **16 units** into it. Whatever the camera was looking at is
+replaced in one frame, so both sides of the join have to show the same thing. `LevelJoinTests` checks
+every join, from just behind the ship to the old level's end wall.
+
+- **End on a copy of the next level's start.** A level's last pieces are a straight blend into the
+  next level's starting section, then the next level's **first 276 units** - its first straight and
+  any turn or climb, cut in proportion (a turn is a constant rate, so a cut piece bends exactly like
+  the start of the original). If the two levels define their start tube differently, add a
+  `"handover"` section with the next level's values. Colours and speed may change at the join.
+- **Keep a level's first 276 units plain.** Nothing in them may change the section, and nothing may be
+  placed there - an obstacle, pickup or well there would appear from nowhere at the handover. A piece
+  that blends its shape eases in and out over its whole length, so a copy cut part-way through can't
+  match it; a level's first shape change has to start at 280 or later.
+
+```json
+{ "length": 120, "section": "tube" },     // straighten into the next level's tube
+{ "length": 180 },                         // its first straight
+{ "length": 96, "turn": 9.333333 }         // 96 units of its 35 degree, 360-unit bend
+```
+
 ### Loops
 
 `turn` and `climb` rotate about the track's own axes, so a loop is just `climb` past 360 — nothing
