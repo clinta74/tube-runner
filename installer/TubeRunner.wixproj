@@ -21,4 +21,9 @@
     <OutputName>TubeRunner-$(GameVersion)</OutputName>
     <OutputPath>$(MSBuildThisFileDirectory)..\builds\</OutputPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The standard installer dialogs, for choosing the install folder. Same version as the SDK. -->
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
 </Project>

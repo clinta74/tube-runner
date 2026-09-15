@@ -5,7 +5,8 @@
   Saves (best times) live in Godot's user folder, %APPDATA%\Godot\app_userdata\Tube Runner, not in
   the install folder, so an upgrade or an uninstall leaves them where they are.
 -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Tube Runner"
            Manufacturer="clinta74"
            Version="$(var.GameVersion)"
@@ -19,6 +20,17 @@
 
     <!-- One file: the cabinet goes inside the MSI rather than beside it. -->
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- Welcome, then a page to choose the install folder, then install. The standard InstallDir
+         dialogs put a license page between the first two; there is no license to agree to, and left
+         in it shows placeholder text, so Welcome's Next and the folder page's Back skip it. The
+         folder defaults to %LOCALAPPDATA%\Programs\Tube Runner. The install stays per user, so a
+         folder that needs admin rights to write to, like C:\Program Files, fails with an access error. -->
+    <UI>
+      <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
+    </UI>
 
     <!-- The same icon the game uses, for the installed-apps list and the Start menu shortcut. -->
     <Icon Id="TubeRunner.ico" SourceFile="$(var.GameIcon)" />
