@@ -28,7 +28,7 @@ by `LevelPath` on the `Main` node.
 To test a section while designing, launch a level partway through it (from the repo root):
 
 ```bash
-./play.ps1 -Level level_02.json -Start 3000
+tube play --level level_02.json --start 3000
 ```
 
 ## Export a standalone build
@@ -37,8 +37,15 @@ One-time setup: install Godot's export templates (in the editor, **Editor > Mana
 Download and Install**). Then from the repo root:
 
 ```bash
-./export.ps1
+tube export
+tube export --version 0.4.1   # stamps the version, so the game checks for newer releases
+tube installer                # builds builds/TubeRunner-<version>.msi from the export
 ```
+
+Download the templates from an ordinary terminal or the editor. A terminal inside a packaged app (the
+Claude desktop app, for one) has its writes to `%APPDATA%` redirected to that app's private storage,
+where nothing outside it can see them. `tube export` spots a copy stranded there and prints the command
+to move it.
 
 This writes `builds/windows/TubeRunner.exe` plus its `data_TubeRunner_windows_x86_64` folder (the game's
 .NET code and a private .NET runtime, so players don't need .NET installed), and zips both into
@@ -74,12 +81,14 @@ dotnet test src/TubeRunner.Core.Tests
 Open `game/project.godot` in Godot 4.7 .NET and press **F5**, or from the repo root:
 
 ```bash
-./play.ps1
+tube play
 ```
 
-`play.ps1` builds the C# code, then runs the game (`-Editor` opens the editor instead). Use it rather
-than calling winget's `godot` alias directly: that alias is a symlink, and Godot .NET launched through
-it can't find its .NET assemblies. Set `$env:GODOT` to point the script at a specific Godot executable.
+`tube` is the project's build tool, a small C# program in `tools/Build` (`tube help` lists its commands
+and options). `tube play` builds the C# code, then runs the game (`--editor` opens the editor instead).
+Use it rather than calling winget's `godot` alias directly: that alias is a symlink, and Godot .NET
+launched through it can't find its .NET assemblies. Set the `GODOT` environment variable to use a
+specific Godot executable.
 
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
@@ -92,4 +101,4 @@ it can't find its .NET assemblies. Set `$env:GODOT` to point the script at a spe
 
 Each level is timed: finish it, then try to beat your best time. Best times are saved per level in
 `%APPDATA%\Godot\app_userdata\Tube Runner\best_times.json`; delete that file to reset them. Runs started
-with `-Start` are practice and aren't recorded.
+with `--start` are practice and aren't recorded.

@@ -1,7 +1,7 @@
 extends SceneTree
 
 # Rasterizes an SVG to one PNG per icon size, with Godot's own SVG renderer so no image tools are
-# needed. Run by tools/make-icon.ps1, which packs the PNGs into icon.ico; not part of the game, and
+# needed. Run by `tube icon`, which packs the PNGs into icon.ico; not part of the game, and
 # left out of the export.
 #   godot --headless --path game --script res://tools/make_icon.gd -- <svg> <out dir>
 

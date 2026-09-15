@@ -105,7 +105,7 @@ of itself. The tube also comes out rolled around its own axis, which cannot be s
 { "length": 160, "climb": 90 }
 ```
 
-Tip: annotate pieces with their start and end distance (`// 930 - 1030`); `play.ps1 -Start 930` then
+Tip: annotate pieces with their start and end distance (`// 930 - 1030`); `tube play --start 930` then
 jumps straight to that piece for testing.
 
 ## Splits (forks)

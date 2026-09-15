@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!-- The game's icon: looking down a wireframe tube, with the ship riding the floor. The outer ring
        and the ship are drawn heavy so the icon still reads at 16 px. Rebuild icon.ico with
-       tools/make-icon.ps1 after editing this. -->
+       `tube icon` after editing this. -->
   <defs>
     <radialGradient id="bg" cx="50%" cy="40%" r="70%">
       <stop offset="0" stop-color="#0c3446"/>

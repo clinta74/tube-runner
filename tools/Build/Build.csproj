@@ -1,0 +1,15 @@
+<!--
+  Tube Runner's build commands: play, export, installer, icon. Run them from the repo root with
+  tube.cmd, e.g. "tube export", or through dotnet run with this project. Plain C# on the SDK the game
+  already needs. (No double hyphens in here: XML comments can't contain them.)
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>tube</AssemblyName>
+    <RootNamespace>TubeRunner.Build</RootNamespace>
+  </PropertyGroup>
+</Project>
