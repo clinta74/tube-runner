@@ -307,6 +307,21 @@ Original notes:
 - Downloading and running the new installer in place is the bigger step. Notifying is most of the
   value for a fraction of the risk; start there.
 
+### Settings menu
+*New item. Game + HUD. Mostly playtest; the stored settings file is testable.*
+
+There is nowhere for a player to change anything: every option is a command-line flag, which nobody
+launching from the Start menu can use. Notes for eval:
+- **Update check on/off** is the first one it needs, and the reason for the item: the check contacts
+  GitHub at every launch, and a player should be able to stop that without editing a shortcut.
+- Others that have already come up and would sit here: music and effects volume (the engine, the
+  Unstoppable theme and the cues were all balanced by ear in one room), and perhaps the run summary's
+  practice runs.
+- Lives in the Escape menu as a "Settings" page, reusing its up/down/select handling rather than a new
+  UI. Saved beside `best_times.json` in `user://`, loaded at start, with defaults for anything missing
+  so an old file never stops the game loading.
+- Keep it small. A setting nobody asked for is one more thing to test at every release.
+
 ## Standing constraints
 
 Any of this has to keep three guards passing, all of which exist because something shipped wrong:

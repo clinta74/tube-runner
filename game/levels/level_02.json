@@ -27,27 +27,27 @@
 
   "start": "tube",
   "track": [
-    { "length": 150 },                                              //    0 - 150
+    { "length": 150 },                                              //    0 -  150
 
     // Blue blocks break under fire; "hits" is how many shots they take.
-    { "length": 200, "turn": 30, "obstacles": [                     //  150 - 350
-      { "at": 60, "hits": 1 },
-      { "at": 130, "hits": 2, "angle": 45 },
-      { "at": 130, "hits": 2, "angle": -45 }
+    { "length": 200, "turn": 30, "obstacles": [                     //  150 -  350
+      { "at": 130, "hits": 1 },
+      { "at": 180, "hits": 2, "angle": 45 },
+      { "at": 180, "hits": 2, "angle": -45 }
     ] },
 
     // A full ring of breakable blocks: shoot a hole and fly through it.
-    { "length": 200, "turn": -35, "climb": 10, "pickups": [         //  350 - 550
+    { "length": 200, "turn": -35, "climb": 10, "pickups": [         //  350 -  550
       { "at": 30, "kind": "shield" }
     ], "obstacles": [
       { "at": 120, "hits": 1, "angle": 0, "count": 8, "angleStep": 45, "width": 4.2 }
     ] },
 
     // Rapid fire, then blocks that need a lot of shots.
-    { "length": 100, "section": "oval", "pickups": [                //  550 - 650
+    { "length": 100, "section": "oval", "pickups": [                //  550 -  650
       { "at": 40, "kind": "rapid-fire" }
     ] },
-    { "length": 250, "turn": 30, "obstacles": [                     //  650 - 900
+    { "length": 250, "turn": 30, "obstacles": [                     //  650 -  900
       { "at": 30, "hits": 4, "count": 3, "spacing": 40 },
       { "at": 150, "hits": 3, "angle": 0, "count": 8, "angleStep": 45, "width": 5 }
     ] },
@@ -78,6 +78,10 @@
       { "at": 150, "kind": "target", "count": 3, "spacing": 15 }
     ] },
 
-    { "length": 250 }                                               // 1650 - 1900
+    // Handover to Throttle: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 1650 - 1770
+    { "length": 276 }                                               // 1770 - 2046
   ]
 }

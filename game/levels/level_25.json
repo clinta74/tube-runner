@@ -149,6 +149,11 @@
       { "at": 95, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
     ] },
 
-    { "length": 280 }                                               // 5780 - 6060
+    // Handover to Finale: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 5780 - 5900
+    { "length": 160 },                                              // 5900 - 6060
+    { "length": 116, "turn": 11.047619 }                            // 6060 - 6176
   ]
 }

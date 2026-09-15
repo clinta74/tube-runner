@@ -28,14 +28,14 @@
 
   "start": "tube",
   "track": [
-    { "length": 300 },                                  //   0 -  300  settle in
+    { "length": 300 },                                  //    0 -  300  settle in
 
     // The bend. The mouth sits at 500 on the outer wall, where the tube curves away from a ship on
     // the floor, so it is presented to you rather than seen edge-on. Signs at 330, 390 and 445.
-    { "length": 400, "turn": -70, "warps": [            // 300 -  700
+    { "length": 400, "turn": -70, "warps": [            //  300 -  700
       { "at": 200, "angle": 90 }
     ] },
 
-    { "length": 400 }                                   // 700 - 1100  run to the finish
+    { "length": 400 }                                   //  700 - 1100  run to the finish
   ]
 }

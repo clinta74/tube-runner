@@ -21,23 +21,24 @@
   },
 
   "sections": {
+    "handover": { "radius": 6 },
     "tube": { "radius": 6.5 },
     "oval": { "halfWidth": 9, "halfHeight": 5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 - 200
+    { "length": 200 },                                              //    0 -  200
 
     // Open road: nothing in the way, so wind the throttle up (W / up).
-    { "length": 400, "speed": 115, "obstacles": [                   //  200 - 600
+    { "length": 400, "speed": 115, "obstacles": [                   //  200 -  600
       { "at": 80, "kind": "target" },
       { "at": 200, "kind": "target", "angle": 120 },
       { "at": 320, "kind": "target", "angle": -120 }
     ] },
 
     // Gauntlet: a spiral to thread, and it comes at you fast unless you ease off (S / down).
-    { "length": 250, "turn": 40, "speed": 85, "pickups": [          //  600 - 850
+    { "length": 250, "turn": 40, "speed": 85, "pickups": [          //  600 -  850
       { "at": 220, "kind": "shield", "angle": 180 }
     ], "obstacles": [
       { "at": 40, "angle": -50, "count": 5, "spacing": 40, "angleStep": 50 }
@@ -64,6 +65,10 @@
       { "at": 120, "hits": 2, "angle": 0, "count": 8, "angleStep": 45, "width": 4.6 }
     ] },
 
-    { "length": 200 }                                               // 2100 - 2300
+    // Handover to Ovals: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "handover" },                       // 2100 - 2220
+    { "length": 276 }                                               // 2220 - 2496
   ]
 }

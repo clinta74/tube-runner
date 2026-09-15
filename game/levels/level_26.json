@@ -46,7 +46,7 @@
 
     // 1. Gates, from level 10. Straight into the rhythm, no free look, three in staggered phase.
     { "length": 420, "turn": 40, "obstacles": [                     //  160 -  580
-      { "at": 90,  "period": 2.0, "phase": 0,    "angle": 0,   "width": 20, "height": 3 },
+      { "at": 120, "period": 2.0, "phase": 0,    "angle": 0,   "width": 20, "height": 3 },
       { "at": 220, "period": 2.0, "phase": 0.33, "angle": 120, "width": 20, "height": 3 },
       { "at": 340, "period": 2.0, "phase": 0.66, "angle": 240, "width": 20, "height": 3 }
     ] },

@@ -123,6 +123,11 @@
       { "at": 95, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
     ] },
 
-    { "length": 260 }                                               // 4370 - 4630
+    // Handover to Long Odds: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4370 - 4490
+    { "length": 200 },                                              // 4490 - 4690
+    { "length": 76, "turn": 7.6 }                                   // 4690 - 4766
   ]
 }

@@ -35,11 +35,11 @@
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 -  200
+    { "length": 280 },                                              //    0 -  280
 
     // FREE LOOK. A pair, a quarter turn apart, numbered. Shoot the far one first or nothing happens.
     // Wide enough round the tube that steering between them is the whole exercise.
-    { "length": 300, "section": "wide", "obstacles": [              //  200 -  500
+    { "length": 220, "section": "wide", "obstacles": [              //  280 -  500
       { "at": 150, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
       { "at": 150, "kind": "target", "angle": -90, "group": "a", "order": 1 }
     ] },
@@ -112,6 +112,11 @@
       { "at": 100, "kind": "target", "angle": 180, "group": "g", "order": 2 }
     ] },
 
-    { "length": 250 }                                               // 3110 - 3360
+    // Handover to Gauntlet: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 3110 - 3230
+    { "length": 180 },                                              // 3230 - 3410
+    { "length": 96, "turn": 9.333333 }                              // 3410 - 3506
   ]
 }

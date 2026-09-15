@@ -27,14 +27,14 @@
 
   "start": "tube",
   "track": [
-    { "length": 200, "pickups": [                                   //    0 - 200
-      { "at": 120, "kind": "rapid-fire" }
+    { "length": 320, "pickups": [                                   //    0 -  320
+      { "at": 290, "kind": "rapid-fire" }
     ] },
 
-    { "length": 300, "section": "flat", "speed": 115 },             //  200 - 500
+    { "length": 180, "section": "flat", "speed": 115 },             //  320 -  500
 
     // Four walls, alternating floor and ceiling: jump, land, jump again.
-    { "length": 450, "obstacles": [                                 //  500 - 950
+    { "length": 450, "obstacles": [                                 //  500 -  950
       { "at": 80, "width": 80, "height": 2.5 },
       { "at": 190, "surface": "ceiling", "width": 80, "height": 2.5 },
       { "at": 300, "width": 80, "height": 2.5 },
@@ -71,8 +71,11 @@
       { "at": 80, "kind": "target", "angle": 180 }
     ] },
 
-    // Empty run-out; see level 4. This level's last target sits at 2630, inside what used to be the
-    // final piece, so the run-out has to be a piece of its own rather than a longer tail.
-    { "length": 300 }                                               // 2750 - 3050
+    // Handover to Earthworks: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 2750 - 2870
+    { "length": 230 },                                              // 2870 - 3100
+    { "length": 46, "turn": 11.5 }                                  // 3100 - 3146
   ]
 }

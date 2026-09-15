@@ -35,13 +35,13 @@
   "start": "tube",
   "track": [
     // The block's refill, weaker than A's and B's: two shields, not a full bar.
-    { "length": 240, "pickups": [                                   //    0 -  240
-      { "at": 100, "kind": "shield" },
-      { "at": 170, "kind": "shield", "angle": 180 }
+    { "length": 370, "pickups": [                                   //    0 -  370
+      { "at": 290, "kind": "shield" },
+      { "at": 360, "kind": "shield", "angle": 180 }
     ] },
 
     // FREE LOOK. One plate, in a wide bore, taking a quarter of the wall. Shoot it all you like.
-    { "length": 300, "section": "wide", "obstacles": [              //  240 -  540
+    { "length": 170, "section": "wide", "obstacles": [              //  370 -  540
       { "at": 160, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
     ] },
 
@@ -120,6 +120,11 @@
       { "at": 100, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
     ] },
 
-    { "length": 260 }                                               // 3700 - 3960
+    // Handover to Crossfire: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 3700 - 3820
+    { "length": 200 },                                              // 3820 - 4020
+    { "length": 76, "turn": 7 }                                     // 4020 - 4096
   ]
 }

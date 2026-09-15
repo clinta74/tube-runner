@@ -39,12 +39,12 @@
   "start": "tube",
   "track": [
     // The block's refill.
-    { "length": 220, "pickups": [                                   //    0 -  220
-      { "at": 120, "kind": "full-shields" }
+    { "length": 320, "pickups": [                                   //    0 -  320
+      { "at": 290, "kind": "full-shields" }
     ] },
 
     // A long clear straight. Nothing to do but wind the throttle up - which is the setup.
-    { "length": 380, "speed": 140 },                                //  220 -  600
+    { "length": 280, "speed": 140 },                                //  320 -  600
 
     // FREE LOOK. The tube pinches to a narrow bore, and the limit sits on it. The reason is visible
     // from a long way out: the walls are closing in, so backing off reads as sense, not as a rule.
@@ -111,21 +111,26 @@
     // Two limits back to back with a gap between them. The gap is long enough to be worth speeding
     // through, which is the decision: take the free stretch fast and risk overrunning into the next
     // limit, or hold one speed across both and lose the time.
-    { "length": 280, "section": "narrow", "thrustZones": [          // 2720 - 3000
+    { "length": 280, "section": "narrow", "thrustZones": [          // 3440 - 3720
       { "at": 140, "length": 280 }
     ] },
-    { "length": 220, "section": "tube", "speed": 155 },             // 3000 - 3220
-    { "length": 280, "section": "narrow", "thrustZones": [          // 3220 - 3500
+    { "length": 220, "section": "tube", "speed": 155 },             // 3720 - 3940
+    { "length": 280, "section": "narrow", "thrustZones": [          // 3940 - 4220
       { "at": 140, "length": 280 }
     ] },
 
     // Run for home, wide open and no limits: the level gives the speed back at the end.
-    { "length": 200, "section": "tube", "speed": 160, "turn": -55, "obstacles": [   // 3500 - 3700
+    { "length": 200, "section": "tube", "speed": 160, "turn": -55, "obstacles": [   // 4220 - 4420
       { "at": 110, "angle": 90, "width": 9 }
     ] },
-    { "length": 200, "turn": 60, "climb": 12, "obstacles": [        // 3700 - 3900
+    { "length": 200, "turn": 60, "climb": 12, "obstacles": [        // 4420 - 4620
       { "at": 100, "kind": "target", "angle": 180 }
     ] },
-    { "length": 260 }                                               // 3900 - 4160
+
+    // Handover to Restraint: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4620 - 4740
+    { "length": 276, "turn": 24.642857 }                            // 4740 - 5016
   ]
 }
