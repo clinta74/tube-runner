@@ -83,6 +83,28 @@ Each piece continues from the end of the previous one.
 
 Keep curves gentle: a turn tighter than about 1° per unit length will fold the tube wall.
 
+### Loops
+
+`turn` and `climb` rotate about the track's own axes, so a loop is just `climb` past 360 — nothing
+flips over the top. But **a loop flown at one steady rate closes into a circle and runs straight
+back through its own entry**, however it is tilted. Break it into pieces with different rates:
+
+- **Vertical loop:** four quarters of `climb: 90`, with `turn: 30` on the second and `turn: -30` on
+  the third. The exit runs beside the entry and points the same way. Turning the same way on both
+  middle quarters, on the first and last, or on every quarter, all land the exit back on the entry.
+- **Flat loop:** two halves of `turn: 180`, climbing `30` on the first and `-30` on the second, so it
+  passes over its own entry. A climb of 20 or less on 320-unit halves is not enough clearance.
+
+`TrackClearanceTests` fails any level, bench levels included, whose track comes within a tube's width
+of itself. The tube also comes out rolled around its own axis, which cannot be seen in play.
+
+```json
+{ "length": 160, "climb": 90 },
+{ "length": 160, "climb": 90, "turn": 30 },
+{ "length": 160, "climb": 90, "turn": -30 },
+{ "length": 160, "climb": 90 }
+```
+
 Tip: annotate pieces with their start and end distance (`// 930 - 1030`); `play.ps1 -Start 930` then
 jumps straight to that piece for testing.
 
@@ -304,28 +326,37 @@ travel to clear, while one stacked at a single `angle` takes almost none.
 
 ## Thrust zones
 
-A `thrustZones` list, on a piece or at the top level, marks a stretch that **narrows the throttle
-range**. Nothing is taken away for flying wrong: the cost is control, and the thrust bar on the HUD
-shows the range closing as it happens.
+A `thrustZones` list, on a piece or at the top level, marks a stretch that **closes off the bottom
+of the throttle range**. Nothing is taken away for flying wrong: the cost is control, and the thrust
+bar on the HUD shows the closed-off part while the ship is inside.
 
 | Field | Default | Meaning |
 |---|---|---|
 | `at` | required | Distance of the zone's center from the start of its piece (or of the track). |
 | `length` | `120` | Extent along the track. |
-| `min` | none | Throttle floor inside, as a multiple of the track's speed. Raising it forces speed on the player. |
-| `max` | none | Throttle ceiling inside. Lowering it takes away the option to hurry. |
+| `kind` | `floor` | `floor` closes off the slow end; `ceiling` closes off the fast end. |
 | `branch` | none | Branch index, inside a split. |
 
-At least one of `min` and `max` is required — a zone that changes neither does nothing. The ship's
-own range is 0.5 to 1.75, and a zone only ever narrows it.
+Each kind makes a fixed cut of the ship's range (0.5 to 1.75):
+
+- **`floor`** takes the slowest **20%**, so the floor becomes 0.75. It stops the player crawling
+  through; a ship already above the cut is left alone.
+- **`ceiling`** takes the fastest **75%**, so the ceiling becomes about 0.81. It holds the player
+  back, and a ship arriving faster than that is brought down to it.
+
+Only one end moves; the other stays open.
+
+**Cover the whole section.** Put `at` at half the piece's length and `length` at the piece's
+length, so the limit starts and ends with the section that motivates it rather than giving the range
+back part way through:
 
 ```json
-{ "length": 400, "thrustZones": [ { "at": 200, "length": 150, "min": 1.3 } ] }
+{ "length": 400, "section": "narrow", "thrustZones": [ { "at": 200, "length": 400, "kind": "ceiling" } ] }
 ```
 
-**Raising `min` is the sharper edge.** Being made to carry speed through something tight is a real
-price; being made to slow down is mostly just slower. A throttle already below the new floor is
-dragged up to it, so the ship speeds up whether the player wants it to or not.
+Zones used to carry their own `min` and `max`. Floors authored at 1.3 dragged every ship into the
+middle of its range on the way in, which took the throttle away rather than narrowing it. Those keys
+are now rejected, so an old level fails to load instead of flying differently from how it reads.
 
 This replaced a zone that took a shield for being flown too fast, which was wrong twice over: it
 punished the one thing the rest of the game rewards, and it did it with no warning a player could act

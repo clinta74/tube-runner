@@ -4,11 +4,14 @@
   "speed": 130,
   "segmentLength": 60,
 
-  // Limits where the track most invites speed. Level 14 taught the zone; this one puts every zone
-  // at the end of something that makes the player want to push - a long clear run, a wide bore, a
-  // stretch they have just cleared and feel good about. The lesson is throttle discipline, and it
-  // is deliberately uncomfortable: this is the only mechanic in the game that punishes the thing
-  // the rest of it rewards.
+  // Ceiling zones where the track most invites speed. Level 14 taught the zone; this one puts every
+  // zone at the end of something that makes the player want to push - a long clear run, a wide bore,
+  // a stretch they have just cleared and feel good about - and takes the top three quarters of the
+  // throttle away. The lesson is throttle discipline: arrive fast and the ship is hauled down anyway.
+  //
+  // Held that slow, a straight tube is dead air. So nothing here is straight, and the zones are the
+  // densest stretches in the level: slow is what makes room for a spiral of blocks with targets
+  // threaded through it, and the bends keep the next one out of sight until it is close.
   "theme": {
     "darks": ["#20281c", "#1a2117", "#283021"],
     "lights": ["#8fa878", "#7b9366", "#9db487"],
@@ -33,75 +36,97 @@
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 -  200
+    { "length": 200, "turn": 25 },                                  //    0 -  200
 
-    // The widest bore in the level, wide open, fast. Everything about it says push.
-    { "length": 400, "section": "wide", "speed": 155 },             //  200 -  600
-
-    // And the limit lands the moment it closes. This is the shape the whole level repeats.
-    { "length": 300, "section": "narrow", "thrustZones": [          //  600 -  900
-      { "at": 150, "length": 220, "max": 0.85 }
-    ], "obstacles": [
-      { "at": 100, "angle": 90,  "width": 7 },
-      { "at": 200, "angle": -90, "width": 7 }
+    // The widest bore in the level, fast, with a few easy targets to feel good about.
+    { "length": 400, "section": "wide", "speed": 155, "turn": -45, "climb": 10, "obstacles": [   //  200 -  600
+      { "at": 120, "kind": "target", "angle": 0, "count": 3, "spacing": 90, "angleStep": 120 }
     ] },
 
-    { "length": 260, "section": "tube", "speed": 140, "pickups": [  //  900 - 1160
+    // And the limit lands the moment it closes. This is the shape the whole level repeats.
+    { "length": 300, "section": "narrow", "turn": 70, "climb": -12, "thrustZones": [   //  600 -  900
+      { "at": 150, "length": 300, "kind": "ceiling" }
+    ], "obstacles": [
+      { "at": 50,  "angle": 0, "width": 7, "count": 5, "spacing": 50, "angleStep": 72 },
+      { "at": 75,  "kind": "target", "angle": 180, "count": 4, "spacing": 50, "angleStep": 72 }
+    ] },
+
+    { "length": 260, "section": "tube", "speed": 140, "turn": -55, "pickups": [   //  900 - 1160
       { "at": 130, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 210, "kind": "target", "angle": 0 }
     ] },
 
     // A gauntlet cleared at speed, then immediately a limit. Clearing something well is exactly when
     // a player pushes hardest, so this is where the cost lands.
-    { "length": 340, "speed": 150, "turn": -40, "obstacles": [      // 1160 - 1500
-      { "at": 60, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 }
+    { "length": 340, "speed": 150, "turn": -40, "climb": -14, "obstacles": [   // 1160 - 1500
+      { "at": 60, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 },
+      { "at": 90, "kind": "target", "angle": 180, "count": 2, "spacing": 110 }
     ] },
-    { "length": 300, "section": "narrow", "turn": -30, "thrustZones": [  // 1500 - 1800
-      { "at": 150, "length": 230, "max": 0.85 }
+    { "length": 300, "section": "narrow", "turn": 80, "climb": 14, "thrustZones": [   // 1500 - 1800
+      { "at": 150, "length": 300, "kind": "ceiling" }
+    ], "obstacles": [
+      { "at": 40,  "angle": 90, "width": 7, "count": 5, "spacing": 55, "angleStep": -90 },
+      { "at": 70,  "kind": "target", "angle": -90, "count": 4, "spacing": 55, "angleStep": 90 }
     ] },
 
-    // Gates inside a limit. The gate wants the throttle used as timing; the limit caps how much of
-    // it there is to use. Hurrying into an open gate can cost a shield to the zone instead.
-    { "length": 360, "section": "tube", "speed": 145, "pickups": [  // 1800 - 2160
-      { "at": 70, "kind": "rapid-fire" }
+    // Gates inside a limit, round a bend. The gate wants the throttle used as timing; the limit caps
+    // how much of it there is to use, so only the slow half of the range is left to time with.
+    { "length": 360, "section": "tube", "speed": 145, "turn": -60, "pickups": [  // 1800 - 2160
+      { "at": 50, "kind": "rapid-fire" }
     ], "thrustZones": [
-      { "at": 200, "length": 260, "max": 0.85 }
+      { "at": 180, "length": 360, "kind": "ceiling" }
     ], "obstacles": [
-      { "at": 140, "period": 2.4, "angle": 0,   "width": 20, "height": 3 },
-      { "at": 250, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+      { "at": 120, "period": 2.4, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 170, "kind": "target", "angle": 90, "count": 3, "spacing": 30, "angleStep": 60 },
+      { "at": 240, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 300, "kind": "target", "angle": -90, "count": 3, "spacing": 20, "angleStep": -60 }
     ] },
 
-    { "length": 240, "section": "oval", "speed": 150, "pickups": [  // 2160 - 2400
-      { "at": 120, "kind": "ring-gun" }
+    { "length": 240, "section": "oval", "speed": 150, "turn": 50, "pickups": [  // 2160 - 2400
+      { "at": 60, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 180, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
+      { "at": 150, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 },
+      { "at": 210, "angle": 90, "width": 9 }
     ] },
 
-    // The longest straight in the level, at its highest speed. Then the tightest limit.
-    { "length": 460, "section": "tube", "speed": 165 },             // 2400 - 2860
+    // The longest run in the level, at its highest speed, weaving. Then the tightest limit.
+    { "length": 460, "section": "tube", "speed": 165, "turn": -40, "climb": 18, "obstacles": [   // 2400 - 2860
+      { "at": 120, "angle": 0,   "width": 8 },
+      { "at": 240, "angle": 180, "width": 8 },
+      { "at": 360, "angle": 90,  "width": 8 }
+    ] },
     // A well inside a limit: held slow, so there is time to see it and no speed to steer with. The
     // narrow bore is what makes it bite - a mouth takes a third of the wall whatever the tube.
-    { "length": 340, "section": "narrow", "turn": 65, "thrustZones": [   // 2860 - 3200
-      { "at": 170, "length": 260, "max": 0.85 }
+    { "length": 340, "section": "narrow", "turn": 75, "climb": -18, "thrustZones": [   // 2860 - 3200
+      { "at": 170, "length": 340, "kind": "ceiling" }
     ], "warps": [
       { "at": 240, "angle": 90 }
     ], "obstacles": [
-      { "at": 120, "angle": 180, "width": 7 }
+      { "at": 60,  "angle": 0,   "width": 7 },
+      { "at": 110, "kind": "target", "angle": 180 },
+      { "at": 150, "angle": 180, "width": 7 },
+      { "at": 190, "kind": "target", "angle": 0 },
+      { "at": 300, "angle": -90, "width": 7 }
     ] },
 
-    { "length": 240, "section": "tube", "speed": 150, "pickups": [  // 3200 - 3440
+    { "length": 240, "section": "tube", "speed": 150, "turn": -65, "pickups": [  // 3200 - 3440
       { "at": 120, "kind": "shield", "angle": 90 }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": -90 }
     ] },
 
     // Run for home through a twist, no limits: the restraint is over, spend everything.
     { "length": 190, "speed": 165, "turn": 75, "obstacles": [       // 3440 - 3630
-      { "at": 100, "angle": 0, "count": 2, "spacing": 45, "angleStep": 120 }
+      { "at": 60, "angle": 0, "count": 3, "spacing": 45, "angleStep": 120 }
     ] },
     { "length": 190, "turn": -80, "climb": 14, "obstacles": [       // 3630 - 3820
-      { "at": 95, "kind": "target", "angle": 180 }
+      { "at": 70, "kind": "target", "angle": 180 },
+      { "at": 120, "angle": 60, "count": 2, "spacing": 30, "angleStep": 120 }
     ] },
     { "length": 190, "turn": 70, "climb": -16, "obstacles": [       // 3820 - 4010
       { "at": 95, "angle": 90, "count": 3, "angleStep": 60 }
     ] },
-    { "length": 250 }                                               // 4010 - 4260
+    { "length": 280 }                                               // 4010 - 4290
   ]
 }

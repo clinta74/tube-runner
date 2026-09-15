@@ -49,7 +49,7 @@
     // FREE LOOK. The tube pinches to a narrow bore, and the limit sits on it. The reason is visible
     // from a long way out: the walls are closing in, so backing off reads as sense, not as a rule.
     { "length": 260, "section": "narrow", "thrustZones": [          //  600 -  860
-      { "at": 130, "length": 180, "min": 1.3 }
+      { "at": 130, "length": 260 }
     ] },
 
     { "length": 260, "section": "tube", "speed": 130, "pickups": [  //  860 - 1120
@@ -59,7 +59,7 @@
     // Second limit, now with something to do inside it: blocks to thread while held slow. Going
     // through fast costs a shield; going through slow costs time. Both are real.
     { "length": 340, "section": "narrow", "turn": 35, "thrustZones": [   // 1120 - 1460
-      { "at": 170, "length": 240, "min": 1.3 }
+      { "at": 170, "length": 340 }
     ], "obstacles": [
       { "at": 90,  "angle": 0,   "width": 7 },
       { "at": 180, "angle": 120, "width": 7 },
@@ -77,7 +77,7 @@
     // Read the sign in the geometry - the tube narrows before the corner - or arrive too fast.
     { "length": 420, "section": "tube", "speed": 155 },             // 1740 - 2160
     { "length": 300, "section": "narrow", "turn": 70, "thrustZones": [   // 2160 - 2460
-      { "at": 150, "length": 220, "min": 1.3 }
+      { "at": 150, "length": 300 }
     ], "obstacles": [
       { "at": 200, "angle": 180, "width": 7 }
     ] },
@@ -99,7 +99,7 @@
         ]
       },
       "thrustZones": [
-        { "at": 220, "branch": 1, "length": 240, "min": 1.3 }
+        { "at": 220, "branch": 1, "length": 440 }
       ],
       "obstacles": [
         { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
@@ -112,11 +112,11 @@
     // through, which is the decision: take the free stretch fast and risk overrunning into the next
     // limit, or hold one speed across both and lose the time.
     { "length": 280, "section": "narrow", "thrustZones": [          // 2720 - 3000
-      { "at": 140, "length": 200, "min": 1.3 }
+      { "at": 140, "length": 280 }
     ] },
     { "length": 220, "section": "tube", "speed": 155 },             // 3000 - 3220
     { "length": 280, "section": "narrow", "thrustZones": [          // 3220 - 3500
-      { "at": 140, "length": 200, "min": 1.3 }
+      { "at": 140, "length": 280 }
     ] },
 
     // Run for home, wide open and no limits: the level gives the speed back at the end.

@@ -60,7 +60,7 @@
 
     // 3. A limit with a shoal in it, from 17. Held slow, so more sweeps pass before arrival.
     { "length": 440, "section": "narrow", "thrustZones": [          //  980 - 1420
-      { "at": 210, "length": 320, "min": 1.4 }
+      { "at": 220, "length": 440 }
     ], "obstacles": [
       { "at": 110, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 },
       { "at": 230, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 120 },
@@ -139,7 +139,7 @@
     // 10. A last limit, exactly where a player would push for the line. It is the cruellest placing
     // in the game and it is the one the whole of block B taught.
     { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [   // 4780 - 5180
-      { "at": 200, "length": 300, "min": 1.4 }
+      { "at": 200, "length": 400 }
     ], "obstacles": [
       { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
       { "at": 290, "sweep": 7, "sweepTime": 2.4, "width": 6, "angle": 0 }

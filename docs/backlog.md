@@ -196,6 +196,67 @@ Notes for eval:
 - Mostly untestable as UI, though "which options are offered in which state" is small enough to keep
   honest by hand: mid-level, run over, and run complete each want a different set.
 
+## After v0.3.0
+
+Done:
+
+- **Thrust zones toned down.** Every zone now closes only the slowest 20% of the range (floor 0.75)
+  and nothing else. Zones had carried their own `min`/`max`, and floors of 1.3 dragged every ship to
+  the middle of the range on entry. The keys are now rejected by the loader. Every zone covers its
+  whole section. A second kind, `"kind": "ceiling"`, cuts the top 75% instead (ceiling about 0.81);
+  level 15's zones use it, which keeps Restraint about holding back.
+- **Thrust bar and jump cue enlarged.** The bar has a dark backing and a rim so the full range reads
+  over bright walls, and the closed-off part is hatched with the fill ghosted through it. The on-track
+  jump lines are thicker too.
+- **Unstoppable warning.** Three falling beeps across the last second, then a power-down tone.
+
+### Adaptive background music
+*Built, procedural, needs a listen.* `GameSession.Momentum` (tested) climbs over 90 s of clean
+flying, loses 0.35 per hit and carries between levels. `MusicSynth` fades in pad, bass, drums,
+arpeggio and lead at rising momentum, and Unstoppable's own riff replaces them, crossfading back over
+its last second. What is left is judgement: tempo, key, levels against the engine and cues, and
+whether synthesized music is good enough or this wants recorded stems.
+
+Original notes:
+
+Music that builds while the player keeps progressing without losing a shield, and fades back out
+when they start to struggle. Notes for eval:
+- `EngineAudio` already synthesizes everything into one generator, so a music layer fits there with
+  no asset pipeline. Whether procedural music is good enough, or this wants real stems, is the first
+  thing to settle.
+- Drive it from one "momentum" value in Core: it rises with distance since the last hit, drops sharply
+  on a hit, and is testable. Layers (pad, then bass, then lead) fade in as it rises, rather than
+  one track getting louder, so progress is heard as music arriving.
+- **Unstoppable gets its own music, which replaces the background track while it runs** rather than
+  playing on top of it. That also gives the one-second warning something to land on: the ram theme
+  can break down over its last second and hand back to whatever momentum has built.
+- Watch the mix against the engine and wind, which already rise with speed, and against the cues. A
+  warning beep lost under the lead defeats the point of it.
+
+### Windows installer
+*New item. Build/CI. Testable only by installing on a clean machine.*
+
+The release today is a zip of the exported game. An installer wants a Start menu entry, an
+uninstaller, and a per-user install so it needs no admin rights. Notes for eval:
+- Inno Setup is the likely fit: one script, free, runs on the existing GitHub Actions Windows runner
+  after the Godot export, and the `.exe` attaches to the same `v*` release as the zip.
+- The .NET export already bundles its runtime, so there is nothing to install alongside it.
+- Save data (bests, settings) lives in Godot's `user://`, not the install folder, so an uninstall or
+  upgrade keeps it. Worth checking rather than assuming.
+- Unsigned installers trip SmartScreen. Code signing costs money; decide whether "More info → Run
+  anyway" is acceptable for now.
+
+### Checking for updates
+*New item. Game + CI. Depends on the installer for the smooth version of it.*
+
+- The game compares its own version against the latest GitHub release
+  (`api.github.com/repos/<owner>/<repo>/releases/latest`) and says so on the title or menu screen,
+  with the download link. Once per launch, fails silently offline, never blocks play.
+- The version has to be stamped into the build from the tag in CI, so the check has something true
+  to compare against.
+- Downloading and running the new installer in place is the bigger step. Notifying is most of the
+  value for a fraction of the risk; start there.
+
 ## Standing constraints
 
 Any of this has to keep three guards passing, all of which exist because something shipped wrong:

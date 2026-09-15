@@ -31,6 +31,10 @@ public enum SessionEvent
     RapidFireStarted,
     RingGunCharged,
     UnstoppableStarted,
+
+    /// <summary>Unstoppable has <see cref="GameSession.RamWarning"/> seconds left.</summary>
+    UnstoppableEnding,
+    UnstoppableEnded,
     Finished,
     GameOver,
 }
@@ -43,7 +47,8 @@ public sealed record RunState(
     int RingCharges,
     float RamLeft,
     float Throttle,
-    int Score);
+    int Score,
+    float Momentum = 0f);
 
 /// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
 /// <param name="Special">Fire the ring gun, if it has charges.</param>
@@ -93,6 +98,16 @@ public readonly record struct ShipInput(
 /// </param>
 /// <param name="WarpBack">How far a warp zone throws the ship back up the track.</param>
 /// <param name="WarpDive">Seconds the ship spends falling down a warp mouth before it is thrown back.</param>
+/// <param name="ThrustZoneCut">
+/// Share of the ship's throttle range, from the bottom, that a thrust zone closes off. Small on
+/// purpose: a zone asks the player not to crawl through, it does not pick their speed for them.
+/// </param>
+/// <param name="ThrustZoneCap">
+/// Share of the range, from the top, that a ceiling zone closes off. Large on purpose: being held
+/// back is only a cost when it holds the player well below the speed they want.
+/// </param>
+/// <param name="MomentumBuildTime">Seconds of flying without a hit to take momentum from nothing to full.</param>
+/// <param name="MomentumHitLoss">Momentum a hit takes away. Two or three close together empty it.</param>
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
@@ -113,7 +128,11 @@ public sealed record SessionSettings(
     float ShipHalfLength = 0.8f,
     float FinishRunOut = 260f,
     float WarpBack = 250f,
-    float WarpDive = 0.55f);
+    float WarpDive = 0.55f,
+    float ThrustZoneCut = 0.2f,
+    float ThrustZoneCap = 0.75f,
+    float MomentumBuildTime = 90f,
+    float MomentumHitLoss = 0.35f);
 
 /// <summary>A shot flying down the track ahead of the ship.</summary>
 public sealed class Shot
@@ -149,6 +168,13 @@ public sealed class GameSession
     public const int TargetPoints = 100;
     public const int BreakPoints = 50;
     public const int PickupPoints = 25;
+
+    /// <summary>
+    /// Seconds of unstoppable left when the warning sounds. The player is flying into things on
+    /// purpose while it runs, so the moment it stops is the moment a habit starts costing shields -
+    /// and a number in the corner of the HUD is not where their eyes are.
+    /// </summary>
+    public const float RamWarning = 1f;
 
     // Obstacles and pickups are only tested within this distance of the swept range.
     private const double SearchMargin = 20.0;
@@ -191,6 +217,7 @@ public sealed class GameSession
             RingCharges = carry.RingCharges;
             RamLeft = carry.RamLeft;
             Ship.Throttle = carry.Throttle;
+            Momentum = carry.Momentum;
             _carriedScore = carry.Score;
         }
     }
@@ -236,6 +263,13 @@ public sealed class GameSession
     /// <summary>Seconds left of smashing through anything the ship touches.</summary>
     public float RamLeft { get; private set; }
 
+    /// <summary>
+    /// How well the run is going, from 0 to 1: it climbs steadily while the ship flies without being
+    /// hit and a hit knocks a chunk off it. The music builds from it. It carries between levels, since
+    /// a run is one piece of flying and the music should not start over at every handover.
+    /// </summary>
+    public float Momentum { get; private set; }
+
     /// <summary>Seconds left of post-hit invulnerability.</summary>
     public float RecoveryLeft { get; private set; }
 
@@ -254,7 +288,7 @@ public sealed class GameSession
     public int Score => _carriedScore + _bonus + (int)(Ship.Position.S / 10.0);
 
     /// <summary>State to carry into the next level of the run.</summary>
-    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score);
+    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score, Momentum);
 
     public void Step(float dt, ShipInput input)
     {
@@ -263,7 +297,10 @@ public sealed class GameSession
 
         Elapsed += dt;
         RapidFireLeft = Math.Max(0f, RapidFireLeft - dt);
+        float ramBefore = RamLeft;
         RamLeft = Math.Max(0f, RamLeft - dt);
+        if (ramBefore > RamWarning && RamLeft <= RamWarning) _events.Add(SessionEvent.UnstoppableEnding);
+        if (ramBefore > 0f && RamLeft <= 0f) _events.Add(SessionEvent.UnstoppableEnded);
         RecoveryLeft = Math.Max(0f, RecoveryLeft - dt);
 
         // Down a warp mouth the ship holds station and nothing else happens to it, but the clock
@@ -274,6 +311,9 @@ public sealed class GameSession
             if (DiveLeft <= 0f) FinishWarp();
             return;
         }
+
+        // Only while actually flying: a warp dive is a mistake being paid for, not progress.
+        Momentum = Math.Min(1f, Momentum + dt / _settings.MomentumBuildTime);
 
         float recovered = 1f - RecoveryLeft / _settings.RecoveryTime;
         Ship.SpeedScale = _settings.HitSlowdown + (1f - _settings.HitSlowdown) * recovered;
@@ -363,10 +403,16 @@ public sealed class GameSession
             _inZone = found;
         }
 
-        Ship.ThrottleFloor = Math.Max(_settings.Ship.MinThrottle, found?.MinThrottle ?? 0f);
-        Ship.ThrottleCeiling = Math.Min(_settings.Ship.MaxThrottle, found?.MaxThrottle ?? float.MaxValue);
-        // A zone that asks for more than the ship can give would otherwise invert the range.
-        Ship.ThrottleCeiling = Math.Max(Ship.ThrottleCeiling, Ship.ThrottleFloor);
+        // Each kind takes one end of the range, always by the same share. A throttle already inside
+        // what is left stays exactly where it is; only one outside it is moved to the cut.
+        var ship = _settings.Ship;
+        float span = ship.MaxThrottle - ship.MinThrottle;
+        Ship.ThrottleFloor = found?.Kind == ThrustZoneKind.Floor
+            ? ship.MinThrottle + _settings.ThrustZoneCut * span
+            : ship.MinThrottle;
+        Ship.ThrottleCeiling = found?.Kind == ThrustZoneKind.Ceiling
+            ? ship.MaxThrottle - _settings.ThrustZoneCap * span
+            : ship.MaxThrottle;
     }
 
     /// <returns>False if that was the last shield and the run is over.</returns>
@@ -375,6 +421,7 @@ public sealed class GameSession
         // Extras go first. They sit past the normal shields on the bar, so that is the one the eye
         // expects to lose - and holding them back would mean they were almost never spent, which
         // would make "an extra cannot be refilled" a rule that never came up.
+        Momentum = Math.Max(0f, Momentum - _settings.MomentumHitLoss);
         if (ExtraShields > 0) ExtraShields--;
         else Shields--;
 

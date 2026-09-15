@@ -58,7 +58,7 @@
     // Held slow through a limit, with a key to shoot and its door waiting past the zone. The limit
     // gives time to aim, which is the only kindness in the level.
     { "length": 460, "section": "narrow", "thrustZones": [          // 1040 - 1500
-      { "at": 200, "length": 300, "min": 1.35 }
+      { "at": 230, "length": 460 }
     ], "obstacles": [
       { "at": 140, "kind": "target", "angle": 180, "group": "k2" },
       { "at": 260, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
@@ -99,7 +99,7 @@
     // A shoal in a limit: slow means more sweeps pass before arrival, the pairing from Undertow,
     // now with plates fixed among the movers so part of the wall never opens.
     { "length": 460, "section": "narrow", "turn": -45, "thrustZones": [  // 3060 - 3520
-      { "at": 210, "length": 320, "min": 1.35 }
+      { "at": 230, "length": 460 }
     ], "obstacles": [
       { "at": 110, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
       { "at": 220, "kind": "plate", "angle": 120, "width": 9, "height": 3 },

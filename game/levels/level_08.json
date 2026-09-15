@@ -1,6 +1,6 @@
 {
   "name": "Crossroads",
-  "next": "level_09.json",
+  "next": "level_08b.json",
   "speed": 95,
   "segmentLength": 60,
 

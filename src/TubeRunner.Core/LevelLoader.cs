@@ -264,26 +264,16 @@ public static class LevelLoader
             var z = list[i];
             string where = $"{label} {i}";
             if (z.Length <= 0f) throw new LevelFormatException($"{where}: 'length' must be positive.");
-            if (z.Min is null && z.Max is null)
+            var kind = z.Kind.ToLowerInvariant() switch
             {
-                throw new LevelFormatException($"{where}: set 'min', 'max', or both - a zone that changes neither does nothing.");
-            }
-            if (z.Min is <= 0f || z.Max is <= 0f) throw new LevelFormatException($"{where}: 'min' and 'max' must be positive.");
-            if (z.Min is float lo && z.Max is float hi && lo > hi)
-            {
-                throw new LevelFormatException($"{where}: 'min' {lo} is above 'max' {hi}.");
-            }
+                "floor" => ThrustZoneKind.Floor,
+                "ceiling" => ThrustZoneKind.Ceiling,
+                _ => throw new LevelFormatException($"{where}: unknown kind '{z.Kind}' (use floor or ceiling)."),
+            };
 
             foreach (var (s, branch, _, _) in Place(z, track, offset, where))
             {
-                zones.Add(new ThrustZone
-                {
-                    S = s,
-                    Branch = branch,
-                    Length = z.Length,
-                    MinThrottle = z.Min,
-                    MaxThrottle = z.Max,
-                });
+                zones.Add(new ThrustZone { S = s, Branch = branch, Length = z.Length, Kind = kind });
             }
         }
         return zones;
@@ -440,15 +430,12 @@ public static class LevelLoader
         public List<ThrustZoneData> ThrustZones { get; set; } = new();
     }
 
+    // No numbers of its own: each kind makes a fixed cut. A level still carrying 'min' or 'max' fails
+    // to load rather than quietly flying differently from how it was written.
     private sealed class ThrustZoneData : PlacementData
     {
         public float Length { get; set; } = 120f;
-
-        /// <summary>Throttle floor inside the zone, as a multiple of the track's speed.</summary>
-        public float? Min { get; set; }
-
-        /// <summary>Throttle ceiling inside the zone.</summary>
-        public float? Max { get; set; }
+        public string Kind { get; set; } = "floor";
     }
 
     private sealed class SplitData

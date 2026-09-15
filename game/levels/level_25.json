@@ -49,7 +49,7 @@
 
     // A limit with movers in it.
     { "length": 440, "section": "narrow", "thrustZones": [          //  600 - 1040
-      { "at": 210, "length": 320, "min": 1.35 }
+      { "at": 220, "length": 440 }
     ], "obstacles": [
       { "at": 120, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
       { "at": 250, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 120 },
@@ -117,7 +117,7 @@
 
     // A limit right where the level most invites a push for the end.
     { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [   // 3980 - 4380
-      { "at": 200, "length": 300, "min": 1.35 }
+      { "at": 200, "length": 400 }
     ], "obstacles": [
       { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
       { "at": 290, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 }

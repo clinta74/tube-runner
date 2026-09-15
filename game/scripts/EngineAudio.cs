@@ -18,6 +18,7 @@ public partial class EngineAudio : AudioStreamPlayer
     private const float TopSpeed = 160f;
 
     private readonly List<Voice> _voices = new();
+    private readonly MusicSynth _music = new(MixRate);
     private readonly Random _rng = new();
     private AudioStreamGeneratorPlayback _playback = null!;
     private float _targetSpeed;
@@ -36,6 +37,9 @@ public partial class EngineAudio : AudioStreamPlayer
     }
 
     public void SetSpeed(float speed) => _targetSpeed = speed;
+
+    /// <summary>What the music should be doing; see <see cref="MusicSynth.SetState"/>.</summary>
+    public void SetMusic(float momentum, float ramLeft, bool playing) => _music.SetState(momentum, ramLeft, playing);
 
     public void OnEvent(SessionEvent e)
     {
@@ -82,6 +86,16 @@ public partial class EngineAudio : AudioStreamPlayer
                 // A quick rising arpeggio for any power-up.
                 foreach (float f in new[] { 660f, 880f, 1320f }) _voices.Add(Voice.Tone(f, f * 1.05f, 0.18f, 0.12f));
                 break;
+            case SessionEvent.UnstoppableEnding:
+                // Three falling beeps spread across the last second, so the warning counts down to
+                // the end rather than just marking the start of it.
+                _voices.Add(Voice.Tone(1320f, 1320f, 0.09f, 0.16f, square: true));
+                _voices.Add(Voice.Tone(990f, 990f, 0.09f, 0.16f, square: true, delay: 0.33f));
+                _voices.Add(Voice.Tone(740f, 740f, 0.09f, 0.16f, square: true, delay: 0.66f));
+                break;
+            case SessionEvent.UnstoppableEnded:
+                _voices.Add(Voice.Tone(520f, 110f, 0.4f, 0.22f));
+                break;
             case SessionEvent.Finished:
                 foreach (float f in new[] { 523f, 659f, 784f, 1047f }) _voices.Add(Voice.Tone(f, f, 1.4f, 0.12f));
                 break;
@@ -118,7 +132,10 @@ public partial class EngineAudio : AudioStreamPlayer
         _wind += (white - _wind) * (0.01f + 0.1f * s);
         float wind = _wind * (0.1f + 0.45f * s);
 
-        float mix = engine + wind;
+        // The engine and wind duck under the unstoppable theme, which otherwise has to fight the
+        // loudest the engine ever gets - unstoppable is usually picked up flying flat out.
+        float music = _music.Next();
+        float mix = (engine + wind) * (1f - 0.6f * _music.RamLevel) + music;
         for (int i = _voices.Count - 1; i >= 0; i--)
         {
             mix += _voices[i].Next(_rng);
@@ -140,22 +157,30 @@ public partial class EngineAudio : AudioStreamPlayer
         private readonly bool _square;
         private float _t;
         private float _phase;
+        private float _wait;
 
-        private Voice(float from, float to, float duration, float gain, bool noise, bool square)
+        private Voice(float from, float to, float duration, float gain, bool noise, bool square, float delay)
         {
-            (_from, _to, _duration, _gain, _noise, _square) = (from, to, duration, gain, noise, square);
+            (_from, _to, _duration, _gain, _noise, _square, _wait) = (from, to, duration, gain, noise, square, delay);
         }
 
         public bool Done => _t >= _duration;
 
-        public static Voice Tone(float from, float to, float duration, float gain, bool square = false) =>
-            new(from, to, duration, gain, noise: false, square);
+        /// <param name="delay">Seconds of silence before it starts, for sequencing a few notes from one event.</param>
+        public static Voice Tone(float from, float to, float duration, float gain, bool square = false, float delay = 0f) =>
+            new(from, to, duration, gain, noise: false, square, delay);
 
         public static Voice Noise(float duration, float gain) =>
-            new(0f, 0f, duration, gain, noise: true, square: false);
+            new(0f, 0f, duration, gain, noise: true, square: false, delay: 0f);
 
         public float Next(Random rng)
         {
+            if (_wait > 0f)
+            {
+                _wait -= SampleTime;
+                return 0f;
+            }
+
             float k = _t / _duration;
             float envelope = (1f - k) * (1f - k) * Math.Min(1f, _t / Attack);
             _t += SampleTime;

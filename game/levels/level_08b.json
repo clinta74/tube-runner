@@ -1,0 +1,95 @@
+{
+  "name": "Loop the Loop",
+  "next": "level_09.json",
+  "speed": 110,
+  "segmentLength": 60,
+
+  // The first see-through level, early on purpose: a look at the wireframe style long before
+  // Highwire builds a level around it. Loops and switchbacks on a single track, so the track bends
+  // back on itself and every other part of it is in view through the wall.
+  //
+  // A loop flown at one steady rate closes into a circle and passes through its own entry. So every
+  // loop here is built from pieces with different rates - a swing out and back over the top of a
+  // vertical loop, a climb through a flat one - which carries the exit clear of the way in.
+  // TrackClearanceTests checks that no part of the track comes within a tube's width of another.
+  "theme": {
+    "wire": true,
+    "seamLight": "#7ff0ff",
+    "far": "#000000",
+    "ship": "#ffffff",
+    "block": "#ff8a3a",
+    "target": "#ff3a6a",
+    "breakable": "#7cffb0",
+    "fadeStart": 60,
+    "fadeEnd": 700,
+    "glow": 0.5
+  },
+
+  "sections": {
+    "tube": { "radius": 6 }
+  },
+
+  // Obstacle "at" values are measured from the start of their piece.
+  // The distances in the comments are for `play.ps1 -Start`.
+  "start": "tube",
+  "track": [
+    { "length": 260, "pickups": [                                   //    0 -  260
+      { "at": 150, "kind": "shield", "angle": 180 }
+    ] },
+
+    // A vertical loop. It swings right going up over the top and back left coming down, so the way
+    // out runs beside the way in instead of through it, pointing the same way it came in.
+    { "length": 160, "climb": 90 },                                 //  260 -  420
+    { "length": 160, "climb": 90, "turn": 30, "obstacles": [        //  420 -  580
+      { "at": 80, "kind": "target", "angle": 0 }
+    ] },
+    { "length": 160, "climb": 90, "turn": -30 },                    //  580 -  740
+    { "length": 160, "climb": 90 },                                 //  740 -  900
+
+    { "length": 220, "pickups": [                                   //  900 - 1120
+      { "at": 40, "kind": "rapid-fire" }
+    ], "obstacles": [
+      { "at": 110, "kind": "target", "angle": 0, "count": 3, "spacing": 45, "angleStep": 120 }
+    ] },
+
+    // Switchbacks: a hairpin right, a straight back the way we came, a hairpin left. The legs run
+    // side by side, so the next one is always in view through the wall.
+    { "length": 300, "turn": 180 },                                 // 1120 - 1420
+    { "length": 220, "obstacles": [                                 // 1420 - 1640
+      { "at": 60,  "angle": 0,   "width": 8 },
+      { "at": 110, "kind": "target", "angle": 90, "count": 2, "angleStep": 180 },
+      { "at": 160, "angle": 180, "width": 8 }
+    ] },
+    { "length": 300, "turn": -180 },                                // 1640 - 1940
+    { "length": 220, "obstacles": [                                 // 1940 - 2160
+      { "at": 60,  "kind": "target", "angle": 0, "count": 4, "angleStep": 90 },
+      { "at": 150, "angle": 90, "count": 2, "spacing": 40, "angleStep": 180 }
+    ] },
+    { "length": 300, "turn": 180 },                                 // 2160 - 2460
+    { "length": 200, "pickups": [                                   // 2460 - 2660
+      { "at": 100, "kind": "ring-gun" }
+    ] },
+
+    // A flat loop that climbs as it goes round, so it passes over its own entry rather than through it.
+    { "length": 320, "turn": 180, "climb": 30, "obstacles": [       // 2660 - 2980
+      { "at": 200, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
+    ] },
+    { "length": 320, "turn": 180, "climb": -30, "obstacles": [      // 2980 - 3300
+      { "at": 160, "angle": 90, "width": 8 }
+    ] },
+
+    { "length": 220, "pickups": [                                   // 3300 - 3520
+      { "at": 110, "kind": "shield", "angle": 90 }
+    ] },
+
+    // A dive loop, the other way up, swinging left and back over the bottom.
+    { "length": 160, "climb": -90 },                                // 3520 - 3680
+    { "length": 160, "climb": -90, "turn": -30, "obstacles": [      // 3680 - 3840
+      { "at": 80, "kind": "target", "angle": 180 }
+    ] },
+    { "length": 160, "climb": -90, "turn": 30 },                    // 3840 - 4000
+    { "length": 160, "climb": -90 },                                // 4000 - 4160
+
+    { "length": 400 }                                               // 4160 - 4560  run-out
+  ]
+}

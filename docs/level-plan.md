@@ -28,6 +28,7 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 6 | **Over and Under** | Flat sections under pressure: walls that force jump after jump | Flat, round | ✅ |
 | 7 | **Earthworks** | Boxy sections, a long flat run, a fork | Box, flat, split | ✅ |
 | 8 | **Crossroads** | Forks as a real choice: short-and-mean vs long-and-clear | Split-heavy | ✅ |
+| 8b | **Loop the Loop** | A first look at the wireframe style: loops and switchbacks, the whole track in view | Round, wireframe | ✅ |
 | 9 | **Neon Run** | Everything, faster | All | ✅ |
 | 10 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ✅ |
 | 11 | **Metronome** | Gates in rhythm with jumps | Flat, round | ✅ |
@@ -195,6 +196,7 @@ how obstacles are arranged.
 | 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 2750 |
 | 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4650 |
 | 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4350 |
+| 8b | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4560 |
 | 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 4920 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
