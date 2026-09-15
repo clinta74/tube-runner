@@ -132,7 +132,10 @@ public partial class EngineAudio : AudioStreamPlayer
         _wind += (white - _wind) * (0.01f + 0.1f * s);
         float wind = _wind * (0.1f + 0.45f * s);
 
-        float mix = engine + wind + _music.Next();
+        // The engine and wind duck under the unstoppable theme, which otherwise has to fight the
+        // loudest the engine ever gets - unstoppable is usually picked up flying flat out.
+        float music = _music.Next();
+        float mix = (engine + wind) * (1f - 0.6f * _music.RamLevel) + music;
         for (int i = _voices.Count - 1; i >= 0; i--)
         {
             mix += _voices[i].Next(_rng);

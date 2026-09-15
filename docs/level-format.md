@@ -83,6 +83,28 @@ Each piece continues from the end of the previous one.
 
 Keep curves gentle: a turn tighter than about 1° per unit length will fold the tube wall.
 
+### Loops
+
+`turn` and `climb` rotate about the track's own axes, so a loop is just `climb` past 360 — nothing
+flips over the top. But **a loop flown at one steady rate closes into a circle and runs straight
+back through its own entry**, however it is tilted. Break it into pieces with different rates:
+
+- **Vertical loop:** four quarters of `climb: 90`, with `turn: 30` on the second and `turn: -30` on
+  the third. The exit runs beside the entry and points the same way. Turning the same way on both
+  middle quarters, on the first and last, or on every quarter, all land the exit back on the entry.
+- **Flat loop:** two halves of `turn: 180`, climbing `30` on the first and `-30` on the second, so it
+  passes over its own entry. A climb of 20 or less on 320-unit halves is not enough clearance.
+
+`TrackClearanceTests` fails any level, bench levels included, whose track comes within a tube's width
+of itself. The tube also comes out rolled around its own axis, which cannot be seen in play.
+
+```json
+{ "length": 160, "climb": 90 },
+{ "length": 160, "climb": 90, "turn": 30 },
+{ "length": 160, "climb": 90, "turn": -30 },
+{ "length": 160, "climb": 90 }
+```
+
 Tip: annotate pieces with their start and end distance (`// 930 - 1030`); `play.ps1 -Start 930` then
 jumps straight to that piece for testing.
 

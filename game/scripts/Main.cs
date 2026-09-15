@@ -92,6 +92,12 @@ public partial class Main : Node3D
     /// </summary>
     private const double OutroStart = 900.0;
 
+    /// <summary>
+    /// The victory track. A fixed path rather than one beside the level that finished: a bench level
+    /// in its own folder ends the same way the finale does, and there is only one victory track.
+    /// </summary>
+    private const string VictoryPath = "res://levels/victory.json";
+
     private bool _outro;
     private float _outroTime;
     private float _outroBlend;
@@ -548,7 +554,7 @@ public partial class Main : Node3D
     // Loading a level clears whatever message is up, so the summary goes back on afterwards.
     private void LoadVictoryLap()
     {
-        LoadLevel(LevelPath.GetBaseDir().PathJoin("victory.json"), carry: null, startS: OutroStart);
+        LoadLevel(VictoryPath, carry: null, startS: OutroStart);
         _track.ViewBehind = OutroBehind;
         _running = true;
         _outro = true;

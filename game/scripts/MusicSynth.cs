@@ -20,6 +20,9 @@ public sealed class MusicSynth
     private const int LoopSteps = 16 * 16;
     // How quickly a layer follows its target level, in seconds.
     private const float LayerFade = 0.6f;
+    // The unstoppable theme cuts in almost at once: it is announcing a pickup, and a slow fade made it
+    // quiet at exactly the moment it mattered. Its hand-back is already paced by its target.
+    private const float RamFade = 0.08f;
 
     // A minor: Am, F, C, G, one bar each.
     private static readonly int[][] Chords = { new[] { 57, 60, 64 }, new[] { 53, 57, 60 }, new[] { 48, 52, 55 }, new[] { 55, 59, 62 } };
@@ -36,6 +39,10 @@ public sealed class MusicSynth
     private readonly float _dt;
     private readonly float _stepLength;
     private readonly float _smooth;
+    private readonly float _ramSmooth;
+
+    /// <summary>How loud the unstoppable theme currently is, from 0 to 1. The engine ducks under it.</summary>
+    public float RamLevel => _ram;
     private readonly Random _rng = new(7);
 
     private float _t;
@@ -62,6 +69,7 @@ public sealed class MusicSynth
         _dt = 1f / mixRate;
         _stepLength = 60f / Bpm / 4f;
         _smooth = 1f - MathF.Exp(-_dt / LayerFade);
+        _ramSmooth = 1f - MathF.Exp(-_dt / RamFade);
         _bassDecay = Decay(0.2f);
         _kickDecay = Decay(0.12f);
         _hatDecay = Decay(0.03f);
@@ -105,7 +113,7 @@ public sealed class MusicSynth
         _drums += (_drumsTo - _drums) * _smooth;
         _arp += (_arpTo - _arp) * _smooth;
         _lead += (_leadTo - _lead) * _smooth;
-        _ram += (_ramTo - _ram) * _smooth;
+        _ram += (_ramTo - _ram) * _ramSmooth;
 
         float s = 0f;
         if (_pad > 0.0005f) s += Pad() * 0.09f * _pad;
@@ -214,19 +222,19 @@ public sealed class MusicSynth
     private float Ram()
     {
         _ramPhase = (_ramPhase + _ramFreq * _dt) % 1f;
-        float s = MathF.Tanh((2f * _ramPhase - 1f) * 2.5f) * _ramEnv * 0.13f;
+        float s = MathF.Tanh((2f * _ramPhase - 1f) * 2.5f) * _ramEnv * 0.21f;
         _ramEnv *= _ramDecay;
 
         if (_ramKickEnv > 0.001f)
         {
             _ramKickTime += _dt;
             _ramKickPhase = (_ramKickPhase + (50f + 120f * MathF.Exp(-_ramKickTime / 0.025f)) * _dt) % 1f;
-            s += MathF.Sin(_ramKickPhase * MathF.Tau) * _ramKickEnv * 0.35f;
+            s += MathF.Sin(_ramKickPhase * MathF.Tau) * _ramKickEnv * 0.55f;
             _ramKickEnv *= _ramKickDecay;
         }
         if (_ramSnareEnv > 0.001f)
         {
-            s += ((float)_rng.NextDouble() * 2f - 1f) * _ramSnareEnv * 0.12f;
+            s += ((float)_rng.NextDouble() * 2f - 1f) * _ramSnareEnv * 0.19f;
             _ramSnareEnv *= _snareDecay;
         }
         return s;
