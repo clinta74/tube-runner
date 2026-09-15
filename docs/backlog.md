@@ -198,7 +198,8 @@ Notes for eval:
 
 ## After v0.3.0
 
-Done:
+Done, and shipped across v0.4.0 (gameplay, music, Loop the Loop), v0.4.1 (MSI installer, icon) and
+v0.4.2 (update check, build tool):
 
 - **Thrust zones toned down.** Every zone now closes only the slowest 20% of the range (floor 0.75)
   and nothing else. Zones had carried their own `min`/`max`, and floors of 1.3 dragged every ship to
@@ -209,9 +210,23 @@ Done:
   over bright walls, and the closed-off part is hatched with the fill ghosted through it. The on-track
   jump lines are thicker too.
 - **Unstoppable warning.** Three falling beeps across the last second, then a power-down tone.
+- **Restraint rebuilt** (level 15) for its ceiling zones: slow, so every section bends and the zones
+  are the densest stretches, with spirals of blocks and targets threaded through them.
+- **Loop the Loop** (level 8b, between Crossroads and Neon Run): an early wireframe level of vertical,
+  flat and dive loops and switchbacks. Named 8b rather than renumbering, since best times are keyed by
+  file name. `TrackClearanceTests` now fails any level whose track passes through itself; a loop at
+  one steady rate closes back onto its own entry, and `level-format.md` gives the shapes that clear.
+- **Game icon.** `game/icon.svg`, rendered to `icon.ico` by `tube icon`; used for the window, the exe,
+  the Start menu shortcut and the installed-apps entry.
+- **`tube` build tool.** The PowerShell scripts are now C# in `tools/Build`, run through `tube.cmd`:
+  `tube play`, `tube export`, `tube installer`, `tube icon`. The release workflow uses it too.
+  `tube export` also finds export templates stranded in a packaged app's private storage - where a
+  terminal inside the Claude desktop app redirects `%APPDATA%` writes - and prints the robocopy that
+  moves them.
 
 ### Adaptive background music
-*Built, procedural, needs a listen.* `GameSession.Momentum` (tested) climbs over 90 s of clean
+*Shipped in v0.4.0, procedural.* The Unstoppable theme was turned up after a first listen: louder, in
+within a tenth of a second, and the engine and wind duck under it. `GameSession.Momentum` (tested) climbs over 90 s of clean
 flying, loses 0.35 per hit and carries between levels. `MusicSynth` fades in pad, bass, drums,
 arpeggio and lead at rising momentum, and Unstoppable's own riff replaces them, crossfading back over
 its last second. What is left is judgement: tempo, key, levels against the engine and cues, and
@@ -234,15 +249,25 @@ when they start to struggle. Notes for eval:
   warning beep lost under the lead defeats the point of it.
 
 ### Windows installer
-*Built on the `installer` branch, not yet run.* An MSI with its cabinet embedded, from WiX 5.0.2
-(`installer/TubeRunner.wixproj` and `Package.wxs`, built by `tube installer` through `dotnet build`,
-so nothing extra to install). Per-user install to `%LOCALAPPDATA%\Programs\Tube Runner` with no admin
-prompt, a Start menu shortcut, uninstall from Windows settings, major upgrades that replace the old
-version and refuse downgrades. The release workflow attaches `TubeRunner-<version>.msi` beside the
-zip. Still to do: build and install it once, check an upgrade over an older install keeps best
-times, and give the game an icon (it has Godot's).
+*Shipped in v0.4.1; installed by hand from the v0.4.2 release, which showed the right version.* An
+MSI with its cabinet embedded, from WiX 5.0.2 (`installer/TubeRunner.wixproj` and `Package.wxs`,
+built by `tube installer` through `dotnet build`, so nothing extra to install). Per-user install with
+no admin prompt, defaulting to `%LOCALAPPDATA%\Programs\Tube Runner` with a page to choose another
+folder (WiX's InstallDir dialogs, license page skipped). Start menu shortcut and installed-apps entry
+with the game's icon, uninstall from Windows settings, major upgrades that replace the old version and
+refuse downgrades. The release workflow attaches `TubeRunner-<version>.msi` beside the zip.
 
-Original notes:
+Still open:
+- **Upgrade over an older install** hasn't been tried: install one release, set a best time, install
+  the next, and check the time survives. Saves live in `%APPDATA%\Godot\app_userdata\Tube Runner`,
+  outside the install folder, so it should.
+- **A folder that needs admin rights** (`C:\Program Files`) fails with an access error, since the
+  install is per user. WiX's Advanced dialogs would offer "just me / everyone" and elevate for the
+  second.
+- **No desktop shortcut or "launch when done"** option; both need a custom dialog in an MSI.
+- **Unsigned**, so SmartScreen may warn on download. Signing costs money.
+
+Original notes, from before the MSI was chosen over Inno Setup:
 
 The release today is a zip of the exported game. An installer wants a Start menu entry, an
 uninstaller, and a per-user install so it needs no admin rights. Notes for eval:
@@ -255,15 +280,22 @@ uninstaller, and a per-user install so it needs no admin rights. Notes for eval:
   anyway" is acceptable for now.
 
 ### Checking for updates
-*Built on the `update-check` branch.* `tube export --version x.y.z` stamps the version into the game's
+*Shipped in v0.4.2, and checked by hand: the installed release shows v0.4.2, and "Get version" in the
+Escape menu opened the GitHub release page.* `tube export --version x.y.z` stamps the version into the game's
 assembly (the `GameVersion` MSBuild property, from the environment); the release workflow passes the
 tag. An unstamped build reads 0.0.0 and never checks, so development runs stay offline. At launch
 `UpdateChecker` asks GitHub's latest-release API once, with an 8 s timeout, and says nothing on any
 failure. `Updates` in Core (tested) reads the answer, ignores drafts and pre-releases, compares
 versions numerically, and only accepts this repository's own release page as the link. A newer
 release shows on the start screen and as "Get version x.y.z" in the Escape menu, which opens the page.
-Test runs (`--start`, `--summary`) and `--no-update-check` skip it. Not done: downloading and running
-the new installer in place.
+Test runs (`--start`, `--summary`) and `--no-update-check` skip it.
+
+Still open:
+- **No in-game way to turn it off.** Only the `--no-update-check` flag, which a player launching from
+  the Start menu can't use. A setting belongs with the menu once there are settings.
+- **Downloading and running the new installer in place**, rather than opening the release page. The
+  bigger step: fetch the MSI, verify it, hand over to msiexec and quit. Notifying was most of the value
+  for a fraction of the risk.
 
 Original notes:
 
