@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- The game's icon: looking down a wireframe tube, with the ship riding the floor. The outer ring
+       and the ship are drawn heavy so the icon still reads at 16 px. Rebuild icon.ico with
+       tools/make-icon.ps1 after editing this. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#0c3446"/>
+      <stop offset="1" stop-color="#02070b"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#7ff0ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#7ff0ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#bg)"/>
+
+  <!-- Rails running into the distance. -->
+  <g stroke="#7ff0ff" stroke-width="3" stroke-opacity="0.45" stroke-linecap="round">
+    <line x1="128" y1="97" x2="228" y2="116"/>
+    <line x1="128" y1="97" x2="198.7" y2="186.7"/>
+    <line x1="128" y1="97" x2="57.3" y2="186.7"/>
+    <line x1="128" y1="97" x2="28" y2="116"/>
+    <line x1="128" y1="97" x2="57.3" y2="45.3"/>
+    <line x1="128" y1="97" x2="128" y2="16"/>
+    <line x1="128" y1="97" x2="198.7" y2="45.3"/>
+  </g>
+
+  <!-- Rings, shrinking and fading towards the vanishing point. -->
+  <g fill="none" stroke="#7ff0ff">
+    <circle cx="128" cy="116" r="100" stroke-width="13"/>
+    <circle cx="128" cy="108" r="64" stroke-width="8" stroke-opacity="0.85"/>
+    <circle cx="128" cy="103" r="38" stroke-width="6" stroke-opacity="0.7"/>
+    <circle cx="128" cy="100" r="21" stroke-width="4" stroke-opacity="0.55"/>
+    <circle cx="128" cy="98" r="10" stroke-width="3" stroke-opacity="0.4"/>
+  </g>
+
+  <!-- The ship and its engine glow. -->
+  <ellipse cx="128" cy="198" rx="34" ry="18" fill="url(#glow)"/>
+  <path d="M128 146 L166 204 L128 188 L90 204 Z" fill="#ffffff"/>
+</svg>

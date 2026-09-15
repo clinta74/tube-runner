@@ -1,0 +1,29 @@
+<!--
+  The Windows installer: an MSI with its cabinet embedded, so it is one file. Built by installer.ps1
+  from the export in builds/windows:
+    ./export.ps1
+    ./installer.ps1
+
+  WiX 5.0.2 on purpose. It comes from NuGet through `dotnet build`, so nothing else needs installing,
+  and from 6.0 on WiX asks users to accept its Open Source Maintenance Fee terms.
+-->
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+
+    <!-- Not ProductVersion: older WiX used that name for its own version, and it is easy to trip on. -->
+    <GameVersion Condition="'$(GameVersion)' == ''">0.0.0</GameVersion>
+    <GameBuild Condition="'$(GameBuild)' == ''">$(MSBuildThisFileDirectory)..\builds\windows</GameBuild>
+    <GameIcon Condition="'$(GameIcon)' == ''">$(MSBuildThisFileDirectory)..\game\icon.ico</GameIcon>
+    <DefineConstants>GameVersion=$(GameVersion);GameBuild=$(GameBuild);GameIcon=$(GameIcon)</DefineConstants>
+
+    <OutputName>TubeRunner-$(GameVersion)</OutputName>
+    <OutputPath>$(MSBuildThisFileDirectory)..\builds\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The standard installer dialogs, for choosing the install folder. Same version as the SDK. -->
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+</Project>
