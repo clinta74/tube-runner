@@ -14,6 +14,7 @@ namespace TubeRunner.Game;
 public partial class Main : Node3D
 {
     private const string BestTimesPath = "user://best_times.json";
+    private const string SettingsPath = "user://settings.json";
 
     [Export] public ShaderMaterial WallMaterial { get; set; } = null!;
     [Export(PropertyHint.File, "*.json")] public string LevelPath { get; set; } = "res://levels/level_01.json";
@@ -164,9 +165,12 @@ public partial class Main : Node3D
             if (arg == "--summary") _debugSummary = true;
             if (arg == "--no-update-check") _noUpdateCheck = true;
             if (arg == "--menu") _debugMenu = true;
+            if (arg == "--settings") _debugSettings = true;
         }
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
+        _settings = GameSettings.FromJson(FileAccess.FileExists(SettingsPath) ? FileAccess.GetFileAsString(SettingsPath) : null);
+        ApplySettings();
         _runStart = LevelPath;
         LoadLevel(LevelPath, carry: null, startS: _startS);
 
@@ -179,8 +183,22 @@ public partial class Main : Node3D
         AddChild(_updates);
         _updates.UpdateFound += OnUpdateFound;
         // Not on a test run: those exist to look at one level, and a notice over it is in the way.
-        if (!_noUpdateCheck && !_practice && !_debugSummary) _updates.Start();
+        StartUpdateCheck();
         if (_debugMenu) OpenMenu();
+        if (_debugSettings)
+        {
+            OpenMenu();
+            OpenSettings();
+        }
+    }
+
+    // Once per launch, and not from a test run or with the setting off. Turning the setting on later in
+    // the same session runs it then.
+    private void StartUpdateCheck()
+    {
+        if (_updateCheckStarted || _noUpdateCheck || _practice || _debugSummary || !_settings.CheckForUpdates) return;
+        _updateCheckStarted = true;
+        _updates.Start();
     }
 
     // The start screen, with this build's version and, once the check has found one, the newer release.
@@ -210,6 +228,12 @@ public partial class Main : Node3D
 
     // Opens the Escape menu at launch, for looking at it without a keypress - which a recording can't make.
     private bool _debugMenu;
+
+    // Opens straight onto the settings page, likewise.
+    private bool _debugSettings;
+
+    private GameSettings _settings = new();
+    private bool _updateCheckStarted;
 
     private const string StartScreen = """
         TUBE RUNNER
@@ -653,6 +677,7 @@ public partial class Main : Node3D
             CloseMenu();
             RestartRun();
         })));
+        _menu.Add(("Settings", OpenSettings));
         if (_update is not null)
         {
             var release = _update;
@@ -688,6 +713,44 @@ public partial class Main : Node3D
         _menuOpen = false;
         _menuConfirming = false;
         _hud.Menu.Close();
+    }
+
+    // Escape backs out of the settings to the menu, the same as out of a question.
+    private void OpenSettings()
+    {
+        _menuConfirming = true;
+        _hud.Menu.OpenSettings(_settings, changed =>
+        {
+            _settings = changed;
+            ApplySettings();
+            SaveSettings();
+            StartUpdateCheck();
+        }, OpenMenu);
+    }
+
+    private void ApplySettings()
+    {
+        var mode = _settings.ScreenMode switch
+        {
+            ScreenMode.Fullscreen => DisplayServer.WindowMode.ExclusiveFullscreen,
+            // Godot's plain "fullscreen" is the borderless window covering the screen.
+            ScreenMode.Borderless => DisplayServer.WindowMode.Fullscreen,
+            _ => DisplayServer.WindowMode.Windowed,
+        };
+        if (DisplayServer.WindowGetMode() != mode) DisplayServer.WindowSetMode(mode);
+        DisplayServer.WindowSetVsyncMode(_settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+        _audio.SetVolumes(_settings.MasterVolume, _settings.MusicVolume, _settings.EffectsVolume);
+    }
+
+    private void SaveSettings()
+    {
+        using var file = FileAccess.Open(SettingsPath, FileAccess.ModeFlags.Write);
+        if (file is null)
+        {
+            GD.PushError($"Couldn't save settings: {FileAccess.GetOpenError()}");
+            return;
+        }
+        file.StoreString(_settings.ToJson());
     }
 
     /// <summary>

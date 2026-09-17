@@ -42,6 +42,9 @@ public static class InputSetup
         // answers to the same hands as the game.
         AddTo("ui_up", KeyEvent(Key.W), Stick(JoyAxis.LeftY, -1f));
         AddTo("ui_down", KeyEvent(Key.S), Stick(JoyAxis.LeftY, 1f));
+        // Likewise left and right, which move a slider once it has focus.
+        AddTo("ui_left", KeyEvent(Key.A), Stick(JoyAxis.LeftX, -1f));
+        AddTo("ui_right", KeyEvent(Key.D), Stick(JoyAxis.LeftX, 1f));
     }
 
     private static void AddTo(string action, params InputEvent[] events)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using TubeRunner.Core;
 
 namespace TubeRunner.Game;
 
@@ -79,11 +80,7 @@ public partial class GameMenu : Control
     public void Open(string title, IReadOnlyList<(string Label, Action Pick)> options)
     {
         _title.Text = title;
-        foreach (var child in _buttons.GetChildren())
-        {
-            _buttons.RemoveChild(child);
-            child.QueueFree();
-        }
+        ClearRows();
 
         Button? first = null;
         foreach (var (label, pick) in options)
@@ -101,13 +98,151 @@ public partial class GameMenu : Control
         }
 
         Visible = true;
-        first?.CallDeferred(Control.MethodName.GrabFocus);
+        if (first is not null) FocusLater(first);
     }
+
+    /// <summary>
+    /// The settings page. Every change is reported through <paramref name="changed"/> as it happens -
+    /// there is no separate apply, so what the player hears and sees is always what is saved.
+    /// </summary>
+    /// <param name="back">Called by the Back button, once this frame is over.</param>
+    public void OpenSettings(GameSettings current, Action<GameSettings> changed, Action back)
+    {
+        _title.Text = "SETTINGS";
+        ClearRows();
+        var settings = current;
+        void Change(Func<GameSettings, GameSettings> edit)
+        {
+            settings = edit(settings);
+            changed(settings);
+        }
+
+        var updates = Toggle(settings.CheckForUpdates, on => Change(s => s with { CheckForUpdates = on }));
+        AddRow("Check for updates", updates);
+
+        var screen = new OptionButton();
+        // In the same order as ScreenMode, so an item's index is its value.
+        screen.AddItem("Windowed");
+        screen.AddItem("Fullscreen");
+        screen.AddItem("Borderless");
+        screen.Selected = (int)settings.ScreenMode;
+        screen.GetPopup().AddThemeFontSizeOverride("font_size", RowFontSize);
+        screen.ItemSelected += index => Change(s => s with { ScreenMode = (ScreenMode)(int)index });
+        AddRow("Screen", screen);
+
+        AddRow("VSync", Toggle(settings.VSync, on => Change(s => s with { VSync = on })));
+
+        AddRow("Master volume", VolumeSlider(settings.MasterVolume, v => Change(s => s with { MasterVolume = v })));
+        AddRow("Music", VolumeSlider(settings.MusicVolume, v => Change(s => s with { MusicVolume = v })));
+        AddRow("Effects", VolumeSlider(settings.EffectsVolume, v => Change(s => s with { EffectsVolume = v })));
+
+        var done = new Button { Text = "Back", CustomMinimumSize = new Vector2(460f, 64f), FocusMode = FocusModeEnum.All };
+        done.AddThemeFontSizeOverride("font_size", ButtonFontSize);
+        StyleButton(done);
+        done.Pressed += () => Callable.From(back).CallDeferred();
+        done.MouseEntered += done.GrabFocus;
+        var center = new CenterContainer();
+        center.AddChild(done);
+        _buttons.AddChild(center);
+
+        Visible = true;
+        FocusLater(updates);
+    }
+
+    // Focus once the new controls are laid out. Skipped if something replaced the page first in the
+    // same frame - opening the menu and then its settings page straight away does exactly that.
+    private static void FocusLater(Control control) =>
+        Callable.From(() =>
+        {
+            if (IsInstanceValid(control) && control.IsInsideTree()) control.GrabFocus();
+        }).CallDeferred();
 
     public void Close()
     {
         Visible = false;
         GetViewport()?.GuiReleaseFocus();
+    }
+
+    private const int RowFontSize = 30;
+
+    private void ClearRows()
+    {
+        foreach (var child in _buttons.GetChildren())
+        {
+            _buttons.RemoveChild(child);
+            child.QueueFree();
+        }
+    }
+
+    // A setting's name on the left and its control on the right. Every control focuses on hover, the
+    // same rule as the menu's buttons, so the mouse and the keys never disagree about what is selected.
+    private void AddRow(string name, Control control)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 24);
+
+        var label = new Label { Text = name, CustomMinimumSize = new Vector2(280f, 0f), VerticalAlignment = VerticalAlignment.Center };
+        label.AddThemeFontSizeOverride("font_size", RowFontSize);
+        row.AddChild(label);
+
+        control.CustomMinimumSize = new Vector2(360f, 56f);
+        control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        control.FocusMode = FocusModeEnum.All;
+        control.AddThemeFontSizeOverride("font_size", RowFontSize);
+        control.AddThemeStyleboxOverride("focus", Box(new Color(_accent, 0.12f), 3, _accent, 8));
+        control.MouseEntered += () => control.GrabFocus();
+        row.AddChild(control);
+
+        _buttons.AddChild(row);
+    }
+
+    // An on/off switch that says which it is. Godot's switch alone is a small grey pill, and at a
+    // glance on and off look the same.
+    private static CheckButton Toggle(bool value, Action<bool> changed)
+    {
+        var toggle = new CheckButton { ButtonPressed = value, Text = value ? "On" : "Off" };
+        toggle.Toggled += on =>
+        {
+            toggle.Text = on ? "On" : "Off";
+            changed(on);
+        };
+        return toggle;
+    }
+
+    // A 0-100 slider with its value beside it, in steps of five. Left and right move it once it has
+    // focus, as do A and D and the stick.
+    private HBoxContainer VolumeSlider(float value, Action<float> changed)
+    {
+        var box = new HBoxContainer();
+        box.AddThemeConstantOverride("separation", 16);
+
+        var slider = new HSlider
+        {
+            MinValue = 0,
+            MaxValue = 100,
+            Step = 5,
+            Value = Math.Round(value * 100f),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+            FocusMode = FocusModeEnum.All,
+        };
+        slider.AddThemeStyleboxOverride("focus", Box(new Color(_accent, 0.12f), 3, _accent, 8));
+        slider.MouseEntered += slider.GrabFocus;
+
+        var readout = new Label { Text = $"{slider.Value:0}%", CustomMinimumSize = new Vector2(90f, 0f), HorizontalAlignment = HorizontalAlignment.Right };
+        readout.AddThemeFontSizeOverride("font_size", RowFontSize);
+
+        slider.ValueChanged += v =>
+        {
+            readout.Text = $"{v:0}%";
+            changed((float)(v / 100.0));
+        };
+
+        box.AddChild(slider);
+        box.AddChild(readout);
+        // The row focuses the slider rather than the box around it, which can't be moved with keys.
+        box.FocusEntered += slider.GrabFocus;
+        return box;
     }
 
     private void StyleButton(Button button)

@@ -29,6 +29,22 @@ public partial class EngineAudio : AudioStreamPlayer
 
     [Export] public float Gain { get; set; } = 0.5f;
 
+    private float _masterLevel = 1f;
+    private float _musicLevel = 1f;
+    private float _effectsLevel = 1f;
+
+    /// <summary>
+    /// The settings' volume sliders, each from 0 to 1. Squared on the way in: hearing is roughly
+    /// logarithmic, so a straight multiplier put nearly all the change in the bottom of the slider and
+    /// half-way sounded barely quieter than full.
+    /// </summary>
+    public void SetVolumes(float master, float music, float effects)
+    {
+        _masterLevel = master * master;
+        _musicLevel = music * music;
+        _effectsLevel = effects * effects;
+    }
+
     public override void _Ready()
     {
         Stream = new AudioStreamGenerator { MixRate = MixRate, BufferLength = 0.1f };
@@ -135,13 +151,14 @@ public partial class EngineAudio : AudioStreamPlayer
         // The engine and wind duck under the unstoppable theme, which otherwise has to fight the
         // loudest the engine ever gets - unstoppable is usually picked up flying flat out.
         float music = _music.Next();
-        float mix = (engine + wind) * (1f - 0.6f * _music.RamLevel) + music;
+        float effects = (engine + wind) * (1f - 0.6f * _music.RamLevel);
         for (int i = _voices.Count - 1; i >= 0; i--)
         {
-            mix += _voices[i].Next(_rng);
+            effects += _voices[i].Next(_rng);
             if (_voices[i].Done) _voices.RemoveAt(i);
         }
-        return Math.Clamp(mix * Gain, -1f, 1f);
+        float mix = music * _musicLevel + effects * _effectsLevel;
+        return Math.Clamp(mix * Gain * _masterLevel, -1f, 1f);
     }
 
     /// <summary>A short synthesized sound: a pitch sweep or a noise burst with a decaying envelope.</summary>
