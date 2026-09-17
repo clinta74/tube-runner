@@ -107,7 +107,6 @@ public partial class Main : Node3D
     private readonly List<(string Label, Action Pick)> _menu = new();
     private bool _menuOpen;
     private bool _menuConfirming;
-    private int _menuIndex;
     private string _menuTitle = "PAUSED";
 
     // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
@@ -164,6 +163,7 @@ public partial class Main : Node3D
             }
             if (arg == "--summary") _debugSummary = true;
             if (arg == "--no-update-check") _noUpdateCheck = true;
+            if (arg == "--menu") _debugMenu = true;
         }
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
@@ -180,6 +180,7 @@ public partial class Main : Node3D
         _updates.UpdateFound += OnUpdateFound;
         // Not on a test run: those exist to look at one level, and a notice over it is in the way.
         if (!_noUpdateCheck && !_practice && !_debugSummary) _updates.Start();
+        if (_debugMenu) OpenMenu();
     }
 
     // The start screen, with this build's version and, once the check has found one, the newer release.
@@ -206,6 +207,9 @@ public partial class Main : Node3D
     private UpdateChecker _updates = null!;
     private ReleaseInfo? _update;
     private bool _noUpdateCheck;
+
+    // Opens the Escape menu at launch, for looking at it without a keypress - which a recording can't make.
+    private bool _debugMenu;
 
     private const string StartScreen = """
         TUBE RUNNER
@@ -285,9 +289,9 @@ public partial class Main : Node3D
             else if (_menuOpen) CloseMenu();
             else OpenMenu();
         }
+        // The menu's own buttons take the mouse, keyboard and gamepad; the game just holds still under it.
         if (_menuOpen)
         {
-            UpdateMenu();
             DrawWorld(0f, steer: 0f);
             return;
         }
@@ -661,7 +665,6 @@ public partial class Main : Node3D
         }
         _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
 
-        _menuIndex = 0;
         _menuOpen = true;
         _shake = 0f;
         RefreshMenu();
@@ -675,36 +678,16 @@ public partial class Main : Node3D
         _menu.Clear();
         _menu.Add(("No, go back", OpenMenu));
         _menu.Add((yes, act));
-        _menuIndex = 0;
         RefreshMenu();
     }
 
-    private void RefreshMenu() => _hud.ShowMenu(_menuTitle, _menu.ConvertAll(o => o.Label), _menuIndex);
+    private void RefreshMenu() => _hud.Menu.Open(_menuTitle, _menu);
 
     private void CloseMenu()
     {
         _menuOpen = false;
         _menuConfirming = false;
-        _hud.HideMenu();
-    }
-
-    private void UpdateMenu()
-    {
-        int move = Input.IsActionJustPressed(InputSetup.ThrottleUp) ? -1
-            : Input.IsActionJustPressed(InputSetup.ThrottleDown) ? 1
-            : 0;
-        if (move != 0)
-        {
-            _menuIndex = (_menuIndex + move + _menu.Count) % _menu.Count;
-            RefreshMenu();
-        }
-
-        if (Input.IsActionJustPressed(InputSetup.Jump) || Input.IsActionJustPressed(InputSetup.Fire))
-        {
-            // Taken before the call: picking one can load a level and rebuild the menu underneath.
-            var pick = _menu[_menuIndex].Pick;
-            pick();
-        }
+        _hud.Menu.Close();
     }
 
     /// <summary>
