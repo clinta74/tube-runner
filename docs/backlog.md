@@ -308,7 +308,19 @@ Original notes:
   value for a fraction of the risk; start there.
 
 ### Settings menu, and menus that take the mouse
-*New item. Game + HUD. Settings file and defaults are testable; the menus are playtest.*
+*Shipped in v0.5.0.* The Escape menu is built from real controls (`GameMenu`): clickable, with the
+keyboard and gamepad moving the same highlight, and a pick never also jumping or firing. The Settings
+page has the update check, screen mode (windowed, fullscreen, borderless), VSync, and master, music and
+effects volume. Settings apply and save as they change, to `settings.json` beside the best times;
+`GameSettings` in Core is tested for defaults, older files, damaged files and out-of-range values.
+`tube play --menu` and `--settings` open straight onto them.
+
+Still open:
+- **Remember the window's size and position** between launches. Planned alongside screen mode, left out.
+- **Motion options** (shake, speed streaks, hit flash), still only if someone finds the effects too much.
+- **Key rebinding**, the item below.
+
+The plan as it was written:
 
 There is nowhere for a player to change anything: every option is a command-line flag, which nobody
 launching from the Start menu can use.
