@@ -14,6 +14,7 @@ namespace TubeRunner.Game;
 public partial class Main : Node3D
 {
     private const string BestTimesPath = "user://best_times.json";
+    private const string SettingsPath = "user://settings.json";
 
     [Export] public ShaderMaterial WallMaterial { get; set; } = null!;
     [Export(PropertyHint.File, "*.json")] public string LevelPath { get; set; } = "res://levels/level_01.json";
@@ -107,7 +108,6 @@ public partial class Main : Node3D
     private readonly List<(string Label, Action Pick)> _menu = new();
     private bool _menuOpen;
     private bool _menuConfirming;
-    private int _menuIndex;
     private string _menuTitle = "PAUSED";
 
     // Last frame's pose, to ease the ship across when a fork or merge moves it to another tube.
@@ -164,9 +164,13 @@ public partial class Main : Node3D
             }
             if (arg == "--summary") _debugSummary = true;
             if (arg == "--no-update-check") _noUpdateCheck = true;
+            if (arg == "--menu") _debugMenu = true;
+            if (arg == "--settings") _debugSettings = true;
         }
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
+        _settings = GameSettings.FromJson(FileAccess.FileExists(SettingsPath) ? FileAccess.GetFileAsString(SettingsPath) : null);
+        ApplySettings();
         _runStart = LevelPath;
         LoadLevel(LevelPath, carry: null, startS: _startS);
 
@@ -179,7 +183,22 @@ public partial class Main : Node3D
         AddChild(_updates);
         _updates.UpdateFound += OnUpdateFound;
         // Not on a test run: those exist to look at one level, and a notice over it is in the way.
-        if (!_noUpdateCheck && !_practice && !_debugSummary) _updates.Start();
+        StartUpdateCheck();
+        if (_debugMenu) OpenMenu();
+        if (_debugSettings)
+        {
+            OpenMenu();
+            OpenSettings();
+        }
+    }
+
+    // Once per launch, and not from a test run or with the setting off. Turning the setting on later in
+    // the same session runs it then.
+    private void StartUpdateCheck()
+    {
+        if (_updateCheckStarted || _noUpdateCheck || _practice || _debugSummary || !_settings.CheckForUpdates) return;
+        _updateCheckStarted = true;
+        _updates.Start();
     }
 
     // The start screen, with this build's version and, once the check has found one, the newer release.
@@ -206,6 +225,15 @@ public partial class Main : Node3D
     private UpdateChecker _updates = null!;
     private ReleaseInfo? _update;
     private bool _noUpdateCheck;
+
+    // Opens the Escape menu at launch, for looking at it without a keypress - which a recording can't make.
+    private bool _debugMenu;
+
+    // Opens straight onto the settings page, likewise.
+    private bool _debugSettings;
+
+    private GameSettings _settings = new();
+    private bool _updateCheckStarted;
 
     private const string StartScreen = """
         TUBE RUNNER
@@ -285,9 +313,9 @@ public partial class Main : Node3D
             else if (_menuOpen) CloseMenu();
             else OpenMenu();
         }
+        // The menu's own buttons take the mouse, keyboard and gamepad; the game just holds still under it.
         if (_menuOpen)
         {
-            UpdateMenu();
             DrawWorld(0f, steer: 0f);
             return;
         }
@@ -649,6 +677,7 @@ public partial class Main : Node3D
             CloseMenu();
             RestartRun();
         })));
+        _menu.Add(("Settings", OpenSettings));
         if (_update is not null)
         {
             var release = _update;
@@ -661,7 +690,6 @@ public partial class Main : Node3D
         }
         _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
 
-        _menuIndex = 0;
         _menuOpen = true;
         _shake = 0f;
         RefreshMenu();
@@ -675,36 +703,54 @@ public partial class Main : Node3D
         _menu.Clear();
         _menu.Add(("No, go back", OpenMenu));
         _menu.Add((yes, act));
-        _menuIndex = 0;
         RefreshMenu();
     }
 
-    private void RefreshMenu() => _hud.ShowMenu(_menuTitle, _menu.ConvertAll(o => o.Label), _menuIndex);
+    private void RefreshMenu() => _hud.Menu.Open(_menuTitle, _menu);
 
     private void CloseMenu()
     {
         _menuOpen = false;
         _menuConfirming = false;
-        _hud.HideMenu();
+        _hud.Menu.Close();
     }
 
-    private void UpdateMenu()
+    // Escape backs out of the settings to the menu, the same as out of a question.
+    private void OpenSettings()
     {
-        int move = Input.IsActionJustPressed(InputSetup.ThrottleUp) ? -1
-            : Input.IsActionJustPressed(InputSetup.ThrottleDown) ? 1
-            : 0;
-        if (move != 0)
+        _menuConfirming = true;
+        _hud.Menu.OpenSettings(_settings, changed =>
         {
-            _menuIndex = (_menuIndex + move + _menu.Count) % _menu.Count;
-            RefreshMenu();
-        }
+            _settings = changed;
+            ApplySettings();
+            SaveSettings();
+            StartUpdateCheck();
+        }, OpenMenu);
+    }
 
-        if (Input.IsActionJustPressed(InputSetup.Jump) || Input.IsActionJustPressed(InputSetup.Fire))
+    private void ApplySettings()
+    {
+        var mode = _settings.ScreenMode switch
         {
-            // Taken before the call: picking one can load a level and rebuild the menu underneath.
-            var pick = _menu[_menuIndex].Pick;
-            pick();
+            ScreenMode.Fullscreen => DisplayServer.WindowMode.ExclusiveFullscreen,
+            // Godot's plain "fullscreen" is the borderless window covering the screen.
+            ScreenMode.Borderless => DisplayServer.WindowMode.Fullscreen,
+            _ => DisplayServer.WindowMode.Windowed,
+        };
+        if (DisplayServer.WindowGetMode() != mode) DisplayServer.WindowSetMode(mode);
+        DisplayServer.WindowSetVsyncMode(_settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+        _audio.SetVolumes(_settings.MasterVolume, _settings.MusicVolume, _settings.EffectsVolume);
+    }
+
+    private void SaveSettings()
+    {
+        using var file = FileAccess.Open(SettingsPath, FileAccess.ModeFlags.Write);
+        if (file is null)
+        {
+            GD.PushError($"Couldn't save settings: {FileAccess.GetOpenError()}");
+            return;
         }
+        file.StoreString(_settings.ToJson());
     }
 
     /// <summary>

@@ -28,8 +28,6 @@ public partial class Hud : CanvasLayer
     private Label _message = null!;
     private ColorRect _flash = null!;
     private ColorRect _messageBack = null!;
-    private ColorRect _menuBack = null!;
-    private Label _menu = null!;
     private Control _jumpCue = null!;
     private Label _jumpLabel = null!;
     private Polygon2D _jumpUp = null!;
@@ -70,12 +68,6 @@ public partial class Hud : CanvasLayer
         // Small enough that an end-of-run list of splits fits.
         _message = AddLabel(34, Control.LayoutPreset.Center, HorizontalAlignment.Center);
 
-        // The menu sits above the message, with its own panel, so opening it does not disturb a run
-        // summary underneath - closing it puts the results back exactly as they were.
-        _menuBack = new ColorRect { Color = new Color(0f, 0f, 0f, 0.86f), MouseFilter = Control.MouseFilterEnum.Ignore };
-        AddChild(_menuBack);
-        _menu = AddLabel(40, Control.LayoutPreset.Center, HorizontalAlignment.Center);
-
         BuildThrustBar();
         BuildJumpCue();
 
@@ -84,12 +76,21 @@ public partial class Hud : CanvasLayer
         AddChild(_shieldBar);
         _shieldBar.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft, Control.LayoutPresetMode.KeepSize, Margin);
         _shieldBar.GrowVertical = Control.GrowDirection.Begin;
+
+        // Added last so it draws over everything, including a run summary - which it leaves alone, so
+        // closing the menu puts the results back exactly as they were.
+        Menu = new GameMenu();
+        AddChild(Menu);
     }
+
+    /// <summary>The Escape menu. Main decides what it offers; this only shows it.</summary>
+    public GameMenu Menu { get; private set; } = null!;
 
     /// <param name="best">The player's best time on this level, if they've finished it before.</param>
     public void Init(string levelName, int shields, int extras, Color accent, float? best)
     {
         _accent = accent;
+        Menu.SetAccent(accent);
         _best = best;
         _frozenScore = null;
         // A level starting clears whatever screen was up: the retry prompt, or the run summary.
@@ -304,13 +305,6 @@ public partial class Hud : CanvasLayer
             _messageBack.GlobalPosition = rect.Position - new Vector2(30f, 20f);
             _messageBack.Size = rect.Size + new Vector2(60f, 40f);
         }
-        _menuBack.Visible = _menu.Text.Length > 0;
-        if (_menuBack.Visible)
-        {
-            var rect = _menu.GetGlobalRect();
-            _menuBack.GlobalPosition = rect.Position - new Vector2(48f, 32f);
-            _menuBack.Size = rect.Size + new Vector2(96f, 64f);
-        }
 
         // A finished run holds its numbers. The victory lap is a fresh session flying a fresh track,
         // so left alone the score would climb on distance the player never earned and the clock
@@ -371,23 +365,6 @@ public partial class Hud : CanvasLayer
 
     /// <summary>Whether a scrollable summary is up, so the caller knows to feed it scroll input.</summary>
     public bool HasSummary => _summaryRows.Count > 0;
-
-    /// <summary>Shows the menu under <paramref name="title"/>, with <paramref name="selected"/> marked.</summary>
-    public void ShowMenu(string title, IReadOnlyList<string> options, int selected)
-    {
-        var lines = new List<string> { title, "" };
-        for (int i = 0; i < options.Count; i++)
-        {
-            // Marked on both sides, because a marker only on the left shifts the text and the whole
-            // list jitters sideways as the selection moves.
-            lines.Add(i == selected ? $">   {options[i]}   <" : $"    {options[i]}    ");
-        }
-        lines.Add("");
-        lines.Add("Up / down to choose     Space to pick     Esc to go back");
-        _menu.Text = string.Join("\n", lines);
-    }
-
-    public void HideMenu() => _menu.Text = "";
 
     /// <summary>
     /// Shows a run's results: a headline, a window onto <paramref name="rows"/> that can be

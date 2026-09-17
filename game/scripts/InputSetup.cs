@@ -36,6 +36,21 @@ public static class InputSetup
         // is of the game rather than of a menu over it. Escape is the player-facing one.
         Add(Pause, KeyEvent(Key.P), Button(JoyButton.Back));
         Add(Menu, KeyEvent(Key.Escape), Button(JoyButton.Start));
+
+        // Menus move their highlight with Godot's built-in ui_up and ui_down, which only know the arrow
+        // keys and the d-pad. Add the keys and stick that already set the ship's speed, so the menu
+        // answers to the same hands as the game.
+        AddTo("ui_up", KeyEvent(Key.W), Stick(JoyAxis.LeftY, -1f));
+        AddTo("ui_down", KeyEvent(Key.S), Stick(JoyAxis.LeftY, 1f));
+        // Likewise left and right, which move a slider once it has focus.
+        AddTo("ui_left", KeyEvent(Key.A), Stick(JoyAxis.LeftX, -1f));
+        AddTo("ui_right", KeyEvent(Key.D), Stick(JoyAxis.LeftX, 1f));
+    }
+
+    private static void AddTo(string action, params InputEvent[] events)
+    {
+        if (!InputMap.HasAction(action)) return;
+        foreach (var e in events) InputMap.ActionAddEvent(action, e);
     }
 
     private static void Add(string action, params InputEvent[] events)

@@ -16,6 +16,8 @@ internal static class Commands
                         --record             record to recordings/ as an AVI
                         --record-fps <n>     frame rate to record at (default 60)
                         --summary            open straight onto the end-of-run results screen
+                        --menu               open straight onto the Escape menu
+                        --settings           open straight onto the settings page
 
           export      Export the standalone Windows build to builds/windows, and zip it.
                         --version <x.y.z>    stamp the version, so the game checks for newer releases
@@ -41,7 +43,7 @@ internal static class Commands
         switch (args[0])
         {
             case "play":
-                Play(Options.Parse(options, flags: ["editor", "record", "summary"], values: ["level", "start", "record-fps"]));
+                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings"], values: ["level", "start", "record-fps"]));
                 break;
             case "export":
                 Export(Options.Parse(options, flags: ["debug"], values: ["version"]));
@@ -89,6 +91,8 @@ internal static class Commands
         if (level is not null) game.Add($"--level=res://levels/{level}");
         if (options.Number("start") is double start) game.Add("--start=" + start.ToString(CultureInfo.InvariantCulture));
         if (options.Flag("summary")) game.Add("--summary");
+        if (options.Flag("menu")) game.Add("--menu");
+        if (options.Flag("settings")) game.Add("--settings");
         if (game.Count > 0) engine.AddRange(["--", .. game]);
 
         Proc.Run(godot, engine, wait: false);
