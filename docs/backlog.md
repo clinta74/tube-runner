@@ -307,20 +307,49 @@ Original notes:
 - Downloading and running the new installer in place is the bigger step. Notifying is most of the
   value for a fraction of the risk; start there.
 
-### Settings menu
-*New item. Game + HUD. Mostly playtest; the stored settings file is testable.*
+### Settings menu, and menus that take the mouse
+*New item. Game + HUD. Settings file and defaults are testable; the menus are playtest.*
 
 There is nowhere for a player to change anything: every option is a command-line flag, which nobody
-launching from the Start menu can use. Notes for eval:
-- **Update check on/off** is the first one it needs, and the reason for the item: the check contacts
-  GitHub at every launch, and a player should be able to stop that without editing a shortcut.
-- Others that have already come up and would sit here: music and effects volume (the engine, the
-  Unstoppable theme and the cues were all balanced by ear in one room), and perhaps the run summary's
-  practice runs.
-- Lives in the Escape menu as a "Settings" page, reusing its up/down/select handling rather than a new
-  UI. Saved beside `best_times.json` in `user://`, loaded at start, with defaults for anything missing
-  so an old file never stops the game loading.
-- Keep it small. A setting nobody asked for is one more thing to test at every release.
+launching from the Start menu can use.
+
+**The settings:**
+
+| Setting | Why |
+|---|---|
+| Check for updates, on/off | The reason for the item: the check contacts GitHub at every launch. |
+| Display mode: windowed, fullscreen, borderless | Expected everywhere; one Godot call. Remember the window's size and position too. |
+| Volume: master, music, effects | The engine, music and Unstoppable theme were balanced by ear on one machine. The mix is already built from separate layers in `EngineAudio`/`MusicSynth`, so each slider is a multiplier. |
+| VSync, on/off | Sits naturally beside display mode. |
+
+Not now: graphics quality (nothing heavy to scale yet) and motion options - shake, speed streaks,
+hit flash - until someone finds the effects too much.
+
+**Menus that take the mouse.** The Escape menu is one text label with `>` markers, so there is nothing
+to click, and sliders and toggles are miserable on keys alone. Rebuild it from real controls - buttons,
+checkboxes, an option picker, sliders - which Godot already makes work with the mouse, keyboard and
+gamepad through focus. Rebuild rather than bolt mouse hit-testing onto the label. The confirms ("Quit
+the game?") move over too.
+
+**Order:**
+1. The Escape menu as real controls, keyboard and gamepad still working.
+2. A Settings page in it with the four settings above. Saved beside `best_times.json` in `user://`,
+   loaded at start, with defaults for anything missing so an old or damaged file never stops the game.
+   Settings take effect as they change, not on a separate apply.
+3. Key rebinding, below, as its own item.
+
+Keep it small. A setting nobody asked for is one more thing to test at every release.
+
+### Key rebinding
+*New item. Game + HUD. Follows the settings menu. The saved bindings are testable; the capture screen is playtest.*
+
+Wanted, but larger than every other setting together, so it waits for the menu to exist. Notes:
+- Actions are already registered in one place, `InputSetup`, so a saved binding just replaces what it
+  registers at start.
+- Needs a "press a key" capture, conflict handling when two actions share a key, keyboard and gamepad
+  columns, and reset to defaults.
+- The start screen lists the controls as fixed text. With rebinding it has to read the live bindings, or
+  it will tell players the wrong keys.
 
 ## Standing constraints
 
