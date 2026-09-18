@@ -82,7 +82,10 @@ from each:
 
 - **The outer wall is the floor and the core is the ceiling**, hanging overhead. Their surfaces face
   each other exactly as a flat section's floor and ceiling do, so **the jump works here** and is the
-  only way between them. `JUMP` lights up for the whole of a ring.
+  only way between them. `JUMP` lights up for the whole of a ring, and that HUD cue is the only
+  signal: the lines that mark a window's edges on a flat floor are left off in a ring, because a
+  mark that follows the wall right round a wide bore reads as a gate to fly through rather than as
+  a note about where jumping starts.
 - **Each wall goes all the way round on its own.** Steering past the far side of the outer wall
   comes back round the outer wall; nothing carries onto the core the way the halves of a tube carry
   into each other.

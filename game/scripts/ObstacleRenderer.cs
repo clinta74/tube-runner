@@ -170,15 +170,15 @@ public partial class ObstacleRenderer : Node3D
         {
             foreach (var (at, opens) in new[] { (window.From, true), (window.To, false) })
             {
+                // A ring is left unmarked. A mark is a line laid across a surface, which is a line on
+                // a flat section and a band right round the wall in a ring - and a band across a wide
+                // bore reads as a gate to fly through rather than as a note about where jumping
+                // starts. The HUD's own cue says the same thing without standing in the tube.
+                if (_shapes.Get(session.Track.SectionAt(at)).IsAnnulus) continue;
+
                 // Both surfaces: the ship can be riding either one when the window opens or shuts.
-                // Except at the edge of a ring, where the surface overhead is the core and the core
-                // is the thing that has just started or stopped existing - a mark on it there would
-                // be drawn on a cylinder of no size, which is to say across the middle of the bore.
                 _jumpMarks.Add((at, opens, Surface.Floor));
-                if (!_shapes.Get(session.Track.SectionAt(at)).IsAnnulus)
-                {
-                    _jumpMarks.Add((at, opens, Surface.Ceiling));
-                }
+                _jumpMarks.Add((at, opens, Surface.Ceiling));
             }
         }
         _createPickup = CreatePickupView;
@@ -611,53 +611,6 @@ public partial class ObstacleRenderer : Node3D
         return new View(pad, center, forward, up, Spins: true, material);
     }
 
-    /// <summary>
-    /// The same mark, taken all the way round a ring's wall: a band standing just off the surface,
-    /// following whatever shape that wall is. Drawn from the centreline like an aperture's blades,
-    /// since it is a thing that goes around the section rather than a thing standing on one spot.
-    /// </summary>
-    private View CreateRingMarkView(
-        (double S, bool Opens, Surface Surface) mark, ProfileShape shape, StandardMaterial3D material)
-    {
-        const int segments = 72;
-        const float stand = 0.25f;
-        const float half = 2f;
-
-        float around = shape.PerimeterOf(mark.Surface);
-        var inner = new Vector3[segments + 1];
-        var outer = new Vector3[segments + 1];
-        for (int i = 0; i <= segments; i++)
-        {
-            var (surface, x) = shape.Wrap(mark.Surface, around * i / segments);
-            var point = shape.PointAt(surface, x);
-            var normal = shape.NormalAt(surface, x);
-            inner[i] = new Vector3(point.X, point.Y, 0f);
-            outer[i] = new Vector3(point.X + normal.X * stand, point.Y + normal.Y * stand, 0f);
-        }
-
-        var front = new Vector3(0f, 0f, -half);
-        var back = new Vector3(0f, 0f, half);
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-        void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
-        {
-            st.AddVertex(a); st.AddVertex(b); st.AddVertex(c);
-            st.AddVertex(a); st.AddVertex(c); st.AddVertex(d);
-        }
-        for (int i = 0; i < segments; i++)
-        {
-            Quad(outer[i] + front, outer[i + 1] + front, outer[i + 1] + back, outer[i] + back);
-            Quad(inner[i] + front, outer[i] + front, outer[i + 1] + front, inner[i + 1] + front);
-            Quad(inner[i] + back, outer[i] + back, outer[i + 1] + back, inner[i + 1] + back);
-        }
-        st.GenerateNormals();
-
-        var frame = _session.Track.FrameAt(mark.S);
-        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
-        AddChild(node);
-        return new View(node, frame.Position, frame.Forward.ToGodot(), frame.Up.ToGodot(), Spins: false, material);
-    }
-
     // A wireframe picture of a well, for the warning signs: rings down to a throat, plus meridians.
     private static Mesh BuildWellIcon()
     {
@@ -907,18 +860,11 @@ public partial class ObstacleRenderer : Node3D
     // a marking rather than as something to dodge.
     private View CreateJumpMarkView((double S, bool Opens, Surface Surface) mark)
     {
-        var material = mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial;
-        // A ring's wall closes on itself, so the mark closes with it. A straight bar laid across a
-        // curved wall is the one thing this must not be: on a flat section it is a line on the
-        // floor, and on anything that bends it is a stick through the tube.
-        var shape = _shapes.Get(_session.Track.SectionAt(mark.S));
-        if (shape.IsAnnulus) return CreateRingMarkView(mark, shape, material);
-
         var (center, forward, up) = Pose(mark.S, -1, mark.Surface, 0f, 0.07f);
         var node = new MeshInstance3D
         {
             Mesh = new BoxMesh { Size = new Vector3(96f, 0.2f, 4f) },
-            MaterialOverride = material,
+            MaterialOverride = mark.Opens ? _jumpOpenMaterial : _jumpCloseMaterial,
         };
         AddChild(node);
         return new View(node, center, forward, up, Spins: false,
