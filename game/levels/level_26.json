@@ -89,7 +89,9 @@
     ] },
 
     // A fork with a ring in the quick mouth and nothing in the slow one: the tight road can be taken
-    // only by whoever shot for it, and the long road is there for whoever did not.
+    // only by whoever shot for it, and the long road is there for whoever did not. The ring is in
+    // the fork wall rather than down the branch, so it is read while the key is still in front of
+    // the player - a ring further in is only met once the road has been committed to.
     { "length": 180, "section": "chamber", "obstacles": [           // 2720 - 2900
       { "at": 70, "kind": "target", "angle": 90, "group": "sf" }
     ] },
@@ -101,7 +103,7 @@
         ]
       },
       "apertures": [
-        { "at": 70, "branch": 1, "blades": 6, "keys": ["sf"] }
+        { "at": 20, "branch": 1, "blades": 6, "keys": ["sf"] }
       ],
       "obstacles": [
         { "at": 200, "branch": 0, "angle": 0, "count": 2, "spacing": 110, "angleStep": 120, "width": 7 },
