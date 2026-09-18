@@ -4,8 +4,8 @@ namespace TubeRunner.Core;
 public readonly record struct JumpWindow(double From, double To);
 
 /// <summary>
-/// Finds where on a track jumping becomes possible and where it stops. A jump needs a fully
-/// unrolled section, and a track eases into and out of one over a whole piece, so the boundary is
+/// Finds where on a track jumping becomes possible and where it stops. A jump needs somewhere to
+/// jump to: a fully unrolled section, or a ring, where the core overhead is the other surface, and a track eases into and out of one over a whole piece, so the boundary is
 /// somewhere in the middle of a blend rather than at a piece edge. The renderer marks these on the
 /// wall so the player can see the window coming instead of testing the button against it.
 /// </summary>
@@ -15,10 +15,13 @@ public static class JumpWindows
     private const double Step = 2.0;
     private const int Refinements = 14;
 
+    /// <summary>Whether a section has a surface overhead to cross to.</summary>
+    public static bool Jumpable(ProfileShape shape) => shape.Unroll >= 1f || shape.IsAnnulus;
+
     public static List<JumpWindow> Find(Track track)
     {
         var shapes = new ProfileShapeCache();
-        bool Open(double s) => shapes.Get(track.SectionAt(s)).Unroll >= 1f;
+        bool Open(double s) => Jumpable(shapes.Get(track.SectionAt(s)));
 
         var windows = new List<JumpWindow>();
         bool was = Open(0);

@@ -210,7 +210,7 @@ public partial class TrackRenderer : Node3D
                 // Use the split directly so the branch's last ring, at the merge, stays on the branch.
                 var frame = split is null ? _track.FrameAt(s) : split.BranchFrame(_track, s, branch);
                 var shape = _shapes.Get(split is null ? _track.SectionAt(s) : split.Section(branch));
-                FillStrip(shape);
+                FillStrip(shape, surface);
                 foreach (float x in _xs)
                 {
                     // The wall itself is drawn down into any well here, so the tube extrudes into it
@@ -225,14 +225,14 @@ public partial class TrackRenderer : Node3D
                         well = WellDepth(s, loop, branch, out float sink);
                         if (well > 0f) p -= shape.NormalAt(surface, x) * sink;
                     }
-                    st.SetUV(new Vector2(0.75f + loop / shape.Perimeter, (float)(s - s0)));
+                    st.SetUV(new Vector2(0.75f + loop / shape.PerimeterOf(surface), (float)(s - s0)));
                     st.SetUV2(new Vector2(well, 0f));
                     st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
                 }
             }
             // Cut against the section in the middle of the span; it barely changes across a chunk.
             var midShape = _shapes.Get(split is null ? _track.SectionAt((from + to) * 0.5) : split.Section(branch));
-            FillStrip(midShape);
+            FillStrip(midShape, surface);
             AddGridIndices(st, start, rings, StripVertices, from, to, surface, branch, midShape);
             start += (rings + 1) * StripVertices;
         }
@@ -338,8 +338,20 @@ public partial class TrackRenderer : Node3D
     }
 
     // Surface X positions across one strip: left wing, the surface itself, right wing.
-    private void FillStrip(ProfileShape shape)
+    private void FillStrip(ProfileShape shape, Surface surface)
     {
+        // A wall of a ring closes on itself rather than meeting the other one, so its strip is the
+        // whole way round it and has no wings: the same vertices, spread over four times the arc.
+        if (shape.IsAnnulus)
+        {
+            float half = shape.PerimeterOf(surface) * 0.5f;
+            for (int i = 0; i < StripVertices; i++)
+            {
+                _xs[i] = -half + 2f * half * i / (StripVertices - 1);
+            }
+            return;
+        }
+
         float q = shape.Quarter, w = shape.WingLength;
         int n = WingSteps.Length;
         for (int i = 0; i < n; i++)

@@ -8,6 +8,12 @@ namespace TubeRunner.Core;
 /// from its center, positive toward the track's right. In a closed tube the surfaces meet at the
 /// side midpoints (X = ±<see cref="Quarter"/>), so moving past one continues onto the other. In an
 /// open section they unroll flat, separate, and extend sideways by <see cref="WingLength"/>.
+///
+/// A section with a <see cref="CrossSection.Core"/> is a third arrangement: the floor is the whole
+/// of the outer wall and the ceiling the whole of the core, each closing on itself, and the two
+/// never meet. X therefore runs right around whichever wall the ship is on and wraps there rather
+/// than carrying onto the other, and the walls are joined only by a jump. The core is the outer
+/// curve scaled down, so it shares the outer curve's samples and differs only in scale.
 /// </summary>
 public sealed class ProfileShape
 {
@@ -51,6 +57,34 @@ public sealed class ProfileShape
         Unroll = section.Unroll;
         Spread = section.Spread;
         WingLength = MaxWingLength * Spread * Spread * Spread;
+        Core = section.Core;
+        IsAnnulus = section.IsAnnulus;
+    }
+
+    /// <summary>The core's size as a fraction of the outer wall, or 0 for a hollow tube.</summary>
+    public float Core { get; }
+
+    /// <inheritdoc cref="CrossSection.IsAnnulus"/>
+    public bool IsAnnulus { get; }
+
+    /// <summary>
+    /// Length once around <paramref name="surface"/>. The same as <see cref="Perimeter"/> except on
+    /// the core of a ring, which is smaller - and that difference is why a position has to be
+    /// converted with <see cref="Across"/> to mean the same place on the other wall.
+    /// </summary>
+    public float PerimeterOf(Surface surface) =>
+        IsAnnulus && surface == Surface.Ceiling ? Perimeter * Core : Perimeter;
+
+    /// <summary>
+    /// The same place around the section, expressed on the other surface: what X becomes when the
+    /// ship jumps from <paramref name="from"/> to the wall opposite. Unchanged unless the two walls
+    /// are different sizes, which only a ring's are.
+    /// </summary>
+    public float Across(Surface from, float x)
+    {
+        if (!IsAnnulus) return x;
+        var to = from == Surface.Floor ? Surface.Ceiling : Surface.Floor;
+        return x * PerimeterOf(to) / PerimeterOf(from);
     }
 
     public CrossSection Section { get; }
@@ -79,7 +113,8 @@ public sealed class ProfileShape
     /// Distance around the closed curve, counter-clockwise from the floor center. Continuous across
     /// the side edges; used for texturing and for distances in closed tubes.
     /// </summary>
-    public float Loop(Surface surface, float x) => surface == Surface.Floor ? x : 2f * Quarter - x;
+    public float Loop(Surface surface, float x) =>
+        IsAnnulus ? x : surface == Surface.Floor ? x : 2f * Quarter - x;
 
     /// <summary>
     /// In a closed tube, carries an X past a side edge onto the other surface. Open sections are
@@ -88,6 +123,15 @@ public sealed class ProfileShape
     public (Surface Surface, float X) Wrap(Surface surface, float x)
     {
         if (!IsClosed) return (surface, x);
+
+        // Each wall of a ring closes on itself, so going past the far side of one comes back round
+        // the same wall. Nothing carries across; that is what the jump is for.
+        if (IsAnnulus)
+        {
+            float around = PerimeterOf(surface);
+            float half = around * 0.5f;
+            return (surface, x - around * MathF.Floor((x + half) / around));
+        }
 
         float q = Quarter;
         float loop = Loop(surface, x);
@@ -98,6 +142,14 @@ public sealed class ProfileShape
     public Vector2 PointAt(Surface surface, float x)
     {
         (surface, x) = Wrap(surface, x);
+        if (IsAnnulus)
+        {
+            // Both walls are measured from the bottom and run the same way round, so the ship keeps
+            // its sense of right through a jump. The core is the outer curve scaled down.
+            float scale = surface == Surface.Floor ? 1f : Core;
+            return CurvePoint(0.75f + x / PerimeterOf(surface)) * scale;
+        }
+
         float q = Quarter;
         float edge = Math.Clamp(x, -q, q);
         bool floor = surface == Surface.Floor;
@@ -113,8 +165,11 @@ public sealed class ProfileShape
     public Vector2 NormalAt(Surface surface, float x)
     {
         var t = PointAt(surface, x + TangentStep) - PointAt(surface, x - TangentStep);
-        // +X runs rightward on both surfaces; "into the tube" is up from the floor, down from the ceiling.
-        var n = surface == Surface.Floor ? new Vector2(-t.Y, t.X) : new Vector2(t.Y, -t.X);
+        // +X runs rightward on both surfaces; "into the tube" is up from the floor, down from the
+        // ceiling. A ring's walls run the same way round rather than mirroring, so its core takes
+        // the same turn as the outer wall and is flipped afterwards to face back across the gap.
+        var n = surface == Surface.Floor || IsAnnulus ? new Vector2(-t.Y, t.X) : new Vector2(t.Y, -t.X);
+        if (IsAnnulus && surface == Surface.Ceiling) n = -n;
         return Vector2.Normalize(n);
     }
 

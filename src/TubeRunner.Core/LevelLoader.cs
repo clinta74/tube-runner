@@ -298,6 +298,11 @@ public static class LevelLoader
             {
                 throw new LevelFormatException($"{where}: an aperture needs a closed tube to ring; flat sections have no way round.");
             }
+            // Blades reach from the wall to the middle of the section, which is where a core sits.
+            if (shape.IsAnnulus)
+            {
+                throw new LevelFormatException($"{where}: an aperture cannot be built in a ring; its blades close on the middle, which the core is already in.");
+            }
 
             float step = shape.Perimeter / a.Blades;
             for (int b = a.Open; b < a.Blades; b++)
@@ -377,6 +382,12 @@ public static class LevelLoader
 
             foreach (var (s, branch, surface, x) in Place(w, track, offset, where))
             {
+                // A well is sunk into the wall by the renderer against one closed profile, and its
+                // width is a share of that profile - neither of which means anything on a core.
+                if (track.SectionAt(s, branch).IsAnnulus)
+                {
+                    throw new LevelFormatException($"{where}: a warp well cannot be sunk into a ring's wall.");
+                }
                 // Defaults come from the Warp itself rather than being written out again here. They
                 // were duplicated once, and the copy in this file quietly won: every well in the
                 // game was a sixth of its intended size for as long as that went unnoticed.
@@ -458,7 +469,7 @@ public static class LevelLoader
                     throw new LevelFormatException($"{where}: 'angle' only works in closed tubes; use 'x' and 'surface' on flat sections.");
                 }
                 // Degrees around the tube from the floor center, positive to the right.
-                (onSurface, x) = shape.Wrap(Surface.Floor, (angle + n * p.AngleStep) / 360f * shape.Perimeter);
+                (onSurface, x) = shape.Wrap(surface, (angle + n * p.AngleStep) / 360f * shape.PerimeterOf(surface));
             }
             yield return (s, branch, onSurface, x);
         }
@@ -476,7 +487,17 @@ public static class LevelLoader
         {
             throw new LevelFormatException($"Section '{name}': squareness and opening must be between 0 and 1.");
         }
-        return new CrossSection(halfWidth, halfHeight, s.Squareness, s.Opening);
+        // Under a fifth and the core is a thread with no room to ride; over three quarters and the
+        // ring left to fly in is thinner than the ship's own jump.
+        if (s.Core != 0f && s.Core is < 0.2f or > 0.75f)
+        {
+            throw new LevelFormatException($"Section '{name}': 'core' is the middle cylinder's share of the section and must be between 0.2 and 0.75, or 0 for none.");
+        }
+        if (s.Core > 0f && s.Opening > 0f)
+        {
+            throw new LevelFormatException($"Section '{name}': a section cannot have a 'core' and be open; there would be nothing for the core to sit inside.");
+        }
+        return new CrossSection(halfWidth, halfHeight, s.Squareness, s.Opening, s.Core);
     }
 
     private static Theme ToTheme(ThemeData? t)
@@ -555,6 +576,7 @@ public static class LevelLoader
         public float HalfHeight { get; set; }
         public float Squareness { get; set; }
         public float Opening { get; set; }
+        public float Core { get; set; }
     }
 
     private sealed class PieceData

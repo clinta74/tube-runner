@@ -107,6 +107,12 @@ public sealed class Track
         {
             throw new ArgumentException("Splits need closed tubes, not flat planes.");
         }
+        // A fork is a wall with an opening per branch, worked out against one wall closing round the
+        // middle. A core sits in that middle, so there is nothing sensible to cut the openings from.
+        if (chamber.IsAnnulus || branchSection.IsAnnulus)
+        {
+            throw new ArgumentException("Splits cannot be built in a ring; the core is in the way of the fork.");
+        }
         if (branches.Count < 2 || branches.Count > MaxBranches)
         {
             throw new ArgumentException($"A split needs 2 to {MaxBranches} branches.");

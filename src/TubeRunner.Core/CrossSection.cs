@@ -13,7 +13,15 @@ namespace TubeRunner.Core;
 /// 0 = closed tube. From 0 to 0.5 the lower half unrolls into a flat floor and the upper half into
 /// a flat ceiling; from 0.5 to 1 they spread sideways toward the horizon. Open pieces must be straight.
 /// </param>
-public readonly record struct CrossSection(float HalfWidth, float HalfHeight, float Squareness = 0f, float Opening = 0f)
+/// <param name="Core">
+/// 0 = a hollow tube. Above 0 a second cylinder of that fraction of the section's size runs down
+/// the middle, and the ship flies in the ring between the two: the outer wall is its floor and the
+/// core is its ceiling, hanging overhead. Each wall goes all the way round on its own, and the only
+/// way between them is a jump - the same crossing flat sections use, which is why the two walls
+/// face each other exactly as a floor and a ceiling do.
+/// </param>
+public readonly record struct CrossSection(
+    float HalfWidth, float HalfHeight, float Squareness = 0f, float Opening = 0f, float Core = 0f)
 {
     public static CrossSection Circle(float radius) => new(radius, radius);
 
@@ -21,6 +29,9 @@ public readonly record struct CrossSection(float HalfWidth, float HalfHeight, fl
     public float Exponent => 2f * MathF.Pow(16f, Squareness);
 
     public bool IsClosed => Opening <= 0f;
+
+    /// <summary>Whether a cylinder runs down the middle, making the playable space a ring.</summary>
+    public bool IsAnnulus => Core > 0f && IsClosed;
 
     /// <summary>
     /// Whether a section-space point lies inside the closed shape. A positive tolerance counts points
@@ -42,5 +53,6 @@ public readonly record struct CrossSection(float HalfWidth, float HalfHeight, fl
         a.HalfWidth + (b.HalfWidth - a.HalfWidth) * t,
         a.HalfHeight + (b.HalfHeight - a.HalfHeight) * t,
         a.Squareness + (b.Squareness - a.Squareness) * t,
-        a.Opening + (b.Opening - a.Opening) * t);
+        a.Opening + (b.Opening - a.Opening) * t,
+        a.Core + (b.Core - a.Core) * t);
 }

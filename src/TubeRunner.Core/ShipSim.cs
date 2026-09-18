@@ -53,7 +53,7 @@ public sealed class ShipSim
     /// The HUD reads this rather than working it out again, so what it promises and what the ship
     /// will actually do cannot drift apart.
     /// </summary>
-    public bool CanJump => !IsJumping && Shape.Unroll >= 1f;
+    public bool CanJump => !IsJumping && JumpWindows.Jumpable(Shape);
 
     /// <summary>Progress through the current jump, from 0 to 1.</summary>
     public float JumpProgress { get; private set; }
@@ -102,14 +102,25 @@ public sealed class ShipSim
         double s = Position.S + ForwardSpeed * dt;
         // Carries the ship into a branch at a fork and back out at a merge.
         var moved = _track.MoveTo(Position, s);
+        var before = Shape;
         Shape = _shapes.Get(_track.SectionAt(s, moved.Branch));
         var surface = moved.Surface;
+
+        float landed = moved.X;
+        if (before.IsAnnulus != Shape.IsAnnulus && surface == Surface.Ceiling && !IsJumping)
+        {
+            (surface, landed) = CoreArrivedOrLeft(before, landed);
+        }
 
         if (IsJumping)
         {
             JumpProgress += dt / _settings.JumpDuration;
             if (JumpProgress >= 1f)
             {
+                // The walls of a ring are different sizes, so the same place around the section is a
+                // different X on each. Landing without converting would slide the ship sideways by
+                // however much the two differ.
+                landed = Shape.Across(surface, landed);
                 surface = Opposite(surface);
                 IsJumping = false;
                 JumpProgress = 0f;
@@ -119,7 +130,7 @@ public sealed class ShipSim
         // The ship's right is +X on the floor and -X on the ceiling, where it rides upside down.
         // Past the middle of a jump it has rolled over, so it steers as if on the destination.
         var facing = IsJumping && JumpProgress >= 0.5f ? Opposite(surface) : surface;
-        float x = moved.X + steer * _settings.SteerSpeed * dt * (facing == Surface.Floor ? 1f : -1f);
+        float x = landed + steer * _settings.SteerSpeed * dt * (facing == Surface.Floor ? 1f : -1f);
 
         // Through the funnel where flat planes close back into a tube, the ship stays on its
         // surface and is eased toward the center instead of sliding up the narrowing walls.
@@ -136,6 +147,22 @@ public sealed class ShipSim
 
         Position = new TrackPosition(s, surface, x, moved.Branch);
     }
+
+    /// <summary>
+    /// Moves a ship riding the ceiling onto the right surface when a core grows in or shrinks away
+    /// under it. A tube's ceiling is the upper half of its wall; a ring's is the core, which is a
+    /// different surface entirely, so the name means two different places either side of the change.
+    ///
+    /// Gaining a core is seamless: the upper half of the wall simply becomes part of the outer wall,
+    /// which is one surface all the way round, so the ship carries on from the same place under a
+    /// different name. Losing one is not, because the surface the ship was riding has gone - it is
+    /// put down on the wall at the same place around the section, and levels should bring the player
+    /// off the core before closing a ring rather than rely on that.
+    /// </summary>
+    private (Surface Surface, float X) CoreArrivedOrLeft(ProfileShape before, float x) =>
+        Shape.IsAnnulus
+            ? (Surface.Floor, Shape.Wrap(Surface.Floor, before.Loop(Surface.Ceiling, x)).X)
+            : (Surface.Floor, before.Across(Surface.Ceiling, x));
 
     /// <summary>
     /// Drops the ship at another point on the track, keeping where it sits on the surface. Warp
@@ -176,8 +203,9 @@ public sealed class ShipSim
         if (!IsJumping) return (point, up);
 
         var other = Opposite(Position.Surface);
-        var otherUp = Shape.NormalAt(other, Position.X);
-        var target = Shape.PointAt(other, Position.X) + otherUp * rideHeight;
+        float otherX = Shape.Across(Position.Surface, Position.X);
+        var otherUp = Shape.NormalAt(other, otherX);
+        var target = Shape.PointAt(other, otherX) + otherUp * rideHeight;
         float e = MathUtil.SmoothStep(JumpProgress);
         // Roll over during the jump so the ship lands upright on the other surface.
         return (Vector2.Lerp(point, target, e), MathUtil.Rotate(up, MathF.PI * e));
@@ -190,7 +218,10 @@ public sealed class ShipSim
     public float HeightAbove(Surface surface)
     {
         if (!IsJumping) return 0f;
-        float gap = Vector2.Distance(Shape.PointAt(Surface.Floor, Position.X), Shape.PointAt(Surface.Ceiling, Position.X));
+        var other = Opposite(Position.Surface);
+        float gap = Vector2.Distance(
+            Shape.PointAt(Position.Surface, Position.X),
+            Shape.PointAt(other, Shape.Across(Position.Surface, Position.X)));
         float e = MathUtil.SmoothStep(JumpProgress);
         return surface == Position.Surface ? e * gap : (1f - e) * gap;
     }
@@ -203,6 +234,10 @@ public sealed class ShipSim
     private float LateralLimit(bool rejoining)
     {
         const float funnelFloor = 0.6f;
+        // Mid-jump across a ring, X is clamped rather than wrapped, and a wall of a ring is twice
+        // the way round that half a tube is - clamping to a quarter would pin the ship to the side.
+        if (Shape.IsAnnulus) return Shape.PerimeterOf(Position.Surface) * 0.5f;
+
         float q = Shape.Quarter, max = _settings.MaxPlaneOffset;
         if (Shape.IsClosed) return rejoining ? Math.Min(max, funnelFloor * q) : q;
 

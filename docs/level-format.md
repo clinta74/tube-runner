@@ -38,6 +38,7 @@ A section is a cross-section shape. Every shape blends smoothly into every other
 | `halfWidth`, `halfHeight` | Semi-axes. Open planes sit at ±`halfHeight`. |
 | `squareness` | 0 = ellipse, 1 = rounded rectangle with flat floor and ceiling. |
 | `opening` | 0 = closed tube, 1 = open flat planes (see below). |
+| `core` | A cylinder down the middle, as a share of the section: 0.2 to 0.75, or 0 for none. See below. |
 
 ```json
 "sections": {
@@ -47,6 +48,49 @@ A section is a cross-section shape. Every shape blends smoothly into every other
   "flat": { "radius": 6, "opening": 1 }
 }
 ```
+
+### Rings: a cylinder down the middle
+
+A section with a `core` has a second cylinder running down the middle of it, and the ship flies in
+the ring between the two. `core` is that cylinder's size as a share of the section, from 0.2 to
+0.75; 0, the default, is an ordinary hollow tube.
+
+```json
+"sections": {
+  "mouth": { "radius": 16 },
+  "ring":  { "radius": 16, "core": 0.45 }
+}
+```
+
+It is a third arrangement alongside the hollow tube and the open planes, and it borrows one rule
+from each:
+
+- **The outer wall is the floor and the core is the ceiling**, hanging overhead. Their surfaces face
+  each other exactly as a flat section's floor and ceiling do, so **the jump works here** and is the
+  only way between them. `JUMP` lights up for the whole of a ring.
+- **Each wall goes all the way round on its own.** Steering past the far side of the outer wall
+  comes back round the outer wall; nothing carries onto the core the way the halves of a tube carry
+  into each other.
+- **The two walls are out of reach of each other.** A block on the core cannot be hit from the outer
+  wall whatever the gap measures, and the ring gun sweeps the wall the ship is on.
+
+Because the core is smaller, the same place around the section is a smaller distance on it: a
+quarter of the way round the outer wall is a quarter of the way round the core, but half as many
+units. A jump keeps the *place*, not the number, so the ship lands under where it left.
+
+**Make the bore wide.** A ring only reads as one when the wall is too big to see all of at once —
+radius 14 to 18 against the usual 6. Below about 10 it looks like a tube with something stuck in it.
+
+**The core blocks the view**, which is most of what it is for: what is on the far side of the ring is
+hidden until you come round to it, so a wide bore stops being an easy one.
+
+**Bring the player off the core before closing a ring.** A core that grows in is seamless — the
+upper half of the wall simply becomes part of the outer wall, which is one surface all the way round
+— but a core that shrinks away takes the surface the ship was riding with it, and the ship is put
+down on the outer wall in one frame. Give the last stretch of a ring a reason to be on the outside.
+
+**Not yet supported in a ring:** splits, apertures and warp wells. The first two assume a single
+wall closing around the middle, which is exactly what a core is in the way of.
 
 ### Flat sections
 

@@ -167,6 +167,7 @@ public partial class Main : Node3D
             if (arg == "--no-update-check") _noUpdateCheck = true;
             if (arg == "--menu") _debugMenu = true;
             if (arg.StartsWith("--shot=")) _shotPath = arg["--shot=".Length..];
+            if (arg == "--ceiling") _startCeiling = true;
             if (arg == "--settings") _debugSettings = true;
         }
 
@@ -239,6 +240,10 @@ public partial class Main : Node3D
     private string? _shotPath;
     private int _shotFrames = 45;
 
+    /// <summary>Start the run on the ceiling rather than the floor, for looking at the far surface
+    /// of a flat section or the core of a ring without anyone having to fly there and jump.</summary>
+    private bool _startCeiling;
+
     // Opens straight onto the settings page, likewise.
     private bool _debugSettings;
 
@@ -296,7 +301,7 @@ public partial class Main : Node3D
         var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
         // Start on the floor; by default far enough in that the camera has track behind it.
         _levelStart = startS ?? CameraBehind + 10.0;
-        var start = new TrackPosition(_levelStart, Surface.Floor, 0f);
+        var start = new TrackPosition(_levelStart, _startCeiling ? Surface.Ceiling : Surface.Floor, 0f);
         _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry, level.Warps,
             level.ThrustZones);
 
