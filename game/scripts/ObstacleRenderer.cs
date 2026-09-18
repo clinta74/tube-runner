@@ -168,14 +168,18 @@ public partial class ObstacleRenderer : Node3D
         _jumpMarks.Clear();
         foreach (var window in jumpWindows ?? Array.Empty<JumpWindow>())
         {
+            // A ring is left unmarked. A mark is a line laid across a surface, which is a line on a
+            // flat section and a band right round the wall in a ring - and a band across a wide bore
+            // reads as a gate to fly through rather than as a note about where jumping starts. The
+            // HUD's own cue says the same thing without standing in the tube.
+            //
+            // Judged from the middle of the window, not its edges: an edge is found by bisection and
+            // lands a hair outside the ring, on a section that is not one, which is how the marks
+            // came back after being taken out.
+            if (_shapes.Get(session.Track.SectionAt((window.From + window.To) * 0.5)).IsAnnulus) continue;
+
             foreach (var (at, opens) in new[] { (window.From, true), (window.To, false) })
             {
-                // A ring is left unmarked. A mark is a line laid across a surface, which is a line on
-                // a flat section and a band right round the wall in a ring - and a band across a wide
-                // bore reads as a gate to fly through rather than as a note about where jumping
-                // starts. The HUD's own cue says the same thing without standing in the tube.
-                if (_shapes.Get(session.Track.SectionAt(at)).IsAnnulus) continue;
-
                 // Both surfaces: the ship can be riding either one when the window opens or shuts.
                 _jumpMarks.Add((at, opens, Surface.Floor));
                 _jumpMarks.Add((at, opens, Surface.Ceiling));

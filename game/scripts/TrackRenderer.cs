@@ -31,10 +31,15 @@ public partial class TrackRenderer : Node3D
     // across facets far bigger than the cells on them.
     private static readonly int RingStripVertices = 2 * SurfaceSegments + 1;
 
-    private const int RingCapSegments = 48;
-
     // Fine enough that no piece is stepped over; a core's ends sit on piece boundaries.
     private const double CoreScanStep = 1.0;
+
+    // How far inside a span its end rings read their section from; see AddTube.
+    private const double SectionInset = 0.001;
+
+    // How far inside a core's last piece its closing cap is built, so the section it is built from
+    // is one that still has the core.
+    private const double CoreCapInset = 0.01;
     private static readonly Surface[] Surfaces = { Surface.Floor, Surface.Ceiling };
 
     private readonly Dictionary<long, Placed> _chunks = new();
@@ -45,9 +50,13 @@ public partial class TrackRenderer : Node3D
     private readonly ProfileShapeCache _shapes = new();
     private readonly float[] _xs = new float[Math.Max(StripVertices, RingStripVertices)];
 
-    // Where a core starts and where it stops, so each end can be closed with a flat cap. A core does
-    // not taper in: it is there or it is not, and an open pipe end would be a hole to see down.
-    private readonly List<double> _coreEnds = new();
+    // Where a core starts and where it stops. Spans are split here, the way they are split at forks,
+    // so a span is drawn either entirely as a ring or entirely as a tube: a strip that has to carry
+    // a core across rings that do not have one puts those rings on the centreline and stitches them
+    // to the first ring that does - a cone from the axis, which from the front is a disc across the
+    // bore. Each end also gets a flat cap, streamed like a fork wall and drawn in the same material,
+    // because an end face that wears the wall's own checker reads as more wall.
+    private readonly List<double> _coreBounds = new();
     private readonly List<WarpCut> _warpCuts = new();
     private Track _track = null!;
     private Material _material = null!;
@@ -98,15 +107,12 @@ public partial class TrackRenderer : Node3D
         // piece whose section carries it, so both ends fall on a piece boundary and each is closed
         // off with a flat cap. Found by walking rather than by reading the pieces, so a core that
         // spans several of them is one run with two ends rather than a cap at every join.
-        _coreEnds.Clear();
+        _coreBounds.Clear();
         bool had = track.SectionAt(0).IsAnnulus;
         for (double s = CoreScanStep; s <= track.Length; s += CoreScanStep)
         {
             bool has = track.SectionAt(s).IsAnnulus;
-            // The S recorded has to be one where the core is actually there: a cap is built from the
-            // core's own wall, and a section without one has no wall to build from. So the first
-            // step inside the run at its start, and the last step inside it at its end.
-            if (has != had) _coreEnds.Add(has ? s : s - CoreScanStep);
+            if (has != had) _coreBounds.Add(s);
             had = has;
         }
 
@@ -139,6 +145,15 @@ public partial class TrackRenderer : Node3D
                 _capSpecs.Add(new CapSpec(split.EndS, split, split.Length));
             }
             if (track.SectionAt(track.Length).IsClosed) _capSpecs.Add(new CapSpec(track.Length, null, 0f));
+
+            // A core's ends. The cap is built from the core's own wall, so it has to be built from a
+            // section that has one: at a start the boundary itself does, since a piece carries its
+            // core from its first unit, and at a stop the last hair of the piece before does.
+            foreach (double bound in _coreBounds)
+            {
+                bool starts = track.SectionAt(bound).IsAnnulus;
+                _capSpecs.Add(new CapSpec(starts ? bound : bound - CoreCapInset, null, 0f, Core: true));
+            }
         }
 
         // Fork and merge walls sit in shadow around their openings. The wall closing the end of the
@@ -213,20 +228,34 @@ public partial class TrackRenderer : Node3D
         return new Placed(node, origin);
     }
 
-    // Pieces of [s0, s1): the main track outside splits, and every branch inside them.
+    // Pieces of [s0, s1): the main track outside splits, and every branch inside them. The main
+    // track is cut again wherever a core starts or stops, so no span straddles one (see _coreBounds).
     private IEnumerable<(double From, double To, TrackSplit? Split, int Branch)> Spans(double s0, double s1)
     {
         double s = s0;
         foreach (var split in _track.Splits)
         {
             if (split.EndS <= s || split.StartS >= s1) continue;
-            if (split.StartS > s) yield return (s, split.StartS, null, -1);
+            foreach (var span in AtCoreBounds(s, split.StartS)) yield return span;
 
             double from = Math.Max(s, split.StartS), to = Math.Min(split.EndS, s1);
             for (int b = 0; b < split.BranchCount; b++) yield return (from, to, split, b);
             s = to;
         }
-        if (s < s1) yield return (s, s1, null, -1);
+        foreach (var span in AtCoreBounds(s, s1)) yield return span;
+    }
+
+    // [from, to) on the main track, cut at every core boundary that falls inside it.
+    private IEnumerable<(double From, double To, TrackSplit? Split, int Branch)> AtCoreBounds(double from, double to)
+    {
+        double s = from;
+        foreach (double bound in _coreBounds)
+        {
+            if (bound <= s || bound >= to) continue;
+            yield return (s, bound, null, -1);
+            s = bound;
+        }
+        if (s < to) yield return (s, to, null, -1);
     }
 
     // One tube (floor and ceiling strips) from `from` to `to`, on the main track or a split's branch.
@@ -238,10 +267,9 @@ public partial class TrackRenderer : Node3D
         // by ring. The two layouts describe the same wall in different halves - a hollow tube splits
         // it between the floor and ceiling strips, a ring gives the whole of it to the floor and
         // hands the ceiling the core instead - so a strip that changed its mind part way along would
-        // stitch the upper half of the wall to the core and sheet the bore across. A span that is a
-        // ring anywhere is a ring throughout; where the core has no size yet the strip closes to a
-        // point and the cone it makes is the core arriving, which is what it looks like anyway.
-        bool ring = SectionOf(from, split, branch).IsAnnulus || SectionOf(to, split, branch).IsAnnulus;
+        // stitch the upper half of the wall to the core and sheet the bore across. Spans are cut at
+        // every core boundary, so the middle of one says what the whole of it is.
+        bool ring = SectionOf((from + to) * 0.5, split, branch).IsAnnulus;
 
         foreach (var surface in Surfaces)
         {
@@ -250,7 +278,14 @@ public partial class TrackRenderer : Node3D
                 double s = from + (to - from) * r / rings;
                 // Use the split directly so the branch's last ring, at the merge, stays on the branch.
                 var frame = split is null ? _track.FrameAt(s) : split.BranchFrame(_track, s, branch);
-                var shape = _shapes.Get(split is null ? _track.SectionAt(s) : split.Section(branch));
+                // The section is read a hair inside the span. A span ends exactly where a core starts
+                // or stops, and which side of that line the line itself falls on is the piece
+                // lookup's business, not this strip's: a ring span's end ring read from the far side
+                // has no core, collapses to the centreline, and is stitched to the ring beside it as
+                // a cone - which from the front is a striped disc across the bore. The frame is not
+                // moved; only the shape is, and by less than the wall's own vertex spacing.
+                double inside = Math.Clamp(s, Math.Min(from + SectionInset, to), Math.Max(to - SectionInset, from));
+                var shape = _shapes.Get(split is null ? _track.SectionAt(inside) : split.Section(branch));
                 int across = FillStrip(shape, surface, ring);
                 for (int i = 0; i < across; i++)
                 {
@@ -280,17 +315,6 @@ public partial class TrackRenderer : Node3D
             int stride = FillStrip(midShape, surface, ring);
             AddGridIndices(st, start, rings, stride, from, to, surface, branch, midShape);
             start += (rings + 1) * stride;
-
-            // A core's ends are closed off, so what arrives is a cylinder with a flat face rather
-            // than a pipe open to look down. After the strip's own indices, not before: the cursor
-            // this moves is the one those indices are counted from.
-            if (surface == Surface.Ceiling && ring)
-            {
-                foreach (double end in _coreEnds)
-                {
-                    if (end > from && end <= to) start = AddCoreCap(st, start, end, split, branch, s0, origin);
-                }
-            }
         }
         return start;
     }
@@ -344,7 +368,7 @@ public partial class TrackRenderer : Node3D
         }
     }
 
-    // A disc filling the section; the cap shader cuts any branch openings out of it.
+    // A disc filling the section, or a core's end; the cap shader cuts any branch openings out of it.
     private Placed BuildCap(CapSpec spec)
     {
         double s = spec.S;
@@ -352,13 +376,18 @@ public partial class TrackRenderer : Node3D
         var chamber = new ProfileShape(_track.SectionAt(s));
         var origin = frame.Position;
 
+        // A core's face is the core's outline, which is the ceiling of a ring; a wall's is the whole
+        // section's, which is the floor of a tube going all the way round.
+        var rim = spec.Core ? Surface.Ceiling : Surface.Floor;
+        float around = chamber.PerimeterOf(rim);
+
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         st.SetUV(Vector2.Zero);
         st.AddVertex(Vector3.Zero);
         for (int i = 0; i <= CapSegments; i++)
         {
-            var p = chamber.PointAt(Surface.Floor, chamber.Perimeter * i / CapSegments);
+            var p = chamber.PointAt(rim, around * i / CapSegments);
             st.SetUV(new Vector2(p.X, p.Y));
             st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
         }
@@ -378,10 +407,12 @@ public partial class TrackRenderer : Node3D
             holes[b] = new Vector4(c.X, c.Y, section.HalfWidth, section.HalfHeight);
         }
         var material = (ShaderMaterial)_capMaterial.Duplicate();
-        material.SetShaderParameter("cap_color", split is null ? _endWallColor : _capColor);
+        // A core's face takes the fork wall's colour: it is the same kind of thing, a flat end that
+        // is not wall, and it must not read as the end of the level.
+        material.SetShaderParameter("cap_color", split is null && !spec.Core ? _endWallColor : _capColor);
         // The rim is a bright ring round a fork opening, which is right there and wrong at the end of
         // a level that carries on: it draws a hard edge exactly where there should be no edge.
-        if (split is null) material.SetShaderParameter("rim_color", _endRimColor);
+        if (split is null && !spec.Core) material.SetShaderParameter("rim_color", _endRimColor);
         material.SetShaderParameter("holes", holes);
         material.SetShaderParameter("hole_count", split?.BranchCount ?? 0);
         // The shader cuts every hole with one exponent, so branches that differ in squareness all
@@ -456,57 +487,13 @@ public partial class TrackRenderer : Node3D
         }
     }
 
-    /// <summary>
-    /// The flat face closing one end of a core: a fan from the centreline out to the core's wall.
-    /// Takes the wall's own material and shading, so it reads as the end of the thing rather than as
-    /// a lid put on it.
-    /// </summary>
-    private int AddCoreCap(SurfaceTool st, int start, double at, TrackSplit? split, int branch, double s0, Vector3d origin)
-    {
-        const int segments = RingCapSegments;
-        var frame = split is null ? _track.FrameAt(at) : split.BranchFrame(_track, at, branch);
-        var shape = _shapes.Get(SectionOf(at, split, branch));
-        float around = shape.PerimeterOf(Surface.Ceiling);
-        if (around <= 0.01f) return start;
-
-        // The wall's seam is drawn wherever a point sits near either end of a segment, which means
-        // the distance written here has to stay inside one - a face is flat across the track, so
-        // every point on it shares whatever distance it is given, and one outside the segment came
-        // out as a single blown white disc. It is given a distance mid-segment instead, moved a
-        // little between the middle of the face and its rim so the checker has something to cut.
-        // One distance for the whole face, not one per ring of it. The wall widens its seam test by
-        // the screen derivative of this number, and a face seen almost edge-on has a derivative big
-        // enough to swallow the test whole - which drew the disc as one blown seam.
-        float middle = _chunkLength * 0.45f;
-        float rim = middle;
-
-        st.SetUV(new Vector2(0.75f, middle));
-        st.SetUV2(Vector2.Zero);
-        st.AddVertex(frame.Position.RelativeTo(origin).ToGodot());
-        for (int i = 0; i <= segments; i++)
-        {
-            var (surface, x) = shape.Wrap(Surface.Ceiling, around * i / segments);
-            var p = shape.PointAt(surface, x);
-            st.SetUV(new Vector2(0.75f + (float)i / segments, rim));
-            st.SetUV2(Vector2.Zero);
-            st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
-        }
-        for (int i = 0; i < segments; i++)
-        {
-            st.AddIndex(start);
-            st.AddIndex(start + 1 + i);
-            st.AddIndex(start + 2 + i);
-        }
-        return start + segments + 2;
-    }
-
     private CrossSection SectionOf(double s, TrackSplit? split, int branch) =>
         split is null ? _track.SectionAt(s) : split.Section(branch);
 
     private static bool InRange(double s, double from, double to) => s >= from && s <= to;
 
     // A wall across the track: a split's fork or merge, or the end of the level.
-    private readonly record struct CapSpec(double S, TrackSplit? Split, float Along);
+    private readonly record struct CapSpec(double S, TrackSplit? Split, float Along, bool Core = false);
 
     // A warp well, reduced to what shaping the wall around it needs.
     private readonly record struct WarpCut(
