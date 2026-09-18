@@ -70,17 +70,19 @@
     ] },
 
     // Two keys, one pad. They sit on opposite walls, so opening it costs the whole way round the
-    // tube and back, and the pad is on the floor where the line already was.
-    { "length": 480, "section": "tube", "turn": -40, "obstacles": [ // 1600 - 2080
+    // tube and back, and the pad is on the floor where the line already was. Half a lap of a tube is
+    // a 0.9 second swing, so the second key stands 200 units past the first - see the spacing rule
+    // in level-format.md.
+    { "length": 620, "section": "tube", "turn": -40, "obstacles": [ // 1600 - 2220
       { "at": 110, "kind": "target", "angle": 90,  "group": "t3" },
-      { "at": 190, "kind": "target", "angle": -90, "group": "t3" }
+      { "at": 310, "kind": "target", "angle": -90, "group": "t3" }
     ], "pickups": [
-      { "at": 380, "kind": "shield", "lockedBy": "t3" }
+      { "at": 490, "kind": "shield", "lockedBy": "t3" }
     ] },
 
     // One key, two things: the door in the way and the pad behind it. Shooting it buys passage and
     // payment at once - the first time the two kinds of lock are the same lock.
-    { "length": 500, "section": "box", "obstacles": [               // 2080 - 2580
+    { "length": 500, "section": "box", "obstacles": [               // 2220 - 2720
       { "at": 120, "kind": "target", "angle": 120, "group": "t4" },
       { "at": 320, "lockedBy": "t4", "width": 26, "height": 3 }
     ], "pickups": [
@@ -89,10 +91,10 @@
 
     // A fork with the prize down the tight road: the key stands in the chamber before it, so the
     // branch has to be chosen already knowing whether the shot landed.
-    { "length": 160, "section": "chamber", "speed": 158, "obstacles": [ // 2580 - 2740
+    { "length": 160, "section": "chamber", "speed": 158, "obstacles": [ // 2720 - 2880
       { "at": 70, "kind": "target", "angle": 90, "group": "tf" }
     ] },
-    { "length": 440, "turn": 85, "split": {                         // 2740 - 3180
+    { "length": 440, "turn": 85, "split": {                         // 2880 - 3320
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
@@ -107,21 +109,21 @@
         { "at": 300, "branch": 1, "kind": "full-shields", "lockedBy": "tf" }
       ]
     },
-    { "length": 140, "section": "tube" },                           // 3180 - 3320
+    { "length": 140, "section": "tube" },                           // 3320 - 3460
 
     // Three keys for the rarest prize in the game. They are spread right round the wall, and the
     // extra shield is on the ceiling, so the whole thing is one long trip off the fast line.
-    { "length": 540, "obstacles": [                                 // 3320 - 3860
+    { "length": 660, "obstacles": [                                 // 3460 - 4120
       { "at": 100, "kind": "target", "angle": 60,   "group": "t5" },
-      { "at": 180, "kind": "target", "angle": 180,  "group": "t5" },
-      { "at": 260, "kind": "target", "angle": -60,  "group": "t5" }
+      { "at": 240, "kind": "target", "angle": 180,  "group": "t5" },
+      { "at": 380, "kind": "target", "angle": -60,  "group": "t5" }
     ], "pickups": [
-      { "at": 450, "kind": "shield-slot", "angle": 180, "lockedBy": "t5" }
+      { "at": 530, "kind": "shield-slot", "angle": 180, "lockedBy": "t5" }
     ] },
 
     // Under pressure for the first time: a gate cycling on the line, with the key beyond it. The
     // shot has to be taken through the gap, or waited for.
-    { "length": 440, "section": "wide", "turn": 55, "obstacles": [  // 3860 - 4300
+    { "length": 440, "section": "wide", "turn": 55, "obstacles": [  // 4120 - 4560
       { "at": 120, "period": 2.2, "angle": 0, "width": 22, "height": 3 },
       { "at": 230, "kind": "target", "angle": -90, "group": "t6" }
     ], "pickups": [
@@ -130,22 +132,22 @@
 
     // Run for home. A key before each bend with its pad round the corner, so the shot is taken
     // before there is anything to see it pay for.
-    { "length": 220, "section": "tube", "speed": 160, "turn": 70, "obstacles": [ // 4300 - 4520
+    { "length": 220, "section": "tube", "speed": 160, "turn": 70, "obstacles": [ // 4560 - 4780
       { "at": 70, "kind": "target", "angle": 0, "group": "t7" }
     ] },
-    { "length": 220, "turn": -75, "climb": 12, "pickups": [         // 4520 - 4740
+    { "length": 220, "turn": -75, "climb": 12, "pickups": [         // 4780 - 5000
       { "at": 90, "kind": "rapid-fire", "lockedBy": "t7" }
     ], "obstacles": [
       { "at": 150, "kind": "target", "angle": 180, "group": "t8" }
     ] },
-    { "length": 220, "turn": 60, "climb": -14, "pickups": [         // 4740 - 4960
+    { "length": 220, "turn": 60, "climb": -14, "pickups": [         // 5000 - 5220
       { "at": 100, "kind": "unstoppable", "angle": 180, "lockedBy": "t8" }
     ] },
 
     // Handover to Ransom: straighten and blend into its tube, then the first 276 units of its track,
     // so the camera sees the same tube on both sides of the join. Nothing to hit out here; the level
     // finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4960 - 5080
-    { "length": 276 }                                               // 5080 - 5356
+    { "length": 120, "section": "tube" },                           // 5220 - 5340
+    { "length": 276 }                                               // 5340 - 5616
   ]
 }

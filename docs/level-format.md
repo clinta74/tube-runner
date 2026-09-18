@@ -382,6 +382,46 @@ apart when its last key goes. Colours are handed out in the order the pairs are 
 four of them, so **keep the number of pairs open at once to four or fewer** — beyond that they start
 repeating, and telling which key opens which is the whole puzzle wherever pairs overlap.
 
+### Spacing keys that are in the same group
+
+**Two keys a quarter of a lap apart are a real distance, and the level has to pay for it in track.**
+The ship moves across the surface at 22 units a second whatever the section, and a shot only hits
+what the ship is lined up with, so a group spread around the wall is a series of swings that each
+take time the track has to provide. Work it out rather than guessing:
+
+```
+swing seconds  = (arc between the two keys) / 22
+units of track = swing seconds x the piece's speed
+```
+
+and then **leave 40% more than that** between them. The arc is a share of the section's perimeter,
+which is where this gets counter-intuitive: a `chamber` is twice the way round that a `tube` is, so
+the same "opposite walls" pairing costs twice as much track in one as in the other.
+
+| Section | Way round | Quarter lap | Half lap |
+|---|---|---|---|
+| `narrow` r 4.8 | 30 | 0.34 s | 0.68 s |
+| `tube` r 6 | 38 | 0.43 s | 0.86 s |
+| `oval` 9 x 4.5 | 44 | 0.50 s | 0.99 s |
+| `wide` r 7.5 | 47 | 0.54 s | 1.07 s |
+| `box` 9.5 x 4.2 | 55 | 0.62 s | 1.25 s |
+| `chamber` 14 x 6.5 | 76 | 0.86 s | 1.72 s |
+
+At 155 units a second, half a lap of a tube is 190 units of track and half a lap of a chamber is
+380. A pair of keys 80 units apart on opposite walls of a chamber cannot be taken at all on a first
+read, however well the level is flown — which is what the fork in Iris shipped as in v0.6.0.
+
+Two things buy slack, and neither is a reason to skip the sum:
+
+- **A shot can be fired from a long way back.** Shots close on what is ahead at 220 units a second
+  on top of the ship's own speed, so a key can be hit well before it is reached, and the swing to
+  the next one started early. That is a technique, though, not a layout: a level that needs it is a
+  level that reads as unfair the first time and clever the fifth.
+- **Rapid fire** cuts the interval between shots from 0.18 s to 0.06 s. It does nothing for the
+  travel, which is what actually costs the time.
+
+**Movers want another 15% on top**, because the aim has to lead them as well as reach them.
+
 **Shots leave at the ship's own position across the surface**, and travel straight down the track.
 There is no aiming, so the player lines a target up by steering onto it. That is what makes an
 ordered group a puzzle worth having: they must steer to each one in turn, in the order you set,
@@ -423,7 +463,9 @@ keys over six blades open opposite pairs together, which reads much better than 
 leaving in a row.
 
 **Keep `keys` to three or fewer.** Every key group takes one of the four pair colours, and an
-aperture the player cannot read the colours off is just a wall with extra steps.
+aperture the player cannot read the colours off is just a wall with extra steps. Space them by the
+rule above: a ring divided three ways is three swings around the wall, and they all have to be made
+before the ring arrives.
 
 **A shut aperture is a sealed ring.** Arriving at one with its keys still standing costs a shield,
 so the first aperture a level shows should leave a sector `open`, and the first fully sealed one
@@ -440,7 +482,21 @@ three-key aperture costs three charges, which is a price worth paying rather tha
 than ringing half a tube.
 
 **An aperture over a fork** is the strongest use of the idea: put one in each branch's mouth and the
-keys decide which way the player is allowed to go, instead of which way they choose to go.
+keys decide which way the player is allowed to go, instead of which way they choose to go. Three
+things have to hold or it does not survive being flown:
+
+- **Put the rings in the fork wall, not down the branches.** A ring further in is only met once the
+  road has been taken, and its keys are behind the player by then, so it reads as a lock with
+  nothing that opens it.
+- **Put each key on the wall its own road is on.** The colour says which key opens which ring; the
+  side says it again, at the moment the player has to commit.
+- **Never let every mouth be sealed at once.** Leave a branch unlocked, or leave blades out of each
+  ring, so missing the keys costs the good road rather than every road. Otherwise a fork is a shield
+  lost to the level rather than to a mistake.
+
+And mind where the keys stand: they cannot go in the chamber itself unless it is enormous, because
+crossing a chamber takes 1.7 seconds. Put them in the tube before it, where the way round is half
+as far and the rings are still in view.
 
 ## Thrust zones
 

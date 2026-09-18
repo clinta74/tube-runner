@@ -87,12 +87,12 @@
     // Divided. Three keys over six blades open opposite pairs, so each shot clears a quarter of the
     // way round and the ring is a different wall depending on which ones landed. The bend after it
     // is to the right, so the right-hand pair is the one worth having.
-    { "length": 560, "section": "wide", "obstacles": [              // 2300 - 2860
+    { "length": 740, "section": "wide", "obstacles": [              // 2300 - 3040
       { "at": 90,  "kind": "target", "angle": 45,   "group": "i5" },
-      { "at": 170, "kind": "target", "angle": 165,  "group": "i6" },
-      { "at": 250, "kind": "target", "angle": -75,  "group": "i7" }
+      { "at": 260, "kind": "target", "angle": 165,  "group": "i6" },
+      { "at": 430, "kind": "target", "angle": -75,  "group": "i7" }
     ], "apertures": [
-      { "at": 430, "blades": 6, "angle": 30, "keys": ["i5", "i6", "i7"] }
+      { "at": 610, "blades": 6, "angle": 30, "keys": ["i5", "i6", "i7"] }
     ] },
 
     // A fork with a ring in each mouth, and one key each. Three things have to be true or the idea
@@ -104,11 +104,12 @@
     //     road's on the right. Colour says which key opens which ring, and the side says it twice.
     //   - a blade or two are left out of each, so missing both keys is a hard entry rather than two
     //     walls and nowhere to go. Shooting buys the whole mouth, not the only way through.
-    { "length": 320, "section": "chamber", "speed": 158, "obstacles": [ // 2860 - 3180
-      { "at": 70,  "kind": "target", "angle": -90, "group": "ia" },
-      { "at": 150, "kind": "target", "angle": 90,  "group": "ib" }
+    { "length": 340, "section": "tube", "speed": 158, "obstacles": [ // 3040 - 3380
+      { "at": 60,  "kind": "target", "angle": -90, "group": "ia" },
+      { "at": 250, "kind": "target", "angle": 90,  "group": "ib" }
     ] },
-    { "length": 440, "turn": 85, "split": {                         // 3180 - 3620
+    { "length": 200, "section": "chamber" },                        // 3380 - 3580
+    { "length": 440, "turn": 85, "split": {                         // 3580 - 4020
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
@@ -126,24 +127,24 @@
         { "at": 330, "branch": 1, "kind": "shield" }
       ]
     },
-    { "length": 140, "section": "tube" },                           // 3620 - 3760
+    { "length": 140, "section": "tube" },                           // 4020 - 4160
 
     // The ring gun, and the one ring it cannot simply delete: its keys are an ordered group, so a
     // sweep takes the one whose turn it is and is spent. Three keys, three charges, or shoot them.
-    { "length": 260, "section": "wide", "pickups": [                // 3760 - 4020
+    { "length": 260, "section": "wide", "pickups": [                // 4160 - 4420
       { "at": 120, "kind": "ring-gun" }
     ] },
-    { "length": 540, "section": "tube", "speed": 160, "obstacles": [ // 4020 - 4560
+    { "length": 680, "section": "tube", "speed": 160, "obstacles": [ // 4420 - 5100
       { "at": 100, "kind": "target", "angle": 90,   "group": "i8", "order": 0 },
-      { "at": 180, "kind": "target", "angle": 210,  "group": "i8", "order": 1 },
-      { "at": 260, "kind": "target", "angle": -30,  "group": "i8", "order": 2 }
+      { "at": 240, "kind": "target", "angle": 210,  "group": "i8", "order": 1 },
+      { "at": 380, "kind": "target", "angle": -30,  "group": "i8", "order": 2 }
     ], "apertures": [
-      { "at": 430, "blades": 6, "keys": ["i8"] }
+      { "at": 540, "blades": 6, "keys": ["i8"] }
     ] },
 
     // A ring in a boxy section, where the blades follow corners instead of a curve, with a locked
     // pad past it so there is something on the other side worth arriving with.
-    { "length": 500, "section": "box", "obstacles": [               // 4560 - 5060
+    { "length": 500, "section": "box", "obstacles": [               // 5100 - 5600
       { "at": 90, "kind": "target", "angle": 180, "group": "i9" }
     ], "apertures": [
       { "at": 300, "blades": 6, "keys": ["i9"] }
@@ -153,12 +154,12 @@
 
     // Run for home. Two rings on a twist, each key round the bend before the ring it opens, so the
     // shot is taken at the only moment the target is in sight at all.
-    { "length": 240, "section": "tube", "turn": 70, "obstacles": [  // 5060 - 5300
+    { "length": 240, "section": "tube", "turn": 70, "obstacles": [  // 5600 - 5840
       { "at": 60, "kind": "target", "angle": 0, "group": "ic" }
     ], "apertures": [
       { "at": 190, "blades": 6, "open": 1, "keys": ["ic"] }
     ] },
-    { "length": 240, "turn": -75, "climb": 12, "obstacles": [       // 5300 - 5540
+    { "length": 240, "turn": -75, "climb": 12, "obstacles": [       // 5840 - 6080
       { "at": 60, "kind": "target", "angle": 180, "group": "id" }
     ], "apertures": [
       { "at": 190, "blades": 6, "open": 1, "angle": 180, "keys": ["id"] }
@@ -167,7 +168,7 @@
     // Handover to Shutter: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here;
     // the level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 5540 - 5660
-    { "length": 276 }                                               // 5660 - 5936
+    { "length": 120, "section": "tube" },                           // 6080 - 6200
+    { "length": 276 }                                               // 6200 - 6476
   ]
 }

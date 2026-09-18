@@ -117,20 +117,20 @@
 
     // Divided three ways, and the bend after it is hard right - so only the right-hand pair of
     // blades is worth a shot, and opening the other two costs the shots and still ends at a wall.
-    { "length": 540, "section": "wide", "speed": 166, "obstacles": [ // 3480 - 4020
+    { "length": 760, "section": "wide", "speed": 166, "obstacles": [ // 3480 - 4240
       { "at": 90,  "kind": "target", "angle": 30,   "group": "s5" },
-      { "at": 170, "kind": "target", "angle": 150,  "group": "s6" },
-      { "at": 250, "kind": "target", "angle": -90,  "group": "s7" }
+      { "at": 270, "kind": "target", "angle": 150,  "group": "s6" },
+      { "at": 450, "kind": "target", "angle": -90,  "group": "s7" }
     ], "apertures": [
-      { "at": 400, "blades": 6, "angle": 30, "keys": ["s5", "s6", "s7"] }
+      { "at": 620, "blades": 6, "angle": 30, "keys": ["s5", "s6", "s7"] }
     ] },
-    { "length": 220, "section": "tube", "turn": 70 },               // 4020 - 4240
+    { "length": 220, "section": "tube", "turn": 70 },               // 4240 - 4460
 
     // Unstoppable, and two rings whose keys are the hardest shots in the level: small, off the line,
     // and close in front of the ring they open. The hammer is the answer for whichever one the shot
     // missed - blades break under it like anything else - and the plate between them is the reminder
     // that it is not the answer to everything.
-    { "length": 680, "section": "oval", "obstacles": [              // 4240 - 4920
+    { "length": 680, "section": "oval", "obstacles": [              // 4460 - 5140
       { "at": 170, "kind": "target", "angle": 150, "group": "s8" },
       { "at": 430, "kind": "target", "angle": -150, "group": "sc" },
       { "at": 500, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
@@ -143,17 +143,17 @@
 
     // Run for home. A twist at full speed with a ring on every bend, each key round the corner in
     // front of its own ring and nothing else in sight.
-    { "length": 240, "speed": 170, "section": "tube", "turn": 75, "obstacles": [ // 4920 - 5160
+    { "length": 240, "speed": 170, "section": "tube", "turn": 75, "obstacles": [ // 5140 - 5380
       { "at": 60, "kind": "target", "angle": 0, "group": "s9" }
     ], "apertures": [
       { "at": 190, "blades": 6, "open": 1, "keys": ["s9"] }
     ] },
-    { "length": 240, "turn": -80, "climb": 14, "obstacles": [       // 5160 - 5400
+    { "length": 240, "turn": -80, "climb": 14, "obstacles": [       // 5380 - 5620
       { "at": 60, "kind": "target", "angle": 180, "group": "sa" }
     ], "apertures": [
       { "at": 190, "blades": 6, "open": 1, "angle": 180, "keys": ["sa"] }
     ] },
-    { "length": 240, "turn": 65, "climb": -12, "obstacles": [       // 5400 - 5640
+    { "length": 240, "turn": 65, "climb": -12, "obstacles": [       // 5620 - 5860
       { "at": 60, "kind": "target", "angle": 90, "group": "sb" }
     ], "apertures": [
       { "at": 190, "blades": 6, "open": 1, "angle": 90, "keys": ["sb"] }
@@ -162,7 +162,7 @@
     // Handover to Roulette: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here;
     // the level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 5640 - 5760
-    { "length": 276 }                                               // 5760 - 6036
+    { "length": 120, "section": "tube" },                           // 5860 - 5980
+    { "length": 276 }                                               // 5980 - 6256
   ]
 }

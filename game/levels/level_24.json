@@ -49,29 +49,29 @@
 
     // Three keys, one door. They are far enough apart around the tube that clearing them is a lap of
     // the wall, and the door is wide enough that arriving with one still standing is a wall.
-    { "length": 540, "section": "wide", "obstacles": [              //  340 -  880
+    { "length": 740, "section": "wide", "obstacles": [              //  340 - 1080
       { "at": 100, "kind": "target", "angle": 45,   "group": "r1" },
-      { "at": 190, "kind": "target", "angle": 165,  "group": "r1" },
-      { "at": 280, "kind": "target", "angle": -75,  "group": "r1" },
-      { "at": 450, "lockedBy": "r1", "angle": 0, "width": 28, "height": 3 }
+      { "at": 270, "kind": "target", "angle": 165,  "group": "r1" },
+      { "at": 440, "kind": "target", "angle": -75,  "group": "r1" },
+      { "at": 620, "lockedBy": "r1", "angle": 0, "width": 28, "height": 3 }
     ] },
 
     // The same three keys, now ordered, so they have to be taken in turn: the one whose turn it is
     // burns bright and the rest sit dim. The pad behind the door is on the same group, so the last
     // shot opens the way and pays for it at once.
-    { "length": 520, "section": "tube", "turn": -45, "obstacles": [ //  880 - 1400
+    { "length": 660, "section": "tube", "turn": -45, "obstacles": [ // 1080 - 1740
       { "at": 110, "kind": "target", "angle": 90,   "group": "r2", "order": 0 },
-      { "at": 200, "kind": "target", "angle": -120, "group": "r2", "order": 1 },
-      { "at": 290, "kind": "target", "angle": 180,  "group": "r2", "order": 2 },
-      { "at": 420, "lockedBy": "r2", "angle": 0, "width": 26, "height": 3 }
+      { "at": 280, "kind": "target", "angle": -120, "group": "r2", "order": 1 },
+      { "at": 370, "kind": "target", "angle": 180,  "group": "r2", "order": 2 },
+      { "at": 510, "lockedBy": "r2", "angle": 0, "width": 26, "height": 3 }
     ], "pickups": [
-      { "at": 470, "kind": "shield", "lockedBy": "r2" }
+      { "at": 570, "kind": "shield", "lockedBy": "r2" }
     ] },
 
     // A well between a key and the pad it lights. Both are up on the far side, and the well is high
     // on the wall where the curve turns it toward the ship, so it reads from a long way out - the
     // gamble is whether the prize is worth flying that line at all.
-    { "length": 480, "section": "oval", "speed": 158, "obstacles": [ // 1400 - 1880
+    { "length": 480, "section": "oval", "speed": 158, "obstacles": [ // 1740 - 2220
       { "at": 90, "kind": "target", "angle": 120, "group": "r3" }
     ], "warps": [
       { "at": 280, "angle": 150, "back": 200, "span": 0.24 }
@@ -81,10 +81,10 @@
 
     // A fork where the quick road is shut. The key is in the chamber, so the choice is made with the
     // shot already taken or already missed - and the long way round is open either way.
-    { "length": 160, "section": "chamber", "obstacles": [           // 1880 - 2040
+    { "length": 160, "section": "chamber", "obstacles": [           // 2220 - 2380
       { "at": 70, "kind": "target", "angle": -90, "group": "rf" }
     ] },
-    { "length": 440, "turn": 85, "split": {                         // 2040 - 2480
+    { "length": 440, "turn": 85, "split": {                         // 2380 - 2820
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
@@ -100,51 +100,51 @@
         { "at": 330, "branch": 1, "kind": "shield" }
       ]
     },
-    { "length": 140, "section": "tube" },                           // 2480 - 2620
+    { "length": 140, "section": "tube" },                           // 2820 - 2960
 
     // Keys behind plates. The line the plates leave is not the line either key is on, so the shots
     // have to be taken from a place that is uncomfortable to hold.
-    { "length": 500, "section": "box", "speed": 160, "obstacles": [ // 2620 - 3120
+    { "length": 580, "section": "box", "speed": 160, "obstacles": [ // 2960 - 3540
       { "at": 110, "kind": "plate", "angle": 60,  "width": 11, "height": 3 },
       { "at": 170, "kind": "target", "angle": 180, "group": "r4" },
       { "at": 240, "kind": "plate", "angle": -60, "width": 11, "height": 3 },
-      { "at": 300, "kind": "target", "angle": 0,   "group": "r4" },
-      { "at": 430, "lockedBy": "r4", "angle": 90, "width": 26, "height": 3 }
+      { "at": 330, "kind": "target", "angle": 90,  "group": "r4" },
+      { "at": 490, "lockedBy": "r4", "angle": 0, "width": 26, "height": 3 }
     ] },
 
     // Keys on movers, sliding while the shot is lined up, and a pad that is only worth the detour if
     // both land. Lead them.
-    { "length": 460, "section": "tube", "turn": 50, "obstacles": [  // 3120 - 3580
+    { "length": 560, "section": "tube", "turn": 50, "obstacles": [  // 3540 - 4100
       { "at": 120, "kind": "target", "sweep": 9,  "sweepTime": 3.0, "angle": 60,  "group": "r5" },
-      { "at": 210, "kind": "target", "sweep": 9,  "sweepTime": 2.6, "angle": -60, "group": "r5" }
+      { "at": 280, "kind": "target", "sweep": 9,  "sweepTime": 2.6, "angle": -60, "group": "r5" }
     ], "pickups": [
-      { "at": 380, "kind": "ring-gun", "lockedBy": "r5" }
+      { "at": 450, "kind": "ring-gun", "lockedBy": "r5" }
     ] },
 
     // Gates on the cycle with the key beyond them, and the door beyond that. Hurry or hold back; the
     // gap that lets the shot through is the same gap that lets the ship through.
-    { "length": 500, "section": "narrow", "speed": 163, "obstacles": [ // 3580 - 4080
+    { "length": 500, "section": "narrow", "speed": 163, "obstacles": [ // 4100 - 4600
       { "at": 110, "period": 2.4, "angle": 0,   "width": 20, "height": 3 },
       { "at": 190, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
       { "at": 290, "kind": "target", "angle": 90, "group": "r6" },
       { "at": 430, "lockedBy": "r6", "angle": 0, "width": 22, "height": 3 }
     ] },
 
-    { "length": 240, "section": "tube", "pickups": [                // 4080 - 4320
+    { "length": 240, "section": "tube", "pickups": [                // 4600 - 4840
       { "at": 120, "kind": "shield", "angle": 90 }
     ] },
 
     // Run for home. A twist, and on each bend a key whose door is already round the corner: the shot
     // is taken on faith and the wall arrives before there is time to regret it.
-    { "length": 220, "speed": 165, "turn": 75, "obstacles": [       // 4320 - 4540
+    { "length": 220, "speed": 165, "turn": 75, "obstacles": [       // 4840 - 5060
       { "at": 60,  "kind": "target", "angle": 90, "group": "r7" },
       { "at": 170, "lockedBy": "r7", "angle": 0, "width": 22, "height": 3 }
     ] },
-    { "length": 220, "turn": -80, "climb": 14, "obstacles": [       // 4540 - 4760
+    { "length": 220, "turn": -80, "climb": 14, "obstacles": [       // 5060 - 5280
       { "at": 60,  "kind": "target", "angle": -90, "group": "r8" },
       { "at": 170, "lockedBy": "r8", "angle": 180, "width": 22, "height": 3 }
     ] },
-    { "length": 220, "turn": 65, "climb": -12, "obstacles": [       // 4760 - 4980
+    { "length": 220, "turn": 65, "climb": -12, "obstacles": [       // 5280 - 5500
       { "at": 60,  "kind": "target", "angle": 180, "group": "r9" },
       { "at": 170, "lockedBy": "r9", "angle": 90, "width": 22, "height": 3 }
     ] },
@@ -152,7 +152,7 @@
     // Handover to Iris: straighten and blend into its tube, then the first 276 units of its track, so
     // the camera sees the same tube on both sides of the join. Nothing to hit out here; the level
     // finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4980 - 5100
-    { "length": 276 }                                               // 5100 - 5376
+    { "length": 120, "section": "tube" },                           // 5500 - 5620
+    { "length": 276 }                                               // 5620 - 5896
   ]
 }
