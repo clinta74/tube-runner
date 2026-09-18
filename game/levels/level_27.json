@@ -65,7 +65,7 @@
     // Now the gamble. Same shape, but the quick branch carries a well on its outer wall - where the
     // tube curves away from the ship, so it is presented rather than seen edge-on. The signs are
     // visible before the fork, so this is a choice and not an ambush.
-    { "length": 120, "section": "chamber", "speed": 155, "pickups": [    // 1000 - 1120
+    { "length": 120, "section": "chamber", "speed": 155, "pickups": [ // 1000 - 1120
       { "at": 60, "kind": "rapid-fire" }
     ] },
     { "length": 440, "turn": 85, "split": {                         // 1120 - 1560
@@ -96,7 +96,11 @@
     // A three-way needs room for three openings side by side at the fork. Three branches of radius 6
     // want 36 units of width and a halfWidth-14 chamber offers 28, so this one widens out and the
     // branches themselves are narrower - which suits it, being the tightest choice in the level.
-    { "length": 140, "section": "wide-chamber", "speed": 160 },     // 2000 - 2140
+    // The prize down the gambling road is itself behind a key, and the key is back here in the
+    // chamber - so the road has to be paid for before it can be seen whether it was worth taking.
+    { "length": 140, "section": "wide-chamber", "speed": 160, "obstacles": [ // 2000 - 2140
+      { "at": 70, "kind": "target", "angle": -90, "group": "rk" }
+    ] },
     { "length": 480, "turn": 100, "split": {                        // 2140 - 2620
         "section": "branch-mid",
         "branches": [
@@ -108,7 +112,7 @@
         ]
       },
       "pickups": [
-        { "at": 280, "branch": 2, "kind": "full-shields" }
+        { "at": 280, "branch": 2, "kind": "full-shields", "lockedBy": "rk" }
       ],
       "warps": [
         { "at": 350, "branch": 2, "angle": 90 }

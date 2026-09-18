@@ -89,7 +89,7 @@ public static class LevelLoader
             thrustZones.AddRange(ToThrustZones(data.Track[i].ThrustZones, track, pieceStarts[i], $"Track piece {i}, thrust zone"));
         }
 
-        RequireKeysExist(obstacles, pickups);
+        RequireKeysWork(obstacles, pickups);
 
         return new Level
         {
@@ -108,32 +108,42 @@ public static class LevelLoader
     }
 
     /// <summary>
-    /// Checks that every 'lockedBy' names a group something is actually in. A misspelled one is the
-    /// worst kind of mistake this format can make: the level loads and plays, and the door it names
-    /// is simply a wall that never opens, or the pad is one that never lights - and both look like
-    /// the player having missed a shot rather than like a typo.
+    /// Checks that every 'lockedBy' names a group something is in, and that the whole of that group
+    /// stands before the thing it opens. Both mistakes load and play, and both look exactly like the
+    /// player having missed a shot: a group that does not exist is a door that never opens or a pad
+    /// that never lights, and a key further down the track than its door is one that cannot be shot
+    /// in time however well it is flown.
     /// </summary>
-    private static void RequireKeysExist(List<Obstacle> obstacles, List<Pickup> pickups)
+    private static void RequireKeysWork(List<Obstacle> obstacles, List<Pickup> pickups)
     {
-        var groups = new HashSet<string>();
+        var last = new Dictionary<string, double>();
         foreach (var o in obstacles)
         {
-            if (o.Group is not null) groups.Add(o.Group);
+            if (o.Group is null) continue;
+            last[o.Group] = Math.Max(last.GetValueOrDefault(o.Group, double.MinValue), o.S);
+        }
+
+        void Check(string what, double s, string group)
+        {
+            if (!last.TryGetValue(group, out double key))
+            {
+                throw new LevelFormatException($"{what} at {s:0}: 'lockedBy' names the group '{group}', which nothing is in.");
+            }
+            if (key >= s)
+            {
+                throw new LevelFormatException(
+                    $"{what} at {s:0} is locked by '{group}', whose last key is at {key:0} - behind it. "
+                    + "A key has to be shot before the thing it opens is reached.");
+            }
         }
 
         foreach (var o in obstacles)
         {
-            if (o.LockedBy is not null && !groups.Contains(o.LockedBy))
-            {
-                throw new LevelFormatException($"Obstacle at {o.S:0}: 'lockedBy' names the group '{o.LockedBy}', which nothing is in.");
-            }
+            if (o.LockedBy is not null) Check("Obstacle", o.S, o.LockedBy);
         }
         foreach (var p in pickups)
         {
-            if (p.LockedBy is not null && !groups.Contains(p.LockedBy))
-            {
-                throw new LevelFormatException($"Pickup at {p.S:0}: 'lockedBy' names the group '{p.LockedBy}', which nothing is in.");
-            }
+            if (p.LockedBy is not null) Check("Pickup", p.S, p.LockedBy);
         }
     }
 

@@ -79,7 +79,7 @@
 
     // Plates in a twist: unanswerable and unseen until close. Narrow bore, so the wall left over
     // after a plate is small, and there is no time to find it from far off.
-    { "length": 200, "section": "narrow", "speed": 165, "turn": 80, "obstacles": [   // 2130 - 2330
+    { "length": 200, "section": "narrow", "speed": 165, "turn": 80, "obstacles": [ // 2130 - 2330
       { "at": 110, "kind": "plate", "angle": 0, "width": 10, "height": 3 }
     ] },
     { "length": 200, "turn": -85, "climb": 14, "obstacles": [       // 2330 - 2530
@@ -96,39 +96,52 @@
       { "at": 230, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
+    // A ring in the dark. The key comes round one bend and the ring round the next, so the shot is
+    // taken at the only moment the target exists and the ring is never seen until it is arrived at.
+    // A blade is left out of each, because an aperture that cannot be seen coming cannot be sealed
+    // and still be fair.
+    { "length": 230, "turn": 70, "obstacles": [                     // 3030 - 3260
+      { "at": 100, "kind": "target", "angle": 0, "group": "bk" }
+    ] },
+    { "length": 230, "turn": -85, "climb": 12, "apertures": [       // 3260 - 3490
+      { "at": 110, "blades": 6, "open": 1, "keys": ["bk"] }
+    ], "pickups": [
+      { "at": 190, "kind": "shield", "angle": 180, "lockedBy": "bk" }
+    ] },
+
     // A well in a twist. The sign ring stands 75 units back - which, on a bend this tight, is the
     // only reason it is fair at all: the signs come round the corner before the well does.
-    { "length": 210, "turn": -80, "warps": [                        // 3030 - 3240
+    { "length": 210, "turn": -80, "warps": [                        // 3490 - 3700
       { "at": 150, "angle": 90 }
     ] },
-    { "length": 210, "turn": 85, "climb": 12, "obstacles": [        // 3240 - 3450
+    { "length": 210, "turn": 85, "climb": 12, "obstacles": [        // 3700 - 3910
       { "at": 105, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
     ] },
 
     // The box in the dark: flat floor and ceiling change how the wall reads, and here it cannot be
     // read in advance at all.
-    { "length": 380, "section": "box", "speed": 170, "turn": -55, "obstacles": [   // 3450 - 3830
+    { "length": 380, "section": "box", "speed": 170, "turn": -55, "obstacles": [ // 3910 - 4290
       { "at": 90,  "angle": 0,   "width": 10 },
       { "at": 190, "period": 2.0, "angle": 180, "width": 18, "height": 3 },
       { "at": 300, "kind": "plate", "angle": 90, "width": 11, "height": 3 }
     ] },
 
     // Run for home: the tightest twist in the game, one thing per bend, nothing visible until it is.
-    { "length": 180, "section": "tube", "speed": 175, "turn": 85, "obstacles": [   // 3830 - 4010
+    { "length": 180, "section": "tube", "speed": 175, "turn": 85, "obstacles": [ // 4290 - 4470
       { "at": 95, "angle": 0, "width": 9 }
     ] },
-    { "length": 180, "turn": -90, "climb": 14, "obstacles": [       // 4010 - 4190
+    { "length": 180, "turn": -90, "climb": 14, "obstacles": [       // 4470 - 4650
       { "at": 95, "kind": "plate", "angle": 180, "width": 11, "height": 3 }
     ] },
-    { "length": 180, "turn": 80, "climb": -16, "obstacles": [       // 4190 - 4370
+    { "length": 180, "turn": 80, "climb": -16, "obstacles": [       // 4650 - 4830
       { "at": 95, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
     ] },
 
     // Handover to Long Odds: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4370 - 4490
-    { "length": 200 },                                              // 4490 - 4690
-    { "length": 76, "turn": 7.6 }                                   // 4690 - 4766
+    { "length": 120, "section": "tube" },                           // 4830 - 4950
+    { "length": 200 },                                              // 4950 - 5150
+    { "length": 76, "turn": 7.6 }                                   // 5150 - 5226
   ]
 }

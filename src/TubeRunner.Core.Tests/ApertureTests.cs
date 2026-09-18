@@ -96,6 +96,25 @@ public class ApertureTests
             """)).Message);
     }
 
+    // A key further down the track than the thing it opens cannot be shot in time however well the
+    // level is flown, and the door or dead pad that results looks exactly like a missed shot.
+    [Fact]
+    public void AKeyBehindWhatItOpens_FailsToLoad()
+    {
+        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse("""
+            {
+              "sections": { "tube": { "radius": 6 } },
+              "start": "tube",
+              "track": [ { "length": 600 } ],
+              "obstacles": [ { "at": 100, "kind": "target", "group": "k" }, { "at": 400, "kind": "target", "group": "k" } ],
+              "pickups": [ { "at": 300, "kind": "shield", "lockedBy": "k" } ]
+            }
+            """));
+
+        // The whole group has to be down, so it is the last key that has to come first.
+        Assert.Contains("last key is at 400", e.Message);
+    }
+
     [Fact]
     public void ALockedPad_IsDeadUntilItsKeyIsShot()
     {

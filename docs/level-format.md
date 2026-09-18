@@ -333,9 +333,11 @@ Four extras on an obstacle, all of them optional, and all of them usable togethe
 { "at": 520, "lockedBy": "k", "width": 30 }        // the door it opens
 ```
 
-A `lockedBy` naming a group nothing is in is a mistake the level refuses to load with. Left to load
-it would be a wall that never opens, or a pad that never lights, and both read as the player having
-missed a shot rather than as a typo.
+A `lockedBy` naming a group nothing is in is a mistake the level refuses to load with, and so is a
+group whose last key stands further down the track than the thing it opens. Left to load, the first
+is a wall that never opens or a pad that never lights, and the second is a key that cannot be shot
+in time however well the level is flown - and both read as the player having missed a shot rather
+than as a typo.
 
 **A `plate` cannot be shot, broken or rammed** — only flown around. Every other obstacle has a way
 out, including unstoppable, which turns any collision into a free scored break. A plate is the one

@@ -241,8 +241,8 @@ line or down the meaner branch, so they cost something to take.
 | Movers | 17, one block sliding on a straight | 18, movers with gates and limits |
 | Hazard plates | 19, a plate you cannot shoot | 20, plates narrowing the only line |
 | Shoot-to-open gates | 21, one target, one gate | 22, keys you must hit while dodging |
-| Locked power-ups | 23, one key, one dead pad on a straight | 24, pads behind doors and wells; on through 26 |
-| Apertures | 25, a ring with a gap you can fly through | 26, rings under gates, movers, plates and speed |
+| Locked power-ups | 23, one key, one dead pad on a straight | 24, pads behind doors and wells; then the branch prize at 27, the dark at 29, the last prize at 30, and the finale's one offer |
+| Apertures | 25, a ring with a gap you can fly through | 26, rings under gates, movers, plates and speed; then see-through at 28, in the dark at 29, divided at 30, and divided again into the finale's fork |
 | Warps down one fork | 27, a fork where one way is a gamble | 30, when there is nothing left to lose |
 
 ## Placeholder art to replace later

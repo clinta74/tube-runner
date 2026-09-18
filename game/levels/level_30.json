@@ -101,7 +101,7 @@
     ] },
 
     // An ordered group at speed, with a mover crossing the firing line.
-    { "length": 460, "section": "tube", "speed": 170, "turn": -45, "obstacles": [   // 3100 - 3560
+    { "length": 460, "section": "tube", "speed": 170, "turn": -45, "obstacles": [ // 3100 - 3560
       { "at": 120, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
       { "at": 230, "sweep": 9, "sweepTime": 2.8, "width": 8, "angle": 0 },
       { "at": 330, "kind": "target", "angle": -90, "group": "a", "order": 1 },
@@ -116,45 +116,58 @@
       { "at": 380, "angle": 270, "width": 10 }
     ] },
 
+    // A ring divided three ways, and the level's last prize behind it. Nothing here is given: each
+    // key clears a quarter of the way round, and the extra shield sits on the side only the first of
+    // them opens, so taking it means picking a shot and then living on that side of the tube.
+    { "length": 560, "section": "oval", "obstacles": [              // 3980 - 4540
+      { "at": 80,  "kind": "target", "angle": 30,   "group": "lk1" },
+      { "at": 160, "kind": "target", "angle": 150,  "group": "lk2" },
+      { "at": 240, "kind": "target", "angle": -90,  "group": "lk3" }
+    ], "apertures": [
+      { "at": 400, "blades": 6, "angle": 30, "keys": ["lk1", "lk2", "lk3"] }
+    ], "pickups": [
+      { "at": 500, "kind": "shield-slot", "angle": 30, "lockedBy": "lk1" }
+    ] },
+
     // A limit right where the level most invites a push for the end.
-    { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [   // 3980 - 4380
+    { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [ // 4540 - 4940
       { "at": 200, "length": 400 }
     ], "obstacles": [
       { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
       { "at": 290, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 }
     ] },
 
-    { "length": 240, "section": "tube", "speed": 170, "pickups": [  // 4380 - 4620
+    { "length": 240, "section": "tube", "speed": 170, "pickups": [  // 4940 - 5180
       { "at": 120, "kind": "ring-gun" }
     ], "obstacles": [
       { "at": 180, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
     ] },
 
     // Wells on the run in, on the fast line, from Highwire.
-    { "length": 400, "section": "narrow", "speed": 175, "turn": -70, "warps": [   // 4620 - 5020
+    { "length": 400, "section": "narrow", "speed": 175, "turn": -70, "warps": [ // 5180 - 5580
       { "at": 140, "angle": 90 },
       { "at": 310, "angle": -90 }
     ] },
 
     // Run for home: a long twist, one thing per bend, nothing given.
-    { "length": 190, "section": "tube", "speed": 180, "turn": 80, "obstacles": [   // 5020 - 5210
+    { "length": 190, "section": "tube", "speed": 180, "turn": 80, "obstacles": [ // 5580 - 5770
       { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
     ] },
-    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 5210 - 5400
+    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 5770 - 5960
       { "at": 95, "period": 2.0, "angle": 180, "width": 20, "height": 3 }
     ] },
-    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 5400 - 5590
+    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 5960 - 6150
       { "at": 95, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 90 }
     ] },
-    { "length": 190, "turn": -80, "climb": 12, "obstacles": [       // 5590 - 5780
+    { "length": 190, "turn": -80, "climb": 12, "obstacles": [       // 6150 - 6340
       { "at": 95, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
     ] },
 
     // Handover to Finale: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 5780 - 5900
-    { "length": 160 },                                              // 5900 - 6060
-    { "length": 116, "turn": 11.047619 }                            // 6060 - 6176
+    { "length": 120, "section": "tube" },                           // 6340 - 6460
+    { "length": 160 },                                              // 6460 - 6620
+    { "length": 116, "turn": 11.047619 }                            // 6620 - 6736
   ]
 }

@@ -48,7 +48,7 @@
   "track": [
     { "length": 220 },                                              //    0 -  220
 
-    // A well on a bend in a full-width tube: the shape from level 23, as a reminder.
+    // A well on a bend in a full-width tube: the shape from Roulette, as a reminder.
     { "length": 360, "turn": -65, "warps": [                        //  220 -  580
       { "at": 200, "angle": 90 }
     ] },
@@ -96,9 +96,18 @@
     },
     { "length": 160, "section": "tube" },                           // 2480 - 2640
 
+    // A ring in the see-through style. Blades are visible from much further out here than a solid
+    // level allows, so this one asks for aim at distance rather than reaction - and a gap is left in
+    // it, because a sealed ring at 165 in a wire level is read long before it can be reached.
+    { "length": 400, "section": "wide", "obstacles": [              // 2640 - 3040
+      { "at": 80, "kind": "target", "angle": 90, "group": "hk" }
+    ], "apertures": [
+      { "at": 300, "blades": 6, "open": 1, "keys": ["hk"] }
+    ] },
+
     // Wells with obstacles, so the steer around one is also a dodge. The blocks sit opposite each
     // well, which means the safe wall is the one the block is on.
-    { "length": 440, "section": "narrow", "speed": 170, "turn": -60, "warps": [   // 2640 - 3080
+    { "length": 440, "section": "narrow", "speed": 170, "turn": -60, "warps": [ // 3040 - 3480
       { "at": 140, "angle": 90 },
       { "at": 330, "angle": 180 }
     ], "obstacles": [
@@ -106,7 +115,7 @@
       { "at": 330, "angle": 0, "width": 7 }
     ] },
 
-    { "length": 240, "section": "tube", "pickups": [                // 3080 - 3320
+    { "length": 240, "section": "tube", "pickups": [                // 3480 - 3720
       { "at": 120, "kind": "ring-gun" }
     ], "obstacles": [
       { "at": 180, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
@@ -114,20 +123,20 @@
 
     // Run for home: a twist through the narrow bore with a well at every other bend, each one out of
     // sight until the corner opens. The signs arrive before the bend, which is the only warning.
-    { "length": 210, "section": "narrow", "speed": 175, "turn": 80, "warps": [   // 3320 - 3530
+    { "length": 210, "section": "narrow", "speed": 175, "turn": 80, "warps": [ // 3720 - 3930
       { "at": 130, "angle": 90 }
     ] },
-    { "length": 210, "turn": -85, "climb": 14, "obstacles": [       // 3530 - 3740
+    { "length": 210, "turn": -85, "climb": 14, "obstacles": [       // 3930 - 4140
       { "at": 105, "angle": 0, "width": 7 }
     ] },
-    { "length": 210, "turn": 75, "climb": -16, "warps": [           // 3740 - 3950
+    { "length": 210, "turn": 75, "climb": -16, "warps": [           // 4140 - 4350
       { "at": 120, "angle": -90 }
     ] },
 
     // Handover to Blackout: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 3950 - 4070
-    { "length": 276 }                                               // 4070 - 4346
+    { "length": 120, "section": "tube" },                           // 4350 - 4470
+    { "length": 276 }                                               // 4470 - 4746
   ]
 }

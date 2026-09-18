@@ -63,9 +63,9 @@
 
     // Station 5: a locked power-up, dark until its key falls, with an unlocked one beside it.
     { "length": 600, "section": "tube", "obstacles": [              // 2400 - 3000
-      { "at": 430, "kind": "target", "group": "k7" }
+      { "at": 200, "kind": "target", "group": "k7" }
     ], "pickups": [
-      { "at": 300, "kind": "shield", "lockedBy": "k7" },
+      { "at": 430, "kind": "shield", "lockedBy": "k7" },
       { "at": 500, "kind": "ring-gun" }
     ] },
 

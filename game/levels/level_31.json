@@ -45,21 +45,21 @@
     // The shortest run-in of any level. There is nothing to learn.
     { "length": 160 },                                              //    0 -  160
 
-    // 1. Gates, from level 11. Straight into the rhythm, no free look, three in staggered phase.
+    // 1. Gates, from Clockwork. Straight into the rhythm, no free look, three in staggered phase.
     { "length": 420, "turn": 40, "obstacles": [                     //  160 -  580
       { "at": 120, "period": 2.0, "phase": 0,    "angle": 0,   "width": 20, "height": 3 },
       { "at": 220, "period": 2.0, "phase": 0.33, "angle": 120, "width": 20, "height": 3 },
       { "at": 340, "period": 2.0, "phase": 0.66, "angle": 240, "width": 20, "height": 3 }
     ] },
 
-    // 2. An ordered group, from 12, spread right round the wall so clearing it costs travel.
-    { "length": 400, "section": "wide", "speed": 165, "obstacles": [    //  580 -  980
+    // 2. An ordered group, from Firing Order, spread right round the wall so clearing it costs travel.
+    { "length": 400, "section": "wide", "speed": 165, "obstacles": [ //  580 -  980
       { "at": 110, "kind": "target", "angle": 180, "group": "a", "order": 0 },
       { "at": 200, "kind": "target", "angle": 60,  "group": "a", "order": 1 },
       { "at": 290, "kind": "target", "angle": -60, "group": "a", "order": 2 }
     ] },
 
-    // 3. A limit with a shoal in it, from 17. Held slow, so more sweeps pass before arrival.
+    // 3. A limit with a shoal in it, from Undertow. Held slow, so more sweeps pass before arrival.
     { "length": 440, "section": "narrow", "thrustZones": [          //  980 - 1420
       { "at": 220, "length": 440 }
     ], "obstacles": [
@@ -74,7 +74,8 @@
       { "at": 110, "kind": "rapid-fire" }
     ] },
 
-    // 4. Plates seeded through a wall of breakables, from 18 and 19. Shooting opens most of it.
+    // 4. Plates seeded through a wall of breakables, from Scarlands and Crossfire. Shooting opens
+    // most of it.
     { "length": 420, "obstacles": [                                 // 1640 - 2060
       { "at": 120, "hits": 2, "angle": 0,   "width": 9 },
       { "at": 120, "kind": "plate", "angle": 90, "width": 11, "height": 3 },
@@ -83,7 +84,7 @@
       { "at": 270, "kind": "plate", "angle": 45, "width": 11, "height": 3 }
     ] },
 
-    // 5. Flat, with the jump rhythm from 11 and plates that cannot be shot, from 18.
+    // 5. Flat, with the jump rhythm from Metronome and plates that cannot be shot, from Scarlands.
     { "length": 120, "section": "flat", "speed": 165 },             // 2060 - 2180
     { "length": 460, "obstacles": [                                 // 2180 - 2640
       { "at": 90,  "period": 2.0, "width": 80, "height": 2.5 },
@@ -94,19 +95,41 @@
       { "at": 430, "kind": "plate", "surface": "ceiling", "x": -10, "width": 24, "height": 2.5 }
     ] },
 
-    // 6. A key and its door, from 20, with the door round a bend and out of sight when the shot has
-    // to be taken.
-    { "length": 240, "section": "tube", "speed": 170, "obstacles": [    // 2640 - 2880
+    // 6. A key and its door, from Keys, with the door round a bend and out of sight when the shot
+    // has to be taken.
+    { "length": 240, "section": "tube", "speed": 170, "obstacles": [ // 2640 - 2880
       { "at": 120, "kind": "target", "angle": 180, "group": "k1" }
     ] },
     { "length": 300, "turn": 70, "obstacles": [                     // 2880 - 3180
       { "at": 180, "lockedBy": "k1", "angle": 0, "width": 24, "height": 3 }
     ] },
 
-    // 7. The three-way from 22: the middle road is the centreline and carries nothing, the quick
-    // road is tightest and carries the well. The prize sits down the meanest route.
-    { "length": 140, "section": "chamber", "speed": 175 },          // 3180 - 3320
-    { "length": 460, "turn": 95, "split": {                         // 3320 - 3780
+    // 7. A pad that has to be shot for, from Tollgate. The only thing the finale offers, and it is
+    // offered rather than given: the key is on the far wall, the pad is on the ceiling, and there is
+    // a mover crossing between them.
+    { "length": 420, "section": "wide", "speed": 175, "obstacles": [ // 3180 - 3600
+      { "at": 90,  "kind": "target", "angle": -90, "group": "f1" },
+      { "at": 210, "sweep": 9, "sweepTime": 2.6, "width": 8, "angle": 0 }
+    ], "pickups": [
+      { "at": 330, "kind": "shield", "angle": 180, "lockedBy": "f1" }
+    ] },
+
+    // 8. A ring divided three ways, from Iris, with a gate on the approach so the shots have to be
+    // taken through a cycle. Whichever quarter ends up open is the line the fork after it is entered
+    // on, which makes this the one stop on the tour that decides the next one.
+    { "length": 560, "section": "tube", "obstacles": [              // 3600 - 4160
+      { "at": 80,  "kind": "target", "angle": 30,   "group": "f2" },
+      { "at": 150, "kind": "target", "angle": 150,  "group": "f3" },
+      { "at": 220, "kind": "target", "angle": -90,  "group": "f4" },
+      { "at": 310, "period": 2.0, "angle": 0, "width": 20, "height": 3 }
+    ], "apertures": [
+      { "at": 440, "blades": 6, "angle": 30, "keys": ["f2", "f3", "f4"] }
+    ] },
+
+    // 9. The fork from Roulette: the quick road is tightest and carries the well, and the prize sits
+    // down the meanest route.
+    { "length": 140, "section": "chamber", "speed": 175 },          // 4160 - 4300
+    { "length": 460, "turn": 95, "split": {                         // 4300 - 4760
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [155, -34, 0], [300, -34, 0], [460, -8, 0]] },
@@ -121,25 +144,25 @@
         { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
       ]
     },
-    { "length": 160, "section": "tube" },                           // 3780 - 3940
+    { "length": 160, "section": "tube" },                           // 4760 - 4920
 
-    // 8. Wells on the fast line in a narrow bore, from 23.
-    { "length": 420, "section": "narrow", "speed": 180, "turn": -70, "warps": [   // 3940 - 4360
+    // 10. Wells on the fast line in a narrow bore, from Highwire.
+    { "length": 420, "section": "narrow", "speed": 180, "turn": -70, "warps": [ // 4920 - 5340
       { "at": 140, "angle": 90 },
       { "at": 320, "angle": -90 }
     ] },
 
-    // 9. The box, dense, at the highest speed in the game.
-    { "length": 420, "section": "box", "speed": 190, "obstacles": [ // 4360 - 4780
+    // 11. The box, dense, at the highest speed in the game.
+    { "length": 420, "section": "box", "speed": 190, "obstacles": [ // 5340 - 5760
       { "at": 90,  "kind": "plate", "angle": 0, "width": 13, "height": 3 },
       { "at": 190, "period": 1.9, "angle": 180, "width": 18, "height": 3 },
       { "at": 290, "sweep": 12, "sweepTime": 2.4, "width": 8, "angle": 90 },
       { "at": 380, "angle": 270, "width": 10 }
     ] },
 
-    // 10. A last limit, exactly where a player would push for the line. It is the cruellest placing
+    // 12. A last limit, exactly where a player would push for the line. It is the cruellest placing
     // in the game and it is the one the whole of block B taught.
-    { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [   // 4780 - 5180
+    { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [ // 5760 - 6160
       { "at": 200, "length": 400 }
     ], "obstacles": [
       { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
@@ -147,24 +170,24 @@
     ] },
 
     // Run for home. The longest twist in the game, one thing per bend, at full speed, in the dark.
-    { "length": 190, "section": "tube", "speed": 195, "turn": 80, "obstacles": [   // 5180 - 5370
+    { "length": 190, "section": "tube", "speed": 195, "turn": 80, "obstacles": [ // 6160 - 6350
       { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
     ] },
-    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 5370 - 5560
+    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 6350 - 6540
       { "at": 95, "period": 1.9, "angle": 180, "width": 20, "height": 3 }
     ] },
-    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 5560 - 5750
+    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 6540 - 6730
       { "at": 95, "sweep": 10, "sweepTime": 2.2, "width": 8, "angle": 90 }
     ] },
-    { "length": 190, "turn": -80, "climb": 12, "warps": [           // 5750 - 5940
+    { "length": 190, "turn": -80, "climb": 12, "warps": [           // 6730 - 6920
       { "at": 110, "angle": 0 }
     ] },
-    { "length": 190, "turn": 85, "climb": -14, "obstacles": [       // 5940 - 6130
+    { "length": 190, "turn": 85, "climb": -14, "obstacles": [       // 6920 - 7110
       { "at": 95, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
     ] },
 
     // The last stretch is clear and straight. After twenty-six levels, the finish should be a thing
     // you can see coming.
-    { "length": 320 }                                               // 6130 - 6450
+    { "length": 320 }                                               // 7110 - 7430
   ]
 }
