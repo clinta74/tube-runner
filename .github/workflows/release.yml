@@ -40,8 +40,19 @@ jobs:
           New-Item -ItemType Directory -Force $target | Out-Null
           Move-Item tpz/templates/* $target
 
+      # Signing needs a certificate from a certificate authority, and a key that a build machine can
+      # reach: of the three ways Signing.cs accepts, only a cloud signing service (TUBE_SIGN_DLIB) works
+      # unattended here - a hardware token has to be plugged into the machine doing the build, so with
+      # one of those the release is signed locally and uploaded by hand instead.
+      #
+      # Until the repository secrets below are set these are empty, the build says the outputs are
+      # unsigned, and the release goes out as it does today. Once they are set, add --signed to both
+      # steps so a tagged release fails rather than quietly publishing something Windows warns about.
       - name: Build and export
         shell: pwsh
+        env:
+          TUBE_SIGN_DLIB: ${{ secrets.TUBE_SIGN_DLIB }}
+          TUBE_SIGN_DLIB_METADATA: ${{ secrets.TUBE_SIGN_DLIB_METADATA }}
         run: |
           $version = $env:GODOT_VERSION
           $env:GODOT = (Resolve-Path "godot/Godot_v${version}_mono_win64/Godot_v${version}_mono_win64_console.exe").Path
@@ -52,6 +63,9 @@ jobs:
 
       - name: Build the installer
         shell: pwsh
+        env:
+          TUBE_SIGN_DLIB: ${{ secrets.TUBE_SIGN_DLIB }}
+          TUBE_SIGN_DLIB_METADATA: ${{ secrets.TUBE_SIGN_DLIB_METADATA }}
         run: |
           $ErrorActionPreference = 'Stop'
           # A tag names the version. A manual run has no tag, so its installer gets a placeholder.

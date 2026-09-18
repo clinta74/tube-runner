@@ -265,7 +265,8 @@ Still open:
   install is per user. WiX's Advanced dialogs would offer "just me / everyone" and elevate for the
   second.
 - **No desktop shortcut or "launch when done"** option; both need a custom dialog in an MSI.
-- **Unsigned**, so SmartScreen may warn on download. Signing costs money.
+- **Unsigned**, so SmartScreen may warn on download — see *Code signing* below, which now has the
+  build side done and is waiting on a certificate.
 
 Original notes, from before the MSI was chosen over Inno Setup:
 
@@ -362,6 +363,38 @@ Wanted, but larger than every other setting together, so it waits for the menu t
   columns, and reset to defaults.
 - The start screen lists the controls as fixed text. With rebinding it has to read the live bindings, or
   it will tell players the wrong keys.
+
+### Code signing
+*Build side done and unused. Blocked on buying a certificate, which is a decision, not work.*
+
+Unsigned, Windows calls the game an unknown publisher: SmartScreen warns before the installer runs and
+Defender offers to delete the download. The publisher shown is the certificate's subject, so the fix is
+a certificate and nothing else — `Manufacturer` in `Package.wxs` only names the installed-apps entry.
+
+Done: `tools/Build/Signing.cs` signs through `signtool` whenever a certificate is configured, and says
+plainly that the output is unsigned when none is, so a working copy without one still builds. The exe is
+signed during export, before the installer packages it — otherwise the copy inside the MSI stays unsigned
+and players are warned when they launch the game rather than when they install it. `--signed` on either
+command makes an unsigned build an error. The release workflow passes the cloud-signing variables through
+from repository secrets and is inert until they exist. Checked against a throwaway self-signed
+certificate: signing succeeds and verification correctly rejects an untrusted root.
+
+Two things worth keeping in mind, both found by testing rather than reasoning:
+- Godot's embedded PCK is a real PE section ending exactly at the end of the file, and a signature is
+  appended after it. The section header and the PCK bytes are untouched, so signing the exe is safe — but
+  only in that order: re-exporting discards the signature.
+- The WiX SDK hard-links the MSI from `installer/obj` into `builds`, so the two names are one file.
+  Signing in place would sign MSBuild's cached copy too, and MSBuild would hand that back as an
+  up-to-date output on the next build, carrying a stale signature into a later release. `tube installer`
+  gives `builds` its own copy before signing.
+
+Still open: **which certificate**. There is no free-for-everyone code signing CA, and since June 2023 the
+key has to live on a hardware token or in a cloud HSM, which decides whether CI can sign at all. SignPath
+Foundation is free for qualifying open source projects; Certum's open source certificate is ~$70–100/yr;
+Azure Trusted Signing is ~$10/mo. All three are OV, so a new release can still be warned about until it
+builds SmartScreen reputation — only an EV certificate (~$300–500/yr, USB token, so local signing only)
+avoids that wait. Once one exists: set the secrets, add `--signed` in the workflow, set `Manufacturer` to
+the validated name, and check a downloaded MSI on a machine that has never seen the game.
 
 ## Standing constraints
 

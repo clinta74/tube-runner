@@ -7,6 +7,9 @@
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <!-- Manufacturer names the publisher in the installed-apps list only. The publisher Windows shows
+       while installing, and in any Defender or SmartScreen warning, comes from the signing
+       certificate's subject instead - so once a certificate exists, set this to the same name. -->
   <Package Name="Tube Runner"
            Manufacturer="clinta74"
            Version="$(var.GameVersion)"

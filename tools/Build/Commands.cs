@@ -22,13 +22,16 @@ internal static class Commands
           export      Export the standalone Windows build to builds/windows, and zip it.
                         --version <x.y.z>    stamp the version, so the game checks for newer releases
                         --debug              debug export, which opens a console with errors
+                        --signed             fail rather than leave the exe unsigned
 
           installer   Build builds/TubeRunner-<version>.msi from the export. Run export first.
                         --version <x.y.z>    defaults to the latest git tag
+                        --signed             fail rather than leave the installer unsigned
 
           icon        Rebuild game/icon.ico from game/icon.svg.
 
-        Set GODOT to use a specific Godot .NET executable.
+        Set GODOT to use a specific Godot .NET executable. Signing is off unless a certificate is
+        configured; Signing.cs lists the TUBE_SIGN_* variables that name one.
         """;
 
     public static int Run(string[] args)
@@ -46,10 +49,10 @@ internal static class Commands
                 Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings"], values: ["level", "start", "record-fps"]));
                 break;
             case "export":
-                Export(Options.Parse(options, flags: ["debug"], values: ["version"]));
+                Export(Options.Parse(options, flags: ["debug", "signed"], values: ["version"]));
                 break;
             case "installer":
-                Installer(Options.Parse(options, flags: [], values: ["version"]));
+                Installer(Options.Parse(options, flags: ["signed"], values: ["version"]));
                 break;
             case "icon":
                 Options.Parse(options, flags: [], values: []);
@@ -101,6 +104,7 @@ internal static class Commands
     private static void Export(Options options)
     {
         var stamp = options.Value("version") is string version ? Versions.Require(version) : null;
+        var signing = Signer(options);
 
         var godot = Godot.Find(console: true);
         var engineVersion = Godot.Version(godot);
@@ -119,6 +123,12 @@ internal static class Commands
             environment: new Dictionary<string, string?> { ["GameVersion"] = stamp });
         if (!File.Exists(exe)) throw new BuildFailure("Godot finished without writing the exe.");
 
+        // Signed here rather than later for two reasons: `tube installer` packages this exe, so signing
+        // it afterwards would leave the copy inside the MSI unsigned, and the zip below should carry the
+        // signed exe as well. Godot keeps the embedded PCK in its own PE section, so a signature - which
+        // goes after the sections - leaves the game's data alone.
+        Sign(signing, exe, exe);
+
         var zip = Repo.Path("builds", "TubeRunner-windows.zip");
         File.Delete(zip);
         ZipFile.CreateFromDirectory(output, zip, CompressionLevel.Optimal, includeBaseDirectory: false);
@@ -130,6 +140,7 @@ internal static class Commands
 
     private static void Installer(Options options)
     {
+        var signing = Signer(options);
         var build = Repo.Path("builds", "windows");
         if (!File.Exists(Path.Combine(build, "TubeRunner.exe")))
         {
@@ -144,7 +155,59 @@ internal static class Commands
 
         var msi = Repo.Path("builds", $"TubeRunner-{version}.msi");
         if (!File.Exists(msi)) throw new BuildFailure($"The installer build finished, but {msi} isn't there.");
+
+        // Signing an MSI covers the cabinet embedded in it too, so this has to come after WiX has built
+        // it. The exe inside was signed during export, which is what stops the warning when the game is
+        // launched rather than when it is installed.
+        //
+        // The WiX SDK hard-links the MSI from installer/obj into builds, so the two names are one file:
+        // signing in place would sign MSBuild's cached copy as well, and MSBuild would then hand that
+        // already-signed file back as an up-to-date output on the next build, carrying a stale signature
+        // into a later release. Giving builds its own copy first leaves obj holding what WiX produced.
+        if (signing is not null) Unlink(msi);
+        Sign(signing, msi, msi);
         Console.WriteLine($"Installer {msi}");
+    }
+
+    /// <summary>
+    /// The signer to use, or null to leave the output unsigned. Resolved before a command does any work,
+    /// so a missing certificate or signtool is reported straight away rather than after a long export.
+    /// --signed makes an unsigned build an error, which is how a release refuses to publish something
+    /// Windows will warn about. See Signing.cs for the variables that configure a certificate.
+    /// </summary>
+    private static Signing? Signer(Options options)
+    {
+        var signing = Signing.Configured();
+        if (signing is null && options.Flag("signed"))
+        {
+            throw new BuildFailure(
+                "--signed was given, but no signing certificate is configured. Set one of "
+                + "TUBE_SIGN_THUMBPRINT, TUBE_SIGN_PFX or TUBE_SIGN_DLIB; see Signing.cs.");
+        }
+        return signing;
+    }
+
+    /// <summary>
+    /// Replaces a file with an independent copy of itself, so that writing to it no longer writes to any
+    /// hard link sharing its contents.
+    /// </summary>
+    private static void Unlink(string path)
+    {
+        var separate = path + ".tmp";
+        File.Copy(path, separate, overwrite: true);
+        File.Delete(path);
+        File.Move(separate, path);
+    }
+
+    private static void Sign(Signing? signing, string file, string what)
+    {
+        if (signing is null)
+        {
+            Console.WriteLine($"Unsigned {what} (no certificate configured, so Windows will warn about it)");
+            return;
+        }
+        signing.Sign(file, what);
+        signing.Verify(file);
     }
 
     // Godot renders the SVG at each icon size (game/tools/make_icon.gd), then the PNGs are packed into an

@@ -54,6 +54,44 @@ This writes `builds/windows/TubeRunner.exe` plus its `data_TubeRunner_windows_x8
 The export preset is `game/export_presets.cfg`. It includes `levels/*.json`, which Godot wouldn't
 package otherwise, so new level files are picked up automatically.
 
+### Signing
+
+Unsigned, Windows calls the game an unknown publisher: SmartScreen warns before the installer runs and
+Defender may offer to delete the download. Signing is what replaces that with a publisher name — the
+name on the certificate, not anything written in the installer.
+
+That needs a certificate from a certificate authority. A self-signed one does not help, and there is no
+free-for-everyone code signing CA (Let's Encrypt issues TLS certificates only). Since June 2023 the key
+must also live on a hardware token or in a cloud HSM, which is what decides whether CI can sign:
+
+| Route | Cost | Signs in CI |
+|---|---|---|
+| [SignPath Foundation](https://signpath.org/) — free for qualifying open source projects | free | yes |
+| [Certum Open Source](https://shop.certum.eu/open-source-code-signing.html) | ~$70–100/yr | with SimplySign |
+| [Azure Trusted Signing](https://learn.microsoft.com/azure/trusted-signing/) | ~$10/mo | yes |
+| EV certificate on a USB token (DigiCert, Sectigo) | ~$300–500/yr | no — the token must be plugged in |
+
+Only an EV certificate gets SmartScreen's trust immediately. The others are OV, so early downloads of a
+new release can still be warned about until it builds reputation.
+
+`tube export` and `tube installer` sign whatever they produce once a certificate is configured, and say
+plainly that the output is unsigned when none is. Exactly one of these names the key:
+
+```bash
+TUBE_SIGN_THUMBPRINT=<sha1>    # a certificate in the Windows store, which is how a USB token signs
+TUBE_SIGN_PFX=<file>           # with TUBE_SIGN_PFX_PASSWORD; only for a key issued before June 2023
+TUBE_SIGN_DLIB=<dll>           # with TUBE_SIGN_DLIB_METADATA; how the cloud services sign, and the
+                               # only one that works unattended in CI
+```
+
+The exe is signed during export, before the installer packages it — otherwise the copy inside the MSI
+stays unsigned and players are warned when they launch the game rather than when they install it. Add
+`--signed` to either command to fail rather than produce an unsigned build; the release workflow should
+use it once its secrets are set. See `tools/Build/Signing.cs`.
+
+`Manufacturer` in `installer/Package.wxs` only names the publisher in the installed-apps list; set it to
+match the certificate once one exists.
+
 ### Releasing from GitHub
 
 `.github/workflows/release.yml` does the same build on a Windows runner and attaches the zip to a
