@@ -87,11 +87,17 @@ public readonly record struct CrossSection(
     /// blend lasts, whatever is done to its tip. Snapping instead puts its ends at two definite
     /// places, the piece boundaries, where the renderer closes them with a flat cap. The bore is
     /// still free to widen or turn across the same piece; only the core arrives whole.
+    ///
+    /// The whole piece takes <paramref name="b"/>'s core, its very first unit included. Leaving that
+    /// one unit to the section before - which is what blending from <paramref name="a"/> amounts to
+    /// at t = 0 - left a single sample of track with a core of no size, and the wall drew a cone
+    /// flaring out of the middle of the bore to meet the real core behind it. A disc across the
+    /// tube, at exactly the place the flat cap is there to close.
     /// </summary>
     public static CrossSection Lerp(CrossSection a, CrossSection b, float t) => new(
         a.HalfWidth + (b.HalfWidth - a.HalfWidth) * t,
         a.HalfHeight + (b.HalfHeight - a.HalfHeight) * t,
         a.Squareness + (b.Squareness - a.Squareness) * t,
         a.Opening + (b.Opening - a.Opening) * t,
-        t > 0f ? b.Core : a.Core);
+        b.Core);
 }

@@ -112,19 +112,24 @@ public class AnnulusTests
     [Fact]
     public void AShipOnTheCeiling_StaysWhereItIsWhenACoreGrowsIn()
     {
+        // A hollow piece, then one carrying a core: the core takes the whole of its own piece, so it
+        // begins exactly at the join.
         var tube = CrossSection.Circle(12f);
         var track = new Track(tube, startSpeed: 60f);
-        track.Append(new TrackPiece(300f, Ring));
+        track.Append(new TrackPiece(300f, tube));
         track.Append(new TrackPiece(300f, Ring));
 
         var game = new GameSession(track, [], new SessionSettings(new ShipSettings(SteerSpeed: 22f)),
             new TrackPosition(0, Surface.Ceiling, 0f));
 
+        // Riding the top of the hollow tube, which is where a ceiling is when there is no core.
         var before = game.Ship.Pose(0f).Point;
         Assert.Equal(new Vector2(0f, 12f), before, Compare);
 
-        game.Step(1f / 60f, default);
+        while (game.Ship.Position.S < 301) game.Step(1f / 60f, default);
 
+        // The top of the tube has become part of the outer wall, which is one surface all the way
+        // round. Same place, under a different name - not a drop onto the core.
         Assert.Equal(Surface.Floor, game.Ship.Position.Surface);
         Assert.Equal(before, game.Ship.Pose(0f).Point, Compare);
     }
