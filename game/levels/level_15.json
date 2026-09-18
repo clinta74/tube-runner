@@ -1,137 +1,117 @@
 {
-  "name": "Speed Trap",
-  "id": "speed-trap",
+  "name": "Gauntlet",
+  "id": "gauntlet",
   "next": "level_16.json",
   "speed": 120,
   "segmentLength": 60,
 
-  // Block B opens here: full shields in, then one new idea on its own.
-  // Speed-limit zones - a stretch that costs a shield if it is taken too fast. The inverse of a
-  // boost: the player has set their own throttle since level 3, so handing them speed decides
-  // nothing, while making them give it up on a timed run is a real price.
-  // Every limit here has a visible reason - each one sits where the track is about to do something
-  // that deserves caution - and each follows a straight that invites speed, so easing off is a read
-  // rather than a surprise. A limit that punishes speed for no reason is just arbitrary.
+  // Block A's test. Nothing new: gates from 10, the jump pairing from 11, ordered groups from 12,
+  // all at once and denser. This is the fourth level of the block, so it is also where the block's
+  // resources are thinnest - one shield, late, and the tools before the stretch that needs them.
   "theme": {
-    "darks": ["#20281c", "#1a2117", "#283021"],
-    "lights": ["#8fa878", "#7b9366", "#9db487"],
-    "seamDark": "#0f130c",
-    "seamLight": "#d4ff9f",
-    "far": "#070a06",
-    "ship": "#d4ff9f",
-    "block": "#cbd8bb",
-    "target": "#ff7a3a",
-    "breakable": "#ffe36b",
+    "darks": ["#2b1c1c", "#231616", "#341f1f"],
+    "lights": ["#b07a6a", "#9a6657", "#c08b78"],
+    "seamDark": "#150d0d",
+    "seamLight": "#ffc9a8",
+    "far": "#0a0606",
+    "ship": "#ffc9a8",
+    "block": "#d2bcae",
+    "target": "#ff4d3a",
+    "breakable": "#ffd47c",
     "fadeStart": 35,
-    "fadeEnd": 340,
-    "glow": 0.25
+    "fadeEnd": 330,
+    "glow": 0.3
   },
 
   "sections": {
-    "tube":   { "radius": 6 },
-    "narrow": { "radius": 4.5 },
-    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
-    "wide":   { "radius": 7 },
-    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-    "branch":       { "radius": 6 },
-    "branch-tight": { "radius": 4.5 }
+    "tube": { "radius": 6 },
+    "flat": { "radius": 6, "opening": 1 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":  { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "wide": { "radius": 7 }
   },
 
   "start": "tube",
   "track": [
-    // The block's refill.
-    { "length": 320, "pickups": [                                   //    0 -  320
-      { "at": 290, "kind": "full-shields" }
+    { "length": 180 },                                              //    0 -  180
+
+    // Straight in: gates and blocks mixed, no free look. Everything here was taught in 10.
+    { "length": 360, "turn": 35, "obstacles": [                     //  180 -  540
+      { "at": 100, "period": 2.2, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 160, "angle": 120, "width": 9 },
+      { "at": 240, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 310, "angle": -120, "width": 9 }
     ] },
 
-    // A long clear straight. Nothing to do but wind the throttle up - which is the setup.
-    { "length": 280, "speed": 140 },                                //  320 -  600
-
-    // FREE LOOK. The tube pinches to a narrow bore, and the limit sits on it. The reason is visible
-    // from a long way out: the walls are closing in, so backing off reads as sense, not as a rule.
-    { "length": 260, "section": "narrow", "thrustZones": [          //  600 -  860
-      { "at": 130, "length": 260 }
-    ] },
-
-    { "length": 260, "section": "tube", "speed": 130, "pickups": [  //  860 - 1120
-      { "at": 130, "kind": "rapid-fire" }
-    ] },
-
-    // Second limit, now with something to do inside it: blocks to thread while held slow. Going
-    // through fast costs a shield; going through slow costs time. Both are real.
-    { "length": 340, "section": "narrow", "turn": 35, "thrustZones": [   // 1120 - 1460
-      { "at": 170, "length": 340 }
+    // A group to clear while gates cycle on the same stretch. The steering the group wants and the
+    // timing the gates want are different problems arriving together, which is the point of a test.
+    { "length": 420, "section": "wide", "turn": -40, "pickups": [   //  540 -  960
+      { "at": 60, "kind": "rapid-fire" }
     ], "obstacles": [
-      { "at": 90,  "angle": 0,   "width": 7 },
-      { "at": 180, "angle": 120, "width": 7 },
-      { "at": 270, "angle": 240, "width": 7 }
+      { "at": 140, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
+      { "at": 200, "period": 2.4, "angle": 0, "width": 20, "height": 3 },
+      { "at": 260, "kind": "target", "angle": -90, "group": "a", "order": 1 },
+      { "at": 330, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 380, "kind": "target", "angle": 180, "group": "a", "order": 2 }
     ] },
 
-    // Breathe and open out, with a shield for what the last stretch probably cost.
-    { "length": 280, "section": "wide", "speed": 140, "pickups": [  // 1460 - 1740
+    // Flat, with the jump pairing from 11 - but now with a group on the ceiling that has to be shot
+    // from up there, so the crossing is not just a dodge.
+    { "length": 120, "section": "flat", "speed": 130 },             //  960 - 1080
+    { "length": 440, "obstacles": [                                 // 1080 - 1520
+      { "at": 90,  "period": 2.2, "width": 80, "height": 2.5 },
+      { "at": 90,  "period": 2.2, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 210, "kind": "target", "surface": "ceiling", "x": -14, "group": "b", "order": 0 },
+      { "at": 260, "kind": "target", "surface": "ceiling", "x": 14,  "group": "b", "order": 1 },
+      { "at": 350, "period": 2.2, "phase": 0.5, "width": 80, "height": 2.5 },
+      { "at": 350, "period": 2.2, "surface": "ceiling", "width": 80, "height": 2.5 }
+    ] },
+
+    // Breathe. The only shield in the level, and it sits on the ceiling so reaching it costs time.
+    { "length": 280, "section": "tube", "speed": 125, "pickups": [  // 1520 - 1800
       { "at": 140, "kind": "shield", "angle": 180 }
+    ] },
+
+    // The box: flat floor and ceiling, gates across both, blocks in the corners. Squarish sections
+    // read differently, which is the oldest trick in the game being used against a new mechanic.
+    { "length": 380, "section": "box", "speed": 140, "obstacles": [ // 1800 - 2180
+      { "at": 80,  "period": 2.0, "angle": 0,   "width": 18, "height": 3 },
+      { "at": 170, "angle": 90,  "width": 8 },
+      { "at": 170, "angle": -90, "width": 8 },
+      { "at": 260, "period": 2.0, "phase": 0.5, "angle": 180, "width": 18, "height": 3 },
+      { "at": 340, "kind": "target", "angle": 0 }
+    ] },
+
+    // Ring gun before a loose ring, with an ordered group in the same stretch that it cannot touch.
+    // Knowing which is which is the whole lesson of 12, tested.
+    { "length": 420, "section": "tube", "turn": 45, "pickups": [    // 2180 - 2600
+      { "at": 60, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 210, "kind": "target", "angle": 90 }
+      { "at": 170, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 },
+      { "at": 290, "kind": "target", "angle": 45,   "group": "c", "order": 0 },
+      { "at": 340, "kind": "target", "angle": -135, "group": "c", "order": 1 }
     ] },
 
-    // The trap this level is named for. A long fast straight, then a blind bend with a limit on it.
-    // Read the sign in the geometry - the tube narrows before the corner - or arrive too fast.
-    { "length": 420, "section": "tube", "speed": 155 },             // 1740 - 2160
-    { "length": 300, "section": "narrow", "turn": 70, "thrustZones": [   // 2160 - 2460
-      { "at": 150, "length": 300 }
-    ], "obstacles": [
-      { "at": 200, "angle": 180, "width": 7 }
+    // A spiral of blocks at speed, to make sure the old skills have not been forgotten.
+    { "length": 340, "turn": -50, "climb": 15, "obstacles": [       // 2600 - 2940
+      { "at": 60, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 }
     ] },
 
-    { "length": 260, "section": "oval", "speed": 145, "pickups": [  // 2460 - 2720
-      { "at": 120, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 190, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    // Run for home: a twist with a gate at every bend, each hidden until it is close.
+    { "length": 180, "speed": 145, "turn": 75, "obstacles": [       // 2940 - 3120
+      { "at": 100, "period": 2.0, "angle": 0, "width": 20, "height": 3 }
+    ] },
+    { "length": 180, "turn": -80, "climb": 14, "obstacles": [       // 3120 - 3300
+      { "at": 90, "period": 2.0, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 180, "turn": 70, "climb": -16, "obstacles": [       // 3300 - 3480
+      { "at": 90, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
     ] },
 
-    // A fork where the quick branch is the one under a limit. The short way saves ground and then
-    // makes you give the speed back, which is this level's whole argument in one junction.
-    { "length": 140, "section": "chamber", "speed": 150 },          // 2720 - 2860
-    { "length": 440, "turn": 85, "split": {                         // 2860 - 3300
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
-          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
-        ]
-      },
-      "thrustZones": [
-        { "at": 220, "branch": 1, "length": 440 }
-      ],
-      "obstacles": [
-        { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
-        { "at": 160, "branch": 1, "angle": 0, "width": 7 }
-      ]
-    },
-    { "length": 140, "section": "tube" },                           // 3300 - 3440
-
-    // Two limits back to back with a gap between them. The gap is long enough to be worth speeding
-    // through, which is the decision: take the free stretch fast and risk overrunning into the next
-    // limit, or hold one speed across both and lose the time.
-    { "length": 280, "section": "narrow", "thrustZones": [          // 3440 - 3720
-      { "at": 140, "length": 280 }
-    ] },
-    { "length": 220, "section": "tube", "speed": 155 },             // 3720 - 3940
-    { "length": 280, "section": "narrow", "thrustZones": [          // 3940 - 4220
-      { "at": 140, "length": 280 }
-    ] },
-
-    // Run for home, wide open and no limits: the level gives the speed back at the end.
-    { "length": 200, "section": "tube", "speed": 160, "turn": -55, "obstacles": [   // 4220 - 4420
-      { "at": 110, "angle": 90, "width": 9 }
-    ] },
-    { "length": 200, "turn": 60, "climb": 12, "obstacles": [        // 4420 - 4620
-      { "at": 100, "kind": "target", "angle": 180 }
-    ] },
-
-    // Handover to Restraint: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Speed Trap: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4620 - 4740
-    { "length": 276, "turn": 24.642857 }                            // 4740 - 5016
+    { "length": 120, "section": "tube" },                           // 3480 - 3600
+    { "length": 276 }                                               // 3600 - 3876
   ]
 }

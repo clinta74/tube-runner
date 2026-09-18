@@ -1,153 +1,130 @@
 {
-  "name": "Tollgate",
-  "id": "tollgate",
+  "name": "Attrition",
+  "id": "attrition",
   "next": "level_24.json",
-  "speed": 150,
+  "speed": 145,
   "segmentLength": 60,
 
-  // A new block opens here, and its idea is the gentlest lock in the game: a power-up that has to be
-  // shot for. A pad with a `lockedBy` is dead until its key falls - dark, with its label in the key's
-  // colour - and flying over it does nothing at all.
-  // Everything this block goes on to do rests on that. Levels 21 and 22 taught a key that opens a
-  // wall, where a miss costs a shield; here a miss costs only the prize, which is exactly the right
-  // price for the first level asking the player to shoot at something that is not in their way.
-  // So the block's own refill is behind a key. It is a level about paying tolls, and the first toll
-  // is the shields it hands back.
-  // The keys sit off the line the pad is on, always. A key that can be shot without leaving the line
-  // to the thing it opens is not a toll, it is a formality.
+  // Block C's test, and the point where the scarcity curve starts to bite. Everything from C -
+  // plates, keys and doors - over everything from A and B. One shield in the whole level, and it is
+  // most of the way through, so the run arrives at block D on whatever it managed to keep.
+  // The name is the design: nothing here is individually harder than what came before. It is long,
+  // it is dense, and it does not give anything back.
   "theme": {
-    "darks": ["#2a2016", "#221a12", "#33271a"],
-    "lights": ["#b08a4a", "#977640", "#c79a53"],
-    "seamDark": "#150f08",
-    "seamLight": "#ffd9a0",
-    "far": "#080502",
-    "ship": "#ffd9a0",
-    "block": "#e0cdb0",
-    "target": "#ff6adf",
-    "breakable": "#7cffb0",
+    "darks": ["#241a1a", "#1d1414", "#2c2020"],
+    "lights": ["#9c7070", "#865e5e", "#ad8080"],
+    "seamDark": "#120b0b",
+    "seamLight": "#ffb3b3",
+    "far": "#070404",
+    "ship": "#ffb3b3",
+    "block": "#d2b9b9",
+    "target": "#ff4040",
+    "breakable": "#ffd06b",
     "fadeStart": 35,
-    "fadeEnd": 345,
-    "glow": 0.35
+    "fadeEnd": 330,
+    "glow": 0.3
   },
 
   "sections": {
-    "tube":         { "radius": 6 },
-    "wide":         { "radius": 7.5 },
-    "oval":         { "halfWidth": 9, "halfHeight": 4.5 },
-    "box":          { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
-    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-    "branch":       { "radius": 6 },
-    "branch-tight": { "radius": 4.5 }
+    "tube":   { "radius": 6 },
+    "narrow": { "radius": 4.5 },
+    "box":    { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "flat":   { "radius": 6, "opening": 1 },
+    "oval":   { "halfWidth": 9, "halfHeight": 4.5 }
   },
 
   "start": "tube",
   "track": [
-    // One shield given outright, so the level does not open by asking for anything.
-    { "length": 340, "pickups": [                                   //    0 -  340
-      { "at": 300, "kind": "shield" }
-    ] },
+    { "length": 180 },                                              //    0 -  180
 
-    // FREE LOOK. One key on the right wall, one dead pad on the floor line 240 units later. Fly over
-    // it without shooting and nothing happens; that is the lesson, and the second half of the
-    // block's refill is what it pays.
-    { "length": 460, "section": "wide", "obstacles": [              //  340 -  800
-      { "at": 90, "kind": "target", "angle": 90, "group": "t1" }
-    ], "pickups": [
-      { "at": 330, "kind": "shield", "lockedBy": "t1" }
-    ] },
-
-    // The same shape, mirrored onto the ceiling, so the pad itself costs travel as well as a shot.
-    { "length": 420, "section": "tube", "turn": 35, "obstacles": [  //  800 - 1220
-      { "at": 100, "kind": "target", "angle": -90, "group": "t2" }
-    ], "pickups": [
-      { "at": 320, "kind": "rapid-fire", "angle": 180, "lockedBy": "t2" }
-    ] },
-
-    // Rapid fire, if it was taken, against what it is for: two rings of thick breakables.
-    { "length": 380, "section": "oval", "speed": 155, "obstacles": [ // 1220 - 1600
-      { "at": 120, "hits": 3, "angle": 0, "count": 6, "angleStep": 60, "width": 5 },
-      { "at": 260, "hits": 3, "angle": 30, "count": 6, "angleStep": 60, "width": 5 }
-    ] },
-
-    // Two keys, one pad. They sit on opposite walls, so opening it costs the whole way round the
-    // tube and back, and the pad is on the floor where the line already was. Half a lap of a tube is
-    // a 0.9 second swing, so the second key stands 200 units past the first - see the spacing rule
-    // in level-format.md.
-    { "length": 620, "section": "tube", "turn": -40, "obstacles": [ // 1600 - 2220
-      { "at": 110, "kind": "target", "angle": 90,  "group": "t3" },
-      { "at": 310, "kind": "target", "angle": -90, "group": "t3" }
-    ], "pickups": [
-      { "at": 490, "kind": "shield", "lockedBy": "t3" }
-    ] },
-
-    // One key, two things: the door in the way and the pad behind it. Shooting it buys passage and
-    // payment at once - the first time the two kinds of lock are the same lock.
-    { "length": 500, "section": "box", "obstacles": [               // 2220 - 2720
-      { "at": 120, "kind": "target", "angle": 120, "group": "t4" },
-      { "at": 320, "lockedBy": "t4", "width": 26, "height": 3 }
-    ], "pickups": [
-      { "at": 420, "kind": "ring-gun", "lockedBy": "t4" }
-    ] },
-
-    // A fork with the prize down the tight road: the key stands in the chamber before it, so the
-    // branch has to be chosen already knowing whether the shot landed.
-    { "length": 160, "section": "chamber", "speed": 158, "obstacles": [ // 2720 - 2880
-      { "at": 70, "kind": "target", "angle": 90, "group": "tf" }
-    ] },
-    { "length": 440, "turn": 85, "split": {                         // 2880 - 3320
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
-          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
-        ]
-      },
-      "obstacles": [
-        { "at": 200, "branch": 0, "angle": 0, "count": 2, "spacing": 90, "angleStep": 90, "width": 7 },
-        { "at": 150, "branch": 1, "angle": 90, "width": 6 }
-      ],
-      "pickups": [
-        { "at": 300, "branch": 1, "kind": "full-shields", "lockedBy": "tf" }
-      ]
-    },
-    { "length": 140, "section": "tube" },                           // 3320 - 3460
-
-    // Three keys for the rarest prize in the game. They are spread right round the wall, and the
-    // extra shield is on the ceiling, so the whole thing is one long trip off the fast line.
-    { "length": 660, "obstacles": [                                 // 3460 - 4120
-      { "at": 100, "kind": "target", "angle": 60,   "group": "t5" },
-      { "at": 240, "kind": "target", "angle": 180,  "group": "t5" },
-      { "at": 380, "kind": "target", "angle": -60,  "group": "t5" }
-    ], "pickups": [
-      { "at": 530, "kind": "shield-slot", "angle": 180, "lockedBy": "t5" }
-    ] },
-
-    // Under pressure for the first time: a gate cycling on the line, with the key beyond it. The
-    // shot has to be taken through the gap, or waited for.
-    { "length": 440, "section": "wide", "turn": 55, "obstacles": [  // 4120 - 4560
-      { "at": 120, "period": 2.2, "angle": 0, "width": 22, "height": 3 },
-      { "at": 230, "kind": "target", "angle": -90, "group": "t6" }
-    ], "pickups": [
-      { "at": 370, "kind": "shield", "lockedBy": "t6" }
-    ] },
-
-    // Run for home. A key before each bend with its pad round the corner, so the shot is taken
-    // before there is anything to see it pay for.
-    { "length": 220, "section": "tube", "speed": 160, "turn": 70, "obstacles": [ // 4560 - 4780
-      { "at": 70, "kind": "target", "angle": 0, "group": "t7" }
-    ] },
-    { "length": 220, "turn": -75, "climb": 12, "pickups": [         // 4780 - 5000
-      { "at": 90, "kind": "rapid-fire", "lockedBy": "t7" }
+    // No free look, no refill. Keys, doors and plates from the first bend.
+    { "length": 420, "turn": 40, "warps": [                         //  180 -  600
+      { "at": 260, "angle": -90 }
     ], "obstacles": [
-      { "at": 150, "kind": "target", "angle": 180, "group": "t8" }
-    ] },
-    { "length": 220, "turn": 60, "climb": -14, "pickups": [         // 5000 - 5220
-      { "at": 100, "kind": "unstoppable", "angle": 180, "lockedBy": "t8" }
+      { "at": 100, "kind": "target", "angle": 90, "group": "k1" },
+      { "at": 200, "kind": "plate", "angle": 0, "width": 12, "height": 3 },
+      { "at": 350, "lockedBy": "k1", "angle": 180, "width": 24, "height": 3 }
     ] },
 
-    // Handover to Ransom: straighten and blend into its tube, then the first 276 units of its track,
-    // so the camera sees the same tube on both sides of the join. Nothing to hit out here; the level
-    // finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 5220 - 5340
-    { "length": 276 }                                               // 5340 - 5616
+    // Gates and plates on one stretch: one opens on a cycle and one never does, and telling them
+    // apart at speed is the whole problem. They are deliberately the same size.
+    { "length": 440, "section": "tube", "obstacles": [              //  600 - 1040
+      { "at": 100, "period": 2.2, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 100, "kind": "plate", "angle": 180, "width": 12, "height": 3 },
+      { "at": 250, "kind": "plate", "angle": 90,  "width": 12, "height": 3 },
+      { "at": 250, "period": 2.2, "phase": 0.5, "angle": 270, "width": 20, "height": 3 },
+      { "at": 380, "period": 2.2, "angle": 45,  "width": 20, "height": 3 }
+    ] },
+
+    // Held slow through a limit, with a key to shoot and its door waiting past the zone. The limit
+    // gives time to aim, which is the only kindness in the level.
+    { "length": 460, "section": "narrow", "thrustZones": [          // 1040 - 1500
+      { "at": 230, "length": 460 }
+    ], "obstacles": [
+      { "at": 140, "kind": "target", "angle": 180, "group": "k2" },
+      { "at": 260, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
+      { "at": 400, "lockedBy": "k2", "angle": 90, "width": 20, "height": 3 }
+    ] },
+
+    // Rapid fire - a tool, not a gift, and the only one until the shield.
+    { "length": 240, "section": "tube", "speed": 155, "pickups": [  // 1500 - 1740
+      { "at": 120, "kind": "rapid-fire" }
+    ] },
+
+    // Flat, with plates that cannot be shot, gates that open, and a forced jump between them.
+    { "length": 120, "section": "flat", "speed": 150 },             // 1740 - 1860
+    { "length": 460, "obstacles": [                                 // 1860 - 2320
+      { "at": 90,  "period": 2.2, "width": 80, "height": 2.5 },
+      { "at": 200, "kind": "plate", "x": -14, "width": 26, "height": 2.5 },
+      { "at": 200, "kind": "plate", "x": 16,  "width": 22, "height": 2.5 },
+      { "at": 320, "width": 80, "height": 2.5 },
+      { "at": 400, "kind": "plate", "surface": "ceiling", "x": -10, "width": 24, "height": 2.5 }
+    ] },
+
+    // The shield. Most of the way through, on the ceiling, off the fast line - it costs time to take
+    // and the run needs it anyway.
+    { "length": 260, "section": "tube", "speed": 155, "pickups": [  // 2320 - 2580
+      { "at": 130, "kind": "shield", "angle": 180 }
+    ] },
+
+    // An ordered group that is also a key, with plates crowding the lines it can be shot from, at
+    // the highest speed so far. Three mechanics on one stretch and no tool that shortcuts it.
+    { "length": 480, "section": "box", "speed": 165, "obstacles": [ // 2580 - 3060
+      { "at": 100, "kind": "plate", "angle": 45,  "width": 11, "height": 3 },
+      { "at": 160, "kind": "target", "angle": 90,  "group": "k3", "order": 0 },
+      { "at": 250, "kind": "plate", "angle": -45, "width": 11, "height": 3 },
+      { "at": 310, "kind": "target", "angle": -90, "group": "k3", "order": 1 },
+      { "at": 430, "lockedBy": "k3", "angle": 0, "width": 26, "height": 3 }
+    ] },
+
+    // A shoal in a limit: slow means more sweeps pass before arrival, the pairing from Undertow,
+    // now with plates fixed among the movers so part of the wall never opens.
+    { "length": 460, "section": "narrow", "turn": -45, "thrustZones": [  // 3060 - 3520
+      { "at": 230, "length": 460 }
+    ], "obstacles": [
+      { "at": 110, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
+      { "at": 220, "kind": "plate", "angle": 120, "width": 9, "height": 3 },
+      { "at": 330, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 240 }
+    ] },
+
+    // Run for home. A twist, at full speed, with a plate or a gate at every bend and nothing given.
+    { "length": 200, "section": "tube", "speed": 170, "turn": 75, "obstacles": [   // 3520 - 3720
+      { "at": 105, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
+    ] },
+    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 3720 - 3920
+      { "at": 100, "period": 2.0, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 3920 - 4120
+      { "at": 100, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
+    ] },
+    { "length": 200, "turn": -65, "climb": 12, "obstacles": [       // 4120 - 4320
+      { "at": 100, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
+    ] },
+
+    // Handover to Roulette: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4320 - 4440
+    { "length": 276 }                                               // 4440 - 4716
   ]
 }

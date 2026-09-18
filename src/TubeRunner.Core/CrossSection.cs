@@ -88,7 +88,9 @@ public readonly record struct CrossSection(
     /// places, the piece boundaries, where the renderer closes them with a flat cap. The bore is
     /// still free to widen or turn across the same piece; only the core arrives whole.
     ///
-    /// The whole piece takes <paramref name="b"/>'s core, its very first unit included. Leaving that
+    /// Between two rings the core blends like everything else, so a change of room overhead is a
+    /// taper and not a step. Where one side has no core at all, the whole piece takes
+    /// <paramref name="b"/>'s, its very first unit included. Leaving that
     /// one unit to the section before - which is what blending from <paramref name="a"/> amounts to
     /// at t = 0 - left a single sample of track with a core of no size, and the wall drew a cone
     /// flaring out of the middle of the bore to meet the real core behind it. A disc across the
@@ -99,5 +101,8 @@ public readonly record struct CrossSection(
         a.HalfHeight + (b.HalfHeight - a.HalfHeight) * t,
         a.Squareness + (b.Squareness - a.Squareness) * t,
         a.Opening + (b.Opening - a.Opening) * t,
-        b.Core);
+        // A core blends only between two sections that both have one - a sleeve widening into a
+        // roomier ring. Where either side has none the core is not eased in or out but snapped, so
+        // it arrives and stops whole, at a piece boundary, where its face is.
+        a.Core > 0f && b.Core > 0f ? a.Core + (b.Core - a.Core) * t : b.Core);
 }

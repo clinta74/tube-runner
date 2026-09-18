@@ -1,123 +1,135 @@
 {
-  "name": "Firing Order",
-  "id": "firing-order",
+  "name": "Metronome",
+  "id": "metronome",
   "next": "level_14.json",
-  "speed": 115,
+  "speed": 110,
   "segmentLength": 60,
 
-  // Target groups that must be shot in order. Two rules shape every group here:
-  //   - order gates shooting, not ramming, so a group on the flight line gets cleared by driving
-  //     through it. Every group below sits out at an angle, off the line the ship holds.
-  //   - shots leave at the ship's own position around the tube and fly straight, so lining a target
-  //     up means steering onto it. A group spread around the wall costs real travel to clear; one
-  //     stacked at a single angle costs almost none. That travel is the puzzle.
-  // The ring gun ignores ordered groups entirely, so it is handed out freely here - it is the tool
-  // for everything that is not a group, and useless against the ones that are.
+  // Gates in rhythm with jumps. On a flat section the ship can cross between floor and ceiling, and
+  // a gate is a full-width wall - so every obstacle here has two answers, timing or the jump, and
+  // the level alternates which one is cheaper. Gates on flat have to be placed by x and surface:
+  // 'angle' only works in a closed tube.
   "theme": {
-    "darks": ["#241a2e", "#1d1526", "#2b1f38"],
-    "lights": ["#9a7fc4", "#8469ad", "#a98fd1"],
-    "seamDark": "#120c18",
-    "seamLight": "#e2c3ff",
-    "far": "#08050b",
-    "ship": "#e2c3ff",
-    "block": "#c8bbd9",
-    "target": "#ffcf3a",
-    "breakable": "#8affc4",
+    "darks": ["#1b2430", "#16202b", "#232b38"],
+    "lights": ["#7f96ad", "#6d8499", "#8d9bb2"],
+    "seamDark": "#0d1319",
+    "seamLight": "#9fe8ff",
+    "far": "#060a0e",
+    "ship": "#9fe8ff",
+    "block": "#c3d2e2",
+    "target": "#ff5a7a",
+    "breakable": "#7cc4ff",
     "fadeStart": 35,
     "fadeEnd": 340,
-    "glow": 0.3
+    "glow": 0.25
   },
 
   "sections": {
     "tube": { "radius": 6 },
-    "wide": { "radius": 7 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
+    "flat": { "radius": 6, "opening": 1 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
   "track": [
     { "length": 280 },                                              //    0 -  280
 
-    // FREE LOOK. A pair, a quarter turn apart, numbered. Shoot the far one first or nothing happens.
-    // Wide enough round the tube that steering between them is the whole exercise.
-    { "length": 220, "section": "wide", "obstacles": [              //  280 -  500
-      { "at": 150, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
-      { "at": 150, "kind": "target", "angle": -90, "group": "a", "order": 1 }
+    // Unroll into the flat. Flat pieces are straight, so everything here is read early - which is
+    // the point while a new pairing is being taught.
+    { "length": 120, "section": "flat", "speed": 115 },             //  280 -  400
+
+    // FREE LOOK. One full-width gate. Jump it, or wait it out: both work, and both are worth feeling.
+    { "length": 260, "obstacles": [                                 //  400 -  660
+      { "at": 130, "period": 2.6, "width": 80, "height": 2.5 }
     ] },
 
-    // Three, spread right round the wall. The order runs against the direction of travel, so the
-    // cheapest steering line is the wrong one.
-    { "length": 340, "section": "tube", "turn": 30, "obstacles": [  //  500 -  840
-      { "at": 120, "kind": "target", "angle": 180, "group": "b", "order": 0 },
-      { "at": 180, "kind": "target", "angle": 60,  "group": "b", "order": 1 },
-      { "at": 240, "kind": "target", "angle": -60, "group": "b", "order": 2 }
-    ] },
-
-    // Rapid fire, then a group tight enough that the firing interval matters as much as the aim.
-    { "length": 300, "pickups": [                                   //  840 - 1140
-      { "at": 80, "kind": "rapid-fire" }
+    // Two in opposite phase, one on each surface. Whichever is shut, the other is open - so this is
+    // the jump used as timing rather than as a dodge.
+    { "length": 320, "pickups": [                                   //  660 -  980
+      { "at": 60, "kind": "shield", "surface": "ceiling", "x": -12 }
     ], "obstacles": [
-      { "at": 190, "kind": "target", "angle": 90,  "group": "c", "order": 0 },
-      { "at": 220, "kind": "target", "angle": 140, "group": "c", "order": 1 },
-      { "at": 250, "kind": "target", "angle": 40,  "group": "c", "order": 2 }
+      { "at": 140, "period": 2.6, "phase": 0,   "width": 80, "height": 2.5 },
+      { "at": 140, "period": 2.6, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 260, "period": 2.6, "phase": 0.5, "width": 80, "height": 2.5 },
+      { "at": 260, "period": 2.6, "phase": 0,   "surface": "ceiling", "width": 80, "height": 2.5 }
     ] },
 
-    { "length": 220, "section": "oval", "speed": 125, "pickups": [  // 1140 - 1360
-      { "at": 110, "kind": "shield", "angle": 180 }
+    // A solid wall between two gates: the jump is forced here, and the gates set when it can happen.
+    { "length": 360, "speed": 125, "obstacles": [                   //  980 - 1340
+      { "at": 70,  "period": 2.4, "width": 80, "height": 2.5 },
+      { "at": 180, "width": 80, "height": 2.5 },
+      { "at": 180, "kind": "target", "surface": "ceiling", "x": -14 },
+      { "at": 290, "period": 2.4, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 }
     ] },
 
-    // Two groups at once, interleaved around the tube. Each has its own order, and picking the wrong
-    // one to start costs the whole approach.
-    // A well on the outer wall of the bend, where the tube curves away and presents it early. The
-    // first one since Crossroads: wells should not go quiet for a dozen levels.
-    { "length": 420, "section": "tube", "turn": -35, "warps": [     // 1360 - 1780
-      { "at": 360, "angle": -90 }
+    // Back into the tube to breathe, with the rapid fire the next stretch wants.
+    { "length": 300, "section": "tube", "speed": 115, "pickups": [  // 1340 - 1640
+      { "at": 140, "kind": "rapid-fire" }
     ], "obstacles": [
-      { "at": 120, "kind": "target", "angle": 0,    "group": "d", "order": 0 },
-      { "at": 120, "kind": "target", "angle": 90,   "group": "e", "order": 0 },
-      { "at": 240, "kind": "target", "angle": 180,  "group": "d", "order": 1 },
-      { "at": 240, "kind": "target", "angle": -90,  "group": "e", "order": 1 },
-      { "at": 340, "kind": "target", "angle": 45,   "group": "d", "order": 2 },
-      { "at": 340, "kind": "target", "angle": -135, "group": "e", "order": 2 }
+      { "at": 220, "kind": "target", "angle": 90 },
+      { "at": 220, "kind": "target", "angle": -90 }
     ] },
 
-    // The ring gun: useless on the groups, but it clears the ring of loose targets in one sweep.
-    // Holding it for the wrong thing is the mistake on offer.
-    { "length": 300, "pickups": [                                   // 1780 - 2080
-      { "at": 90, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 200, "kind": "target", "angle": 0, "count": 6, "angleStep": 60 }
+    // Gates in a closed tube again, so the rhythm has to be read around the wall instead of across
+    // it. Same cycle as the flat stretch, which is the joke: it is the same problem rotated.
+    { "length": 380, "turn": 40, "obstacles": [                     // 1640 - 2020
+      { "at": 90,  "period": 2.6, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 210, "period": 2.6, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 320, "period": 2.6, "angle": 90,  "width": 20, "height": 3 }
     ] },
 
-    // Order under pressure: a group to clear while blocks come past on the same stretch. The blocks
-    // are on the floor line, so the steering the group needs is also the steering that dodges them.
-    { "length": 460, "speed": 135, "turn": 45, "pickups": [         // 2080 - 2540
-      { "at": 60, "kind": "shield", "angle": 90 }
-    ], "obstacles": [
-      { "at": 130, "width": 10 },
-      { "at": 150, "kind": "target", "angle": 120, "group": "f", "order": 0 },
-      { "at": 250, "width": 10, "angle": 30 },
-      { "at": 270, "kind": "target", "angle": -120, "group": "f", "order": 1 },
-      { "at": 370, "width": 10, "angle": -30 },
-      { "at": 390, "kind": "target", "angle": 180, "group": "f", "order": 2 }
+    { "length": 200, "section": "oval", "pickups": [                // 2020 - 2220
+      { "at": 100, "kind": "shield", "angle": 180 }
     ] },
 
-    // Run for home. One last group, on a twist, where each target is out of sight until it is close.
-    { "length": 190, "turn": 70, "obstacles": [                     // 2540 - 2730
-      { "at": 110, "kind": "target", "angle": 90, "group": "g", "order": 0 }
-    ] },
-    { "length": 190, "turn": -75, "climb": 12, "obstacles": [       // 2730 - 2920
-      { "at": 100, "kind": "target", "angle": -90, "group": "g", "order": 1 }
-    ] },
-    { "length": 190, "turn": 65, "climb": -14, "obstacles": [       // 2920 - 3110
-      { "at": 100, "kind": "target", "angle": 180, "group": "g", "order": 2 }
+    // A fork, so branching does not go quiet for the whole of the back half. The quick way round is
+    // the tight one and carries the gates; the long way is roomy and clear. Same bet as ever - time
+    // against shields - with the block's own mechanic priced into the short road.
+    { "length": 140, "section": "chamber", "speed": 130 },          // 2220 - 2360
+    { "length": 420, "turn": 80, "split": {                         // 2360 - 2780
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [140, -30, 0], [280, -30, 0], [420, -8, 0]] },
+          { "offsets": [[0, 8, 0], [140, 30, 0], [280, 30, 0], [420, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        { "at": 210, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 130, "branch": 1, "period": 2.4, "angle": 0, "width": 16, "height": 3 },
+        { "at": 290, "branch": 1, "period": 2.4, "phase": 0.5, "angle": 180, "width": 16, "height": 3 }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 2780 - 2920
+
+    // The hard pairing: flat again, faster, gates on both surfaces on a tighter cycle. A jump takes
+    // 0.55 s, so at this speed the crossing itself has to be timed into the gap.
+    { "length": 120, "section": "flat", "speed": 135 },             // 2920 - 3040
+    { "length": 460, "obstacles": [                                 // 3040 - 3500
+      { "at": 80,  "period": 2.0, "phase": 0,   "width": 80, "height": 2.5 },
+      { "at": 80,  "period": 2.0, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 200, "period": 2.0, "phase": 0.5, "width": 80, "height": 2.5 },
+      { "at": 200, "period": 2.0, "phase": 0,   "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 320, "period": 2.0, "phase": 0,   "width": 80, "height": 2.5 },
+      { "at": 320, "period": 2.0, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 420, "kind": "target", "x": 10 }
     ] },
 
-    // Handover to Gauntlet: straighten and blend into its tube, then the first 276 units of its
+    // Roll back into the tube for the finish.
+    { "length": 300, "section": "tube", "speed": 125 },             // 3500 - 3800
+    { "length": 170, "turn": 60, "obstacles": [                     // 3800 - 3970
+      { "at": 90, "period": 2.2, "angle": 0, "width": 20, "height": 3 }
+    ] },
+    { "length": 170, "turn": -65, "climb": 12, "obstacles": [       // 3970 - 4140
+      { "at": 85, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    ] },
+
+    // Handover to Firing Order: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 3110 - 3230
-    { "length": 180 },                                              // 3230 - 3410
-    { "length": 96, "turn": 9.333333 }                              // 3410 - 3506
+    { "length": 120, "section": "tube" },                           // 4140 - 4260
+    { "length": 276 }                                               // 4260 - 4536
   ]
 }

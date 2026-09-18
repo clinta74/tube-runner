@@ -1,14 +1,15 @@
 {
-  "name": "Undertow",
-  "id": "undertow",
+  "name": "Shoal",
+  "id": "shoal",
   "next": "level_19.json",
-  "speed": 135,
+  "speed": 130,
   "segmentLength": 60,
 
-  // Block B's test. Limits from 14 and 15, movers from 16, gates from 10, all together. The pairing
-  // that makes this level its own thing is limits against movers: a mover's sweep is timed in
-  // seconds, so being held slow inside a zone changes how many sweeps happen before the ship
-  // arrives. The same shoal is a different problem at 100 u/s than at 150.
+  // Movers - blocks that slide around the tube while the ship closes on them, so the gap aimed at is
+  // not the gap arrived at. They sweep around the surface only: moving along the track would break
+  // the collision sweep's ordering, and a hazard that tunnels at speed is worse than no hazard.
+  // A mover's sweep time against the closing speed is the whole design lever. Slow sweeps can be
+  // read and beaten; fast ones have to be guessed, so they are used sparingly and never in packs.
   "theme": {
     "darks": ["#152430", "#111d28", "#1b2b38"],
     "lights": ["#6d94ad", "#5c8099", "#7fa3ba"],
@@ -25,124 +26,85 @@
   },
 
   "sections": {
-    "tube":   { "radius": 6 },
-    "narrow": { "radius": 4.5 },
-    "flat":   { "radius": 6, "opening": 1 },
-    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
-    "wide":   { "radius": 7.5 },
-    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-    "branch":       { "radius": 6 },
-    "branch-tight": { "radius": 4.5 }
+    "tube": { "radius": 6 },
+    "wide": { "radius": 7.5 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 180 },                                              //    0 -  180
+    { "length": 280 },                                              //    0 -  280
 
-    // Straight in: movers and gates on the same stretch, no free look.
-    { "length": 380, "turn": 35, "obstacles": [                     //  180 -  560
-      { "at": 100, "period": 2.3, "angle": 0, "width": 20, "height": 3 },
-      { "at": 190, "sweep": 10, "sweepTime": 3.2, "width": 8, "angle": 120 },
-      { "at": 300, "period": 2.3, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    // FREE LOOK. One block, sliding slowly, in a wide bore with room to go round either side. Long
+    // sweep time so its rhythm can be watched rather than guessed.
+    { "length": 240, "section": "wide", "obstacles": [              //  280 -  520
+      { "at": 160, "sweep": 11, "sweepTime": 4.5, "width": 8 }
     ] },
 
-    // The level's own idea: a limit holding the ship slow through a shoal. Slow means more sweeps
-    // pass before arrival, so the pattern that would have been threaded at speed has moved on.
-    { "length": 420, "section": "narrow", "thrustZones": [          //  560 -  980
-      { "at": 210, "length": 420 }
-    ], "obstacles": [
-      { "at": 110, "sweep": 7, "sweepTime": 3.0, "width": 6, "angle": 0 },
-      { "at": 230, "sweep": 7, "sweepTime": 3.0, "width": 6, "angle": 120 },
-      { "at": 340, "sweep": 7, "sweepTime": 3.0, "width": 6, "angle": 240 }
+    // Two sliding in opposite directions, crossing in the middle. Where they cross is a wall; where
+    // they part is a door. Same sweep time, so the pattern is readable.
+    { "length": 340, "section": "tube", "obstacles": [              //  520 -  860
+      { "at": 150, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 0 },
+      { "at": 150, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 180 },
+      { "at": 270, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 90 }
     ] },
 
-    { "length": 260, "section": "wide", "speed": 150, "pickups": [  //  980 - 1240
+    { "length": 260, "speed": 140, "pickups": [                     //  860 - 1120
       { "at": 130, "kind": "rapid-fire" }
     ], "obstacles": [
       { "at": 200, "kind": "target", "angle": 90 }
     ] },
 
-    // Flat, with gates on both surfaces and a mover on each. On flat the sweep runs across the
-    // plane rather than round a wall, so the same mechanic reads completely differently.
-    { "length": 120, "section": "flat", "speed": 145 },             // 1240 - 1360
-    { "length": 440, "obstacles": [                                 // 1360 - 1800
-      { "at": 90,  "period": 2.2, "width": 80, "height": 2.5 },
-      { "at": 200, "sweep": 16, "sweepTime": 3.4, "width": 12 },
-      { "at": 200, "sweep": 16, "sweepTime": 3.4, "surface": "ceiling", "width": 12 },
-      { "at": 330, "period": 2.2, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
-      { "at": 400, "kind": "target", "x": 12 }
+    // Movers and fixed blocks together. The fixed ones make the gap look safe from a distance; the
+    // movers are what close it by the time the ship arrives.
+    { "length": 400, "turn": 40, "obstacles": [                     // 1120 - 1520
+      { "at": 90,  "angle": 0,   "width": 9 },
+      { "at": 170, "sweep": 10, "sweepTime": 3.5, "width": 7, "angle": 120 },
+      { "at": 260, "angle": 240, "width": 9 },
+      { "at": 340, "sweep": 10, "sweepTime": 3.5, "width": 7, "angle": 60 }
     ] },
 
-    // Breathe, and the only full refill in the level.
-    { "length": 280, "section": "tube", "speed": 145, "pickups": [  // 1800 - 2080
-      { "at": 140, "kind": "shield", "angle": 180 }
+    { "length": 240, "section": "oval", "speed": 145, "pickups": [  // 1520 - 1760
+      { "at": 120, "kind": "shield", "angle": 180 }
     ] },
 
-    // Ordered group inside a limit: held slow, with targets to clear in sequence and a mover
-    // crossing the line each shot has to take.
-    { "length": 420, "section": "narrow", "turn": -40, "thrustZones": [  // 2080 - 2500
-      { "at": 210, "length": 420 }
+    // Movers to shoot past rather than dodge: targets riding the same sweep, so the aim has to lead
+    // them. Shots fly straight from wherever the ship sits, so this is steering, not aiming.
+    { "length": 380, "section": "tube", "turn": -45, "pickups": [   // 1760 - 2140
+      { "at": 60, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 120, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
-      { "at": 220, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
-      { "at": 300, "kind": "target", "angle": -90, "group": "a", "order": 1 },
-      { "at": 380, "kind": "target", "angle": 180, "group": "a", "order": 2 }
+      { "at": 150, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 0 },
+      { "at": 250, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 180 },
+      { "at": 330, "sweep": 9, "sweepTime": 3.0, "width": 8, "angle": 90 }
     ] },
 
-    { "length": 240, "section": "oval", "speed": 155, "pickups": [  // 2500 - 2740
-      { "at": 120, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 180, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
+    // A shoal: four movers on one sweep, in step, so the whole wall breathes side to side. Reading
+    // the phase once solves all of them - and reading it wrong costs the lot.
+    { "length": 440, "speed": 150, "obstacles": [                   // 2140 - 2580
+      { "at": 80, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 0, "count": 4, "spacing": 95, "angleStep": 90 }
     ] },
 
-    // The block's test gets a fork too, with a mover down the short road and a well down it as well
-    // - the first time a branch carries one, five levels before Roulette makes a level of the idea.
-    { "length": 140, "section": "chamber", "speed": 160 },          // 2740 - 2880
-    { "length": 440, "turn": -85, "split": {                        // 2880 - 3320
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]], "section": "branch-tight" },
-          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]] }
-        ]
-      },
-      "warps": [
-        { "at": 300, "branch": 0, "angle": -90 }
-      ],
-      "obstacles": [
-        { "at": 150, "branch": 0, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
-        { "at": 220, "branch": 1, "kind": "target", "angle": 180 }
-      ]
-    },
-    { "length": 140, "section": "tube" },                           // 3320 - 3460
-
-    // Fast straight into a blind limited bend, the trap from 14 and 15, with a mover waiting in it.
-    { "length": 380, "section": "tube", "speed": 165 },             // 3460 - 3840
-    { "length": 320, "section": "narrow", "turn": 70, "thrustZones": [   // 3840 - 4160
-      { "at": 160, "length": 320 }
-    ], "obstacles": [
-      { "at": 200, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 180 }
+    { "length": 260, "section": "wide", "pickups": [                // 2580 - 2840
+      { "at": 130, "kind": "shield", "angle": 90 }
     ] },
 
-    { "length": 220, "section": "tube", "speed": 150, "pickups": [  // 4160 - 4380
-      { "at": 110, "kind": "shield", "angle": 90 }
+    // Movers on a twist, where the bend hides them until they are close and the sweep cannot be read
+    // in advance. Fast sweeps, but only one at a time: guessing should cost one shield, not three.
+    { "length": 200, "section": "tube", "speed": 155, "turn": 70, "obstacles": [   // 2840 - 3040
+      { "at": 110, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 0 }
+    ] },
+    { "length": 200, "turn": -75, "climb": 12, "obstacles": [       // 3040 - 3240
+      { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 180 }
+    ] },
+    { "length": 200, "turn": 65, "climb": -14, "obstacles": [       // 3240 - 3440
+      { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 90 }
     ] },
 
-    // Run for home: a twist with a gate, a mover and a fixed block at each bend. No limits - the
-    // level stops asking for restraint exactly when there is no track left to spend it on.
-    { "length": 200, "speed": 165, "turn": 75, "obstacles": [       // 4380 - 4580
-      { "at": 105, "period": 2.0, "angle": 0, "width": 20, "height": 3 }
-    ] },
-    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 4580 - 4780
-      { "at": 100, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 180 }
-    ] },
-    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 4780 - 4980
-      { "at": 100, "angle": 90, "count": 3, "angleStep": 60 }
-    ] },
-
-    // Handover to Scarlands: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Undertow: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4980 - 5100
-    { "length": 276 }                                               // 5100 - 5376
+    { "length": 120, "section": "tube" },                           // 3440 - 3560
+    { "length": 180 },                                              // 3560 - 3740
+    { "length": 96, "turn": 8.842105 }                              // 3740 - 3836
   ]
 }

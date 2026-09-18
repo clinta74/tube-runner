@@ -1,155 +1,153 @@
 {
-  "name": "Neon Run",
-  "id": "neon-run",
+  "name": "Sleeve",
+  "id": "sleeve",
   "next": "level_11.json",
-  "speed": 100,
+  "speed": 105,
   "segmentLength": 60,
 
+  // A first look at the ring: a bore too wide to see all of at once, with a second cylinder down the
+  // middle of it, and the ship flying in the sleeve between the two. The outer wall is the floor and
+  // the core hangs overhead as the ceiling, so the jump the flat sections taught is the way between
+  // them - and the core hides the far side of the bore, so a wide tube stops being an easy one.
+  // Like Loop the Loop, this shows off a style early rather than teaching a mechanic: everything in
+  // it is a block, a target or a jump. The one new word is the collar, a block the whole way round a
+  // wall, which is the ring's version of a flat section's full-width wall and the thing that makes
+  // the jump compulsory rather than optional. Collars come in pairs, outer wall then core, so the
+  // rhythm is up-and-down rather than a single dodge.
+  // The bore widens partway through, to show the walls going flatter and the room overhead growing
+  // with the bore, and tightens later into a sleeve with almost no room at all.
   "theme": {
-    "darks": ["#0c0620", "#041421", "#140418"],
-    "lights": ["#c02aa8", "#29b8cc", "#ccb029"],
-    "seamDark": "#000000",
-    "seamLight": "#ffffff",
-    "far": "#000000",
-    "ship": "#ffffff",
-    "block": "#b8c0e0",
-    "target": "#ff2050",
-    "breakable": "#7cff9a",
-    "fadeStart": 40,
-    "fadeEnd": 360,
-    "glow": 0.6
+    "darks": ["#1a1d26", "#15171f", "#20242f"],
+    "lights": ["#6f7a9c", "#5e6786", "#828db2"],
+    "seamDark": "#0a0c10",
+    "seamLight": "#cfe4ff",
+    "far": "#04050a",
+    "ship": "#cfe4ff",
+    "block": "#dce3f0",
+    "target": "#ffd23a",
+    "breakable": "#7cffb0",
+    "fadeStart": 60,
+    "fadeEnd": 400,
+    "glow": 0.35
   },
 
   "sections": {
-    "handover": { "radius": 6 },
-    "tube":     { "radius": 5.5 },
-    "oval":     { "halfWidth": 9, "halfHeight": 4 },
-    "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
-    "flat":     { "radius": 5.5, "opening": 1 },
-    "box-flat": { "halfWidth": 9, "halfHeight": 4, "squareness": 1, "opening": 1 },
-    "chamber": { "halfWidth": 14, "halfHeight": 6, "squareness": 0.6 },
-    "branch-tight": { "radius": 4 }
+    "tube":      { "radius": 5.5 },
+    "handover":  { "radius": 5.5 },
+    "narrow":    { "radius": 6 },
+    "mouth":     { "radius": 20 },
+    "ring":      { "radius": 20, "ringHeight": 12 },
+    "wide-ring": { "radius": 28, "ringHeight": 18 },
+    "sleeve":    { "radius": 20, "ringHeight": 5 },
+    "box-ring":  { "halfWidth": 22, "halfHeight": 16, "squareness": 0.7, "ringHeight": 10 }
   },
 
-  // Obstacle "at" values are measured from the start of their piece.
-  // The distances in the comments are for `tube play --start`.
   "start": "tube",
   "track": [
+    // Neon Run's own opening, which is what Loop the Loop's handover was built to meet. Nothing in
+    // the first 276 units, which are the last thing the previous level's camera sees.
     { "length": 200 },                                              //    0 -  200
     { "length": 150, "turn": -50, "obstacles": [                    //  200 -  350
-      { "at": 80, "angle": 0, "count": 4, "spacing": 50, "angleStep": 60 },
-      { "at": 120, "kind": "target", "angle": 180, "count": 3, "spacing": 50 }
-    ] },
-    { "length": 150, "turn": 50, "climb": -12, "pickups": [         //  350 -  500
-      { "at": 60, "kind": "shield" }
+      { "at": 90, "kind": "target", "angle": 180 },
+      { "at": 130, "kind": "target", "angle": 0 }
     ] },
 
-    // Flat: a gap, a jump to the ceiling, a zigzag up there, and a jump back.
-    { "length": 100, "section": "flat", "speed": 125 },             //  500 -  600
-    { "length": 500, "pickups": [                                   //  600 - 1100
-      { "at": 280, "kind": "shield", "surface": "ceiling", "x": -10 }
+    // The bore opens out - a long way out, to three and a half times the tube - with nothing in it,
+    // so the widening itself is the thing to look at.
+    { "length": 240, "section": "mouth", "pickups": [               //  350 -  590
+      { "at": 200, "kind": "shield" }
+    ] },
+
+    // FREE LOOK. The core arrives here, whole, with a flat face, and hangs overhead for a clear
+    // stretch. JUMP lights up; a shield on the core is the reason to try it.
+    { "length": 200, "section": "ring" },                           //  590 -  790
+    { "length": 280, "pickups": [                                   //  790 - 1070
+      { "at": 150, "kind": "shield", "surface": "ceiling", "angle": 0 }
+    ] },
+
+    // Blocks on the outer wall, spaced wide enough to steer round - and then blocks on the core,
+    // which can only be met by being up there. Nothing yet forces a change of wall.
+    { "length": 440, "obstacles": [                                 // 1070 - 1510
+      { "at": 70,  "angle": 0,   "width": 12 },
+      { "at": 170, "angle": 40,  "width": 12 },
+      { "at": 270, "angle": -40, "width": 12 },
+      { "at": 370, "surface": "ceiling", "angle": 0, "width": 8 }
+    ] },
+
+    // The collar. A block the whole way round the outer wall: no way past it down here, so the only
+    // way on is up. Then one the whole way round the core, so the only way on is down. A pair, well
+    // apart, and the jump takes half a second at this speed.
+    { "length": 480, "obstacles": [                                 // 1510 - 1990
+      { "at": 140, "full": true, "height": 3 },
+      { "at": 380, "surface": "ceiling", "full": true, "height": 3 }
+    ] },
+
+    // A bend in the ring. The core hides the far side of it, so what is round the corner on the
+    // outer wall is not in sight until the bend brings it round - the wide bore's own visibility
+    // lever.
+    { "length": 460, "turn": 60, "obstacles": [                     // 1990 - 2450
+      { "at": 100, "angle": 60, "width": 14 },
+      { "at": 230, "angle": 100, "width": 14 },
+      { "at": 360, "angle": 50, "width": 14 }
+    ], "pickups": [
+      { "at": 300, "kind": "shield", "surface": "ceiling", "angle": 0 }
+    ] },
+
+    // Wider still: the bore goes to twenty-eight and the room overhead to eighteen. The walls are
+    // nearly flat under the ship and the core is a big thing, far off. Targets round it, to see how
+    // little of it is on screen at once.
+    { "length": 220, "section": "wide-ring", "speed": 110 },        // 2450 - 2670
+    { "length": 560, "obstacles": [                                 // 2670 - 3230
+      { "at": 100, "kind": "target", "surface": "ceiling", "angle": 0 },
+      { "at": 190, "kind": "target", "surface": "ceiling", "angle": 90 },
+      { "at": 280, "kind": "target", "surface": "ceiling", "angle": 180 },
+      { "at": 370, "kind": "target", "surface": "ceiling", "angle": -90 },
+      { "at": 470, "full": true, "height": 3 }
+    ], "pickups": [
+      { "at": 60, "kind": "ring-gun", "angle": 0 }
+    ] },
+
+    // Then the sleeve: the same bore with the core grown out to within five units of the wall. Not
+    // much room, a short hop, and collars alternating wall and core - the jump rhythm from Over and
+    // Under, wrapped round a cylinder. Speed up for it.
+    { "length": 240, "section": "sleeve", "speed": 118, "obstacles": [ // 3230 - 3470
+      { "at": 180, "surface": "ceiling", "full": true, "height": 2.5 }
+    ] },
+    { "length": 640, "obstacles": [                                 // 3470 - 4110
+      { "at": 100, "full": true, "height": 2.5 },
+      { "at": 260, "surface": "ceiling", "full": true, "height": 2.5 },
+      { "at": 420, "full": true, "height": 2.5 },
+      { "at": 580, "surface": "ceiling", "full": true, "height": 2.5 }
+    ] },
+
+    // A boxy ring, to see the walls with corners in them, and a breather.
+    { "length": 220, "section": "box-ring", "speed": 112 },         // 4110 - 4330
+    { "length": 380, "obstacles": [                                 // 4330 - 4710
+      { "at": 100, "angle": 0, "width": 14 },
+      { "at": 220, "surface": "ceiling", "angle": 0, "width": 10 }
+    ], "pickups": [
+      { "at": 320, "kind": "shield", "angle": 0 }
+    ] },
+
+    // Back to the first ring, and the way out of it: a last prize on the core, then a collar round
+    // the core that brings the player down before the core ends - a core that stops takes its wall
+    // with it, so nobody should be riding it when it does.
+    { "length": 220, "section": "ring" },                           // 4710 - 4930
+    { "length": 400, "pickups": [                                   // 4930 - 5330
+      { "at": 100, "kind": "shield", "surface": "ceiling", "angle": 0 }
     ], "obstacles": [
-      { "at": 50, "x": -8, "width": 14 },
-      { "at": 50, "x": 12, "width": 10 },
-      { "at": 120, "width": 80, "height": 2.5 },
-      { "at": 200, "surface": "ceiling", "x": 5, "width": 12, "count": 3, "spacing": 60, "xStep": -10 },
-      { "at": 220, "kind": "target", "surface": "ceiling", "x": -12, "count": 3, "spacing": 60, "xStep": 12 },
-      { "at": 420, "surface": "ceiling", "width": 80, "height": 2.5 },
-      { "at": 460, "kind": "target" }
-    ] },
-    { "length": 360, "section": "tube" },                           // 1100 - 1460
-
-    { "length": 100, "section": "oval", "turn": 20, "speed": 110, "pickups": [   // 1460 - 1560
-      { "at": 40, "kind": "rapid-fire" }
-    ] },
-    { "length": 250, "turn": -60, "obstacles": [                    // 1560 - 1810
-      { "at": 30, "angle": 60, "count": 4, "spacing": 55, "angleStep": -40 },
-      { "at": 80, "kind": "target", "angle": 180, "count": 3, "spacing": 55 }
-    ] },
-    { "length": 100, "section": "tube", "turn": 20, "pickups": [    // 1810 - 1910
-      { "at": 40, "kind": "ring-gun" }
-    ] },
-    { "length": 200, "turn": 30, "climb": 20, "obstacles": [        // 1910 - 2110
-      { "at": 30, "angle": 0, "count": 6, "spacing": 30, "angleStep": 60 }
+      { "at": 290, "surface": "ceiling", "full": true, "height": 3 }
     ] },
 
-    { "length": 100, "section": "box", "speed": 125, "pickups": [   // 2110 - 2210
-      { "at": 50, "kind": "shield" }
-    ] },
-    { "length": 200, "turn": -40, "obstacles": [                    // 2210 - 2410
-      { "at": 30, "width": 6 },
-      { "at": 90, "x": -6, "width": 6 },
-      { "at": 90, "x": 6, "width": 6 },
-      { "at": 150, "kind": "target", "angle": 90 },
-      { "at": 150, "kind": "target", "angle": -90 }
-    ] },
-    { "length": 100, "section": "box-flat", "speed": 145, "pickups": [   // 2410 - 2510
-      { "at": 50, "kind": "full-shields" }
-    ] },
-    { "length": 400, "obstacles": [                                 // 2510 - 2910
-      { "at": 50, "x": -15, "width": 14, "count": 6, "spacing": 45, "xStep": 6 },
-      { "at": 330, "width": 80, "height": 2.5 },
-      { "at": 370, "kind": "target", "surface": "ceiling" }
-    ] },
-    { "length": 360, "section": "tube" },                           // 2910 - 3270
+    // The core stops here, with a face on it, and the bore closes back down to a tube.
+    { "length": 220, "section": "mouth" },                          // 5330 - 5550
+    { "length": 240, "section": "narrow" },                         // 5550 - 5790
 
-    { "length": 250, "turn": 60, "pickups": [                       // 3270 - 3520
-      { "at": 20, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 60, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 }
-    ] },
-
-    // Widen out, fork left/right, merge, and narrow back down.
-    { "length": 100, "section": "chamber", "speed": 160, "pickups": [    // 3520 - 3620
-      { "at": 30, "kind": "shield-slot", "angle": 90 }
-    ], "obstacles": [
-      { "at": 60, "angle": 180 }
-    ] },
-    // This was a 400-unit dive with the branches forked over and under it - offsets in the same
-    // plane as the bend, which is the one direction that saves nothing, so the short way came out
-    // 0.8% shorter. It is a hard right now, with the fork across the turn. The piece is longer
-    // because a corner this tight at 160 u/s needs the room, and because the saving is a fraction
-    // of the span, a longer piece needs a harder bend to pay the same.
-    { "length": 550, "turn": 110, "split": {                        // 3620 - 4170
-        "section": "tube",
-        "branches": [
-          // The right branch runs round the inside: shorter and tighter, and full of blocks. The
-          // long way round is roomier, with targets to pick off.
-          { "offsets": [[0, 7.5, 0], [180, 40, 0], [370, 40, 0], [550, 7.5, 0]], "section": "branch-tight" },
-          { "offsets": [[0, -7.5, 0], [180, -40, 0], [370, -40, 0], [550, -7.5, 0]] }
-        ]
-      },
-      "pickups": [
-        // The short branch has the spiral to thread, so it keeps a shield.
-        { "at": 340, "branch": 0, "kind": "shield" }
-      ],
-      "obstacles": [
-        // A spiral of blocks the short way, targets the long way.
-        { "at": 150, "branch": 0, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 },
-        { "at": 470, "branch": 0, "angle": 90, "count": 2, "spacing": 40, "angleStep": 180 },
-        { "at": 180, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 65 }
-      ]
-    },
-    { "length": 100, "section": "tube", "pickups": [                // 4170 - 4270
-      { "at": 50, "kind": "unstoppable" }
-    ] },
-
-    // Twisting finish, at full speed: the bends give you almost no warning.
-    { "length": 150, "turn": -80, "obstacles": [                    // 4270 - 4420
-      { "at": 90, "angle": 0, "count": 2, "spacing": 40, "angleStep": 120 }
-    ] },
-    { "length": 150, "turn": 80, "climb": -14, "obstacles": [       // 4420 - 4570
-      { "at": 70, "angle": 180 },
-      { "at": 115, "kind": "target", "angle": 0 }
-    ] },
-    { "length": 150, "turn": -70, "climb": 16, "obstacles": [       // 4570 - 4720
-      { "at": 80, "angle": 90, "count": 3, "angleStep": 60 }
-    ] },
-
-    // Handover to Clockwork: straighten and blend into its tube, then the first 276 units of its
-    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
-    // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "handover" },                       // 4720 - 4840
-    { "length": 276 }                                               // 4840 - 5116
+    // Handover to Neon Run: blend into its tube, then the first 276 units of its track, so the
+    // camera sees the same tube on both sides of the join. Nothing to hit out here; the level
+    // finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "handover" },                       // 5790 - 5910
+    { "length": 200 },                                              // 5910 - 6110
+    { "length": 76, "turn": -25.333333 }                            // 6110 - 6186
   ]
 }

@@ -170,6 +170,23 @@ public class AnnulusTests
         Assert.Contains("nothing for the core to sit inside", e.Message);
     }
 
+    // A core arrives whole and stops whole, but between two rings it blends: a sleeve widening into
+    // a roomier ring is a taper in the core, not a step in it at the piece boundary.
+    [Fact]
+    public void ACoreSnapsInFromNothing_ButBlendsBetweenRings()
+    {
+        var hollow = CrossSection.Circle(20f);
+        var tight = hollow.WithRing(5f);
+        var roomy = hollow.WithRing(12f);
+
+        Assert.Equal(roomy.Core, CrossSection.Lerp(hollow, roomy, 0.01f).Core, 5);
+        Assert.Equal(roomy.Core, CrossSection.Lerp(hollow, roomy, 0.5f).Core, 5);
+        Assert.Equal(0f, CrossSection.Lerp(roomy, hollow, 0.5f).Core, 5);
+
+        float mid = CrossSection.Lerp(tight, roomy, 0.5f).Core;
+        Assert.InRange(mid, Math.Min(tight.Core, roomy.Core) + 0.01f, Math.Max(tight.Core, roomy.Core) - 0.01f);
+    }
+
     // A collar is the ring's version of a flat section's full-width wall: no way past it on the
     // surface, only the jump. Its width is the wall's own perimeter, looked up rather than written,
     // so a level can say "full" on a core without knowing how far round the core is.
