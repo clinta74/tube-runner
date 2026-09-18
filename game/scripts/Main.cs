@@ -166,6 +166,7 @@ public partial class Main : Node3D
             if (arg == "--summary") _debugSummary = true;
             if (arg == "--no-update-check") _noUpdateCheck = true;
             if (arg == "--menu") _debugMenu = true;
+            if (arg.StartsWith("--shot=")) _shotPath = arg["--shot=".Length..];
             if (arg == "--settings") _debugSettings = true;
         }
 
@@ -229,6 +230,14 @@ public partial class Main : Node3D
 
     // Opens the Escape menu at launch, for looking at it without a keypress - which a recording can't make.
     private bool _debugMenu;
+
+    /// <summary>
+    /// Where to write a single frame before quitting, or null for an ordinary run. Checking how a
+    /// piece of the game actually looks otherwise means asking someone to fly to it and describe
+    /// what they saw, which is a slow way to find out that a mesh is inside out.
+    /// </summary>
+    private string? _shotPath;
+    private int _shotFrames = 45;
 
     // Opens straight onto the settings page, likewise.
     private bool _debugSettings;
@@ -306,6 +315,18 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+
+        // --shot: fly on for a moment so the track and its obstacles have streamed in, then save
+        // what is on screen and stop. The image is the frame already drawn, which is why this can
+        // read the viewport straight out rather than waiting on the renderer.
+        if (_shotPath is not null && --_shotFrames <= 0)
+        {
+            var image = GetViewport().GetTexture().GetImage();
+            image.SavePng(_shotPath);
+            GD.Print($"Wrote {_shotPath}");
+            GetTree().Quit();
+            return;
+        }
 
         // The menu holds everything still while it is up: the session is never stepped, so a run
         // cannot end or advance behind it.

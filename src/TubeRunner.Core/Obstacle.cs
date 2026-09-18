@@ -82,6 +82,20 @@ public sealed class Obstacle
     /// </summary>
     public string? LockedBy { get; init; }
 
+    /// <summary>
+    /// Name of the aperture ring this is one blade of, or null for an ordinary obstacle. An
+    /// aperture is a ring of blades that seals the tube and irises open as its keys are shot: each
+    /// blade is a plain locked obstacle as far as the collision is concerned, and this is what lets
+    /// the view draw the ring as one thing that turns rather than as blocks that vanish.
+    /// </summary>
+    public string? Aperture { get; init; }
+
+    /// <summary>Which blade of the ring this is, counting from the floor around to the right.</summary>
+    public int Blade { get; init; }
+
+    /// <summary>How many blades the ring is cut into, including any left out to leave a way through.</summary>
+    public int BladeCount { get; init; }
+
     /// <summary>Shots it has taken so far.</summary>
     public int HitsTaken { get; internal set; }
 

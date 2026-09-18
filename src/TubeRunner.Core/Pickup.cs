@@ -41,5 +41,14 @@ public sealed class Pickup
     /// <summary>Center across the surface (see <see cref="TrackPosition.X"/>).</summary>
     public float X { get; init; }
 
+    /// <summary>
+    /// Name of a target group that switches this on, or null for one that is simply there. Until
+    /// every target in that group is destroyed the pad is dead and flying over it does nothing, so
+    /// the power-up has to be shot for before it can be taken. It is the gentlest form of a lock:
+    /// missing the key costs a reward rather than a shield, which is why it is worth meeting before
+    /// a locked door ever stands in the way.
+    /// </summary>
+    public string? LockedBy { get; init; }
+
     public bool Collected { get; internal set; }
 }
