@@ -378,6 +378,7 @@ public partial class ObstacleRenderer : Node3D
     private View CreateObstacleView(Obstacle o)
     {
         if (o.Aperture is not null) return CreateBladeView(o);
+        if (o.Full) return CreateCollarView(o);
 
         var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f);
         bool target = o.Kind == ObstacleKind.Target;
@@ -407,6 +408,72 @@ public partial class ObstacleRenderer : Node3D
             Obstacle = o,
             Slides = o.Period > 0f,
         };
+    }
+
+    /// <summary>
+    /// A block or plate that goes the whole way round its wall, drawn as a band following that wall
+    /// rather than as a slab across it. Placed from the centreline with the section's own axes, like
+    /// a blade, since it is a thing that goes around the section rather than one standing on a spot.
+    /// </summary>
+    private View CreateCollarView(Obstacle o)
+    {
+        var material = o.Kind == ObstacleKind.Plate ? _hazardMaterial
+            : o.LockedBy is not null ? DoorMaterial(o.LockedBy)
+            : o.Hits > 0 ? Solid(_breakable)
+            : _blockMaterial;
+        var shape = _shapes.Get(_session.Track.SectionAt(o.S, o.Branch));
+        var frame = _session.Track.FrameAt(o.S, o.Branch);
+        var node = new MeshInstance3D
+        {
+            Mesh = BuildBand(shape, o.Surface, o.Length * 0.5f, o.Height),
+            MaterialOverride = material,
+        };
+        AddChild(node);
+        return new View(node, frame.Position, frame.Forward.ToGodot(), frame.Up.ToGodot(), Spins: false, material)
+        {
+            Obstacle = o,
+        };
+    }
+
+    /// <summary>
+    /// A band round one wall of a section: from the wall out to <paramref name="depth"/> off it,
+    /// <paramref name="halfLength"/> either way along the track. Two annular faces and the edge
+    /// between them, which is the face the ship meets. In a hollow tube the floor's perimeter is the
+    /// whole tube, so a band on it rings the tube; on a ring, each wall rings itself.
+    /// </summary>
+    private static Mesh BuildBand(ProfileShape shape, Surface surface, float halfLength, float depth)
+    {
+        const int segments = 64;
+        float around = shape.PerimeterOf(surface);
+
+        var wall = new Vector3[segments + 1];
+        var edge = new Vector3[segments + 1];
+        for (int i = 0; i <= segments; i++)
+        {
+            var (on, x) = shape.Wrap(surface, around * i / segments);
+            var point = shape.PointAt(on, x);
+            var normal = shape.NormalAt(on, x);
+            wall[i] = new Vector3(point.X, point.Y, 0f);
+            edge[i] = new Vector3(point.X + normal.X * depth, point.Y + normal.Y * depth, 0f);
+        }
+
+        var front = new Vector3(0f, 0f, -halfLength);
+        var back = new Vector3(0f, 0f, halfLength);
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        {
+            st.AddVertex(a); st.AddVertex(b); st.AddVertex(c);
+            st.AddVertex(a); st.AddVertex(c); st.AddVertex(d);
+        }
+        for (int i = 0; i < segments; i++)
+        {
+            Quad(wall[i] + front, edge[i] + front, edge[i + 1] + front, wall[i + 1] + front);
+            Quad(wall[i] + back, edge[i] + back, edge[i + 1] + back, wall[i + 1] + back);
+            Quad(edge[i] + front, edge[i + 1] + front, edge[i + 1] + back, edge[i] + back);
+        }
+        st.GenerateNormals();
+        return st.Commit();
     }
 
     /// <summary>

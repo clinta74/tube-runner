@@ -118,6 +118,14 @@ upper half of the wall simply becomes part of the outer wall, which is one surfa
 — but a core that shrinks away takes the surface the ship was riding with it, and the ship is put
 down on the outer wall in one frame. Give the last stretch of a ring a reason to be on the outside.
 
+**A full block is a collar.** On a flat section a wall across the whole floor is `"width": 80`; on
+a wall that goes all the way round - a tube, a ring's outer wall, or its core - it is `"full": true`,
+and the width is looked up from that wall's perimeter, which on a core depends on the ring height
+and is not a number worth making an author know. There is no way past a collar on its own wall,
+only the jump over it, which is what makes one on the core the way to bring a player down off it.
+It is drawn as a band round the wall rather than as a slab across it. A collar cannot also be a
+gate or a mover, yet.
+
 **Not yet supported in a ring:** splits, apertures and warp wells. The first two assume a single
 wall closing around the middle, which is exactly what a core is in the way of.
 
@@ -290,6 +298,7 @@ measured from the start of the track.
 | `angle` | none | **Tubes only**, instead of `surface`/`x`: degrees around the tube from the floor center. 90 = right wall, 180 = ceiling, -90 = left wall. |
 | `width`, `length`, `height` | `3`, `2`, `2` | Size across the surface, along the track, and off the surface. |
 | `hits` | `0` | Blocks only: shots needed to break it. 0 means shots can't. |
+| `full` | `false` | Blocks and plates: go the whole way round the wall, as a collar. The width is looked up, not written; see rings below. |
 | `count` | `1` | Place several, each one shifted by the steps below. |
 | `spacing` | `0` | Distance along the track between repeats. |
 | `xStep` | `0` | Change in `x` per repeat. |

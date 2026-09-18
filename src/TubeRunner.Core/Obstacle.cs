@@ -36,6 +36,13 @@ public sealed class Obstacle
     /// <summary>Extent across the surface.</summary>
     public float Width { get; init; } = 3f;
 
+    /// <summary>
+    /// Whether this goes the whole way round its wall: a collar, with no way past it on the surface
+    /// and only the jump over it. Its <see cref="Width"/> is the wall's perimeter, set by the loader,
+    /// and the view draws it as a band round the wall rather than as a slab across it.
+    /// </summary>
+    public bool Full { get; init; }
+
     /// <summary>Extent along the track.</summary>
     public float Length { get; init; } = 2f;
 

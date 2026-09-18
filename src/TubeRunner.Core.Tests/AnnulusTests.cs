@@ -170,6 +170,85 @@ public class AnnulusTests
         Assert.Contains("nothing for the core to sit inside", e.Message);
     }
 
+    // A collar is the ring's version of a flat section's full-width wall: no way past it on the
+    // surface, only the jump. Its width is the wall's own perimeter, looked up rather than written,
+    // so a level can say "full" on a core without knowing how far round the core is.
+    [Fact]
+    public void AFullBlock_IsAsWideAsItsWall()
+    {
+        var level = LevelLoader.Parse("""
+            {
+              "sections": { "ring": { "radius": 20, "ringHeight": 10 } },
+              "start": "ring",
+              "track": [ { "length": 600, "obstacles": [
+                { "at": 300, "surface": "ceiling", "full": true },
+                { "at": 400, "full": true }
+              ] } ]
+            }
+            """);
+        var shape = new ProfileShape(level.Track.SectionAt(300));
+
+        var onCore = level.Obstacles[0];
+        Assert.True(onCore.Full);
+        Assert.Equal(shape.PerimeterOf(Surface.Ceiling), onCore.Width, 3);
+        Assert.Equal(shape.PerimeterOf(Surface.Floor), level.Obstacles[1].Width, 3);
+    }
+
+    [Fact]
+    public void ACollarOnTheCore_HitsFromAnywhereRoundIt_AndIsJumpedOver()
+    {
+        var track = new Track(Ring, startSpeed: 60f);
+        track.Append(new TrackPiece(1200f, Ring));
+        var shape = new ProfileShape(Ring);
+        // Obstacles hold per-run state, so each session gets its own.
+        Obstacle Collar() => new()
+        {
+            Kind = ObstacleKind.Block, S = 400, Surface = Surface.Ceiling,
+            Width = shape.PerimeterOf(Surface.Ceiling), Full = true, Height = 2f,
+        };
+
+        // Riding the core a third of the way round from where the collar is centred: still hit.
+        var settings = new SessionSettings(new ShipSettings(SteerSpeed: 22f));
+        var game = new GameSession(track, [Collar()], settings, new TrackPosition(0, Surface.Ceiling, shape.PerimeterOf(Surface.Ceiling) / 3f));
+        for (int i = 0; i < 600 && game.Ship.Position.S < 500; i++) game.Step(1f / 60f, default);
+        Assert.Equal(2, game.Shields);
+
+        // Jumping off the core just before it clears it, the way a flat's full wall is cleared.
+        var jumper = new GameSession(track, [Collar()], settings, new TrackPosition(0, Surface.Ceiling, 0f));
+        for (int i = 0; i < 600 && jumper.Ship.Position.S < 380; i++) jumper.Step(1f / 60f, default);
+        jumper.Step(1f / 60f, new ShipInput(Jump: true));
+        for (int i = 0; i < 600 && jumper.Ship.Position.S < 500; i++) jumper.Step(1f / 60f, default);
+        Assert.Equal(3, jumper.Shields);
+    }
+
+    [Theory]
+    [InlineData("""{ "at": 300, "kind": "target", "full": true }""", "blocks and plates")]
+    [InlineData("""{ "at": 300, "full": true, "period": 2 }""", "gate or a mover")]
+    public void AFullBlock_ThatCannotBeOne_FailsToLoad(string obstacle, string says)
+    {
+        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse($$"""
+            {
+              "sections": { "ring": { "radius": 20, "ringHeight": 10 } },
+              "start": "ring",
+              "track": [ { "length": 600, "obstacles": [ {{obstacle}} ] } ]
+            }
+            """));
+        Assert.Contains(says, e.Message);
+    }
+
+    [Fact]
+    public void AFullBlockOnAFlatSection_SaysToUseWidth80()
+    {
+        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse("""
+            {
+              "sections": { "flat": { "radius": 6, "opening": 1 } },
+              "start": "flat",
+              "track": [ { "length": 600, "obstacles": [ { "at": 300, "full": true } ] } ]
+            }
+            """));
+        Assert.Contains("'width' 80", e.Message);
+    }
+
     private static string Error(float radius, float height) =>
         Assert.Throws<LevelFormatException>(() => LevelLoader.Parse(Level(radius, height))).Message;
 

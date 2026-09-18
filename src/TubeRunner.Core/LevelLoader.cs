@@ -227,9 +227,30 @@ public static class LevelLoader
             {
                 throw new LevelFormatException($"{where}: 'order' needs a 'group' to be ordered within.");
             }
+            if (o.Full && kind == ObstacleKind.Target)
+            {
+                throw new LevelFormatException($"{where}: 'full' is for blocks and plates; a target the whole way round has nowhere to be aimed at.");
+            }
+            if (o.Full && (o.Period > 0f || o.Sweep > 0f))
+            {
+                throw new LevelFormatException($"{where}: a 'full' collar cannot also be a gate or a mover.");
+            }
 
             foreach (var (s, branch, surface, x) in Place(o, track, offset, where))
             {
+                float width = o.Width;
+                if (o.Full)
+                {
+                    // The whole way round this wall, whatever wall it is: a tube, a ring's outer
+                    // wall, or its core - which is why the number is looked up rather than written.
+                    var shape = new ProfileShape(track.SectionAt(s, branch));
+                    if (!shape.IsClosed)
+                    {
+                        throw new LevelFormatException($"{where}: 'full' needs a wall that goes all the way round; on a flat section a wall across the whole floor is 'width' 80.");
+                    }
+                    width = shape.PerimeterOf(surface);
+                }
+
                 obstacles.Add(new Obstacle
                 {
                     Kind = kind,
@@ -237,7 +258,8 @@ public static class LevelLoader
                     Branch = branch,
                     Surface = surface,
                     X = x,
-                    Width = o.Width,
+                    Width = width,
+                    Full = o.Full,
                     Length = o.Length,
                     Height = o.Height,
                     Hits = o.Hits,
@@ -665,6 +687,7 @@ public static class LevelLoader
     {
         public string Kind { get; set; } = "block";
         public float Width { get; set; } = 3f;
+        public bool Full { get; set; }
         public float Length { get; set; } = 2f;
         public float Height { get; set; } = 2f;
         public int Hits { get; set; }

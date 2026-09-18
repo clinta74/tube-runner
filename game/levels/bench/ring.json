@@ -86,12 +86,14 @@
       { "at": 380, "surface": "ceiling", "angle": 0, "width": 10 }
     ] },
 
-    // A shield on the core, so there is a reason to be up there, and then a stretch that brings the
-    // player back down before the ring closes - a core that shrinks away takes its wall with it.
+    // A shield on the core, so there is a reason to be up there, and then a collar right round the
+    // core - the ring's version of a flat section's full-width wall. There is no way past it on the
+    // core, only the jump down to the outer wall, which is what brings the player off the core
+    // before the ring closes.
     { "length": 460, "section": "ring-tall", "pickups": [           // 4160 - 4620
       { "at": 180, "kind": "shield", "surface": "ceiling", "angle": 0 }
     ], "obstacles": [
-      { "at": 360, "surface": "ceiling", "angle": 0, "width": 40 }
+      { "at": 360, "surface": "ceiling", "full": true, "height": 3 }
     ] },
 
     // The core stops here, on this boundary, with the same flat face; the bore then closes back to

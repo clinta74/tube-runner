@@ -64,6 +64,7 @@ public partial class TrackRenderer : Node3D
     private Vector3 _capColor;
     private Vector3 _endWallColor;
     private Vector3 _endRimColor;
+    private Vector3 _coreFaceColor;
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
@@ -164,6 +165,10 @@ public partial class TrackRenderer : Node3D
         // was worse than the white wall it replaced - it opened onto empty space, so the level
         // finished in a black hole.
         _capColor = theme.SeamDark.ToVector3();
+        // A fork wall sits in the shadow of its chamber and takes the seam's dark; the front of a
+        // core stands in the open bore and would read as a hole in that. It takes a tone between the
+        // wall's two cell colours instead - a lit flat end, neither a light cell nor a dark one.
+        _coreFaceColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.55f);
         _endWallColor = endsTheRun ? theme.Block.ToVector3() : theme.Far.ToVector3();
         _endRimColor = endsTheRun ? theme.SeamLight.ToVector3() : theme.Far.ToVector3();
 
@@ -407,9 +412,9 @@ public partial class TrackRenderer : Node3D
             holes[b] = new Vector4(c.X, c.Y, section.HalfWidth, section.HalfHeight);
         }
         var material = (ShaderMaterial)_capMaterial.Duplicate();
-        // A core's face takes the fork wall's colour: it is the same kind of thing, a flat end that
-        // is not wall, and it must not read as the end of the level.
-        material.SetShaderParameter("cap_color", split is null && !spec.Core ? _endWallColor : _capColor);
+        // A core's face is a flat end that is not wall and must not read as the end of the level,
+        // nor - standing in the open bore - as a hole.
+        material.SetShaderParameter("cap_color", spec.Core ? _coreFaceColor : split is null ? _endWallColor : _capColor);
         // The rim is a bright ring round a fork opening, which is right there and wrong at the end of
         // a level that carries on: it draws a hard edge exactly where there should be no edge.
         if (split is null && !spec.Core) material.SetShaderParameter("rim_color", _endRimColor);
