@@ -46,6 +46,7 @@ public partial class Main : Node3D
 
     // The level the run starts from, and the state the current level began with (for a retry).
     private string _runStart = "";
+    private string _runStartId = "";
     private RunState? _levelEntry;
     private double _startS;
     private double _levelStart;
@@ -119,15 +120,15 @@ public partial class Main : Node3D
     private Vector3 _snapUp;
     private float _snap;
 
-    private string LevelId => LevelPath.GetFile();
+    private string LevelId => _level.Id;
 
     /// <summary>
-    /// Best-times key for a whole run, keyed by the level it started from. Level keys are file
-    /// names, so this cannot collide with one. A run from level 1 and a run from level 16 are not
+    /// Best-times key for a whole run, keyed by the level it started from. Run keys carry a prefix,
+    /// so this cannot collide with a level's. A run from level 1 and a run from level 16 are not
     /// the same race, and holding both under one key had the finish screen offering a best of 24
     /// seconds against a total of 640.
     /// </summary>
-    private string RunKey => $"run.{_runStart.GetFile()}";
+    private string RunKey => BestTimes.RunPrefix + _runStartId;
 
     private float SplitTotal
     {
@@ -270,6 +271,9 @@ public partial class Main : Node3D
 
         _level = level;
         _levelEntry = carry;
+        // Only the level a run actually begins from names the run. The victory lap loads with no
+        // carry as well, and it must not take the run's key with it while the results are still up.
+        if (path == _runStart) _runStartId = level.Id;
         // The victory lap widens this and nothing else does; put it back for an ordinary level.
         _track.ViewBehind = _trackViewBehind;
         _outro = false;

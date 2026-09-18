@@ -1,16 +1,19 @@
 {
-  "name": "Crossfire",
+  "name": "Scarlands",
+  "id": "scarlands",
   "next": "level_20.json",
-  "speed": 140,
+  "speed": 130,
   "segmentLength": 60,
 
-  // Plates and movers with a shooting load that will not wait. Unstoppable comes back here, one
-  // level after plates were taught - so the player now knows there is one thing it cannot answer,
-  // and the level is built around that knowledge: ram lanes that end in a plate, where the habit
-  // of smashing through has to be broken mid-stretch.
+  // Block C opens here: two shields in - the refills are getting weaker - then one new idea alone.
+  // Hazard plates: wall that cannot be shot, broken or rammed, only flown around. Every other
+  // obstacle has a way out, including unstoppable, which turns any collision into a free break.
+  // A plate is the one thing that stays.
+  // There is deliberately NO unstoppable anywhere in this level. Meeting a plate for the first time
+  // mid-ram would read as a bug rather than a rule. It comes back in 19, once plates are known.
   "theme": {
     "darks": ["#2e2016", "#261a12", "#38271b"],
-    "lights": ["#b08a5c", "#98754d", "#c49a68"],
+    "lights": ["#b08a5c", "#98754d", "#c49a68" ],
     "seamDark": "#170f08",
     "seamLight": "#ffd9a0",
     "far": "#0b0704",
@@ -20,105 +23,109 @@
     "breakable": "#9adfff",
     "fadeStart": 35,
     "fadeEnd": 340,
-    "glow": 0.3
+    "glow": 0.25
   },
 
   "sections": {
     "tube": { "radius": 6 },
     "box":  { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "flat": { "radius": 6, "opening": 1 },
     "wide": { "radius": 7.5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 -  200
-
-    // Straight in: plates and movers together, so the unanswerable thing and the moving thing share
-    // a stretch from the start.
-    { "length": 380, "turn": 35, "obstacles": [                     //  200 -  580
-      { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 },
-      { "at": 200, "sweep": 10, "sweepTime": 3.2, "width": 8, "angle": 150 },
-      { "at": 310, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
+    // The block's refill, weaker than A's and B's: two shields, not a full bar.
+    { "length": 370, "pickups": [                                   //    0 -  370
+      { "at": 290, "kind": "shield" },
+      { "at": 360, "kind": "shield", "angle": 180 }
     ] },
 
-    // Rapid fire before a wall of breakables with plates seeded through it. Shooting opens most of
-    // it; which parts it cannot open is the read.
-    { "length": 400, "section": "wide", "pickups": [                //  580 -  980
+    // FREE LOOK. One plate, in a wide bore, taking a quarter of the wall. Shoot it all you like.
+    { "length": 170, "section": "wide", "obstacles": [              //  370 -  540
+      { "at": 160, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
+    ] },
+
+    // Rapid fire, then a wall of blocks with a plate in the middle of it. The blocks give way; the
+    // plate does not, so the gap that matters is the one the shooting cannot make.
+    { "length": 340, "section": "tube", "pickups": [                //  540 -  880
       { "at": 70, "kind": "rapid-fire" }
     ], "obstacles": [
-      { "at": 180, "hits": 2, "angle": 0,   "width": 9 },
-      { "at": 180, "kind": "plate", "angle": 90, "width": 11, "height": 3 },
-      { "at": 180, "hits": 2, "angle": 180, "width": 9 },
-      { "at": 300, "hits": 3, "angle": 270, "width": 9 },
-      { "at": 300, "kind": "plate", "angle": 45, "width": 11, "height": 3 }
+      { "at": 190, "hits": 2, "angle": 0,   "width": 9 },
+      { "at": 190, "kind": "plate", "angle": 120, "width": 11, "height": 3 },
+      { "at": 190, "hits": 2, "angle": 240, "width": 9 },
+      { "at": 300, "kind": "target", "angle": 180 }
     ] },
 
-    // THE RAM LANE. Unstoppable, then a corridor of blocks made to be smashed - with a plate at the
-    // end of it. The habit has to break before the corridor does.
-    { "length": 440, "section": "tube", "speed": 150, "pickups": [  //  980 - 1420
-      { "at": 60, "kind": "unstoppable" }
-    ], "obstacles": [
-      { "at": 150, "angle": 0,   "width": 10 },
-      { "at": 220, "angle": 90,  "width": 10 },
-      { "at": 290, "angle": 180, "width": 10 },
-      { "at": 360, "kind": "plate", "angle": 270, "width": 13, "height": 3 }
+    // Plates in pairs, leaving one lane open between them. Pure steering: no tool touches these.
+    { "length": 400, "turn": 40, "obstacles": [                     //  880 - 1280
+      { "at": 100, "kind": "plate", "angle": 60,   "width": 12, "height": 3 },
+      { "at": 100, "kind": "plate", "angle": -60,  "width": 12, "height": 3 },
+      { "at": 230, "kind": "plate", "angle": 180,  "width": 12, "height": 3 },
+      { "at": 230, "kind": "plate", "angle": 0,    "width": 12, "height": 3 },
+      { "at": 340, "kind": "plate", "angle": 120,  "width": 12, "height": 3 }
     ] },
 
-    { "length": 240, "section": "oval", "pickups": [                // 1420 - 1660
-      { "at": 120, "kind": "shield", "angle": 180 }
+    { "length": 260, "section": "wide", "speed": 140, "pickups": [  // 1280 - 1540
+      { "at": 130, "kind": "shield", "angle": 90 }
     ] },
 
-    // Moving targets to shoot while plates crowd the line the shots have to be taken from. Shots fly
-    // from wherever the ship sits, so the plates dictate where it can shoot from at all.
-    { "length": 440, "section": "tube", "turn": -45, "obstacles": [ // 1660 - 2100
-      { "at": 120, "kind": "plate", "angle": 90,  "width": 12, "height": 3 },
-      { "at": 190, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 0 },
-      { "at": 290, "kind": "plate", "angle": -90, "width": 12, "height": 3 },
-      { "at": 360, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 180 }
+    // The box. Flat floor and ceiling, plates across the corners, so the readable shape of a squarish
+    // section works against the player for once.
+    { "length": 380, "section": "box", "speed": 145, "obstacles": [ // 1540 - 1920
+      { "at": 90,  "kind": "plate", "angle": 0,   "width": 13, "height": 3 },
+      { "at": 200, "kind": "plate", "angle": 180, "width": 13, "height": 3 },
+      { "at": 200, "kind": "target", "angle": 90 },
+      { "at": 310, "kind": "plate", "angle": 90,  "width": 11, "height": 3 }
     ] },
 
-    // The box, at speed, with a shoal of movers and plates in the corners.
-    { "length": 400, "section": "box", "speed": 160, "obstacles": [ // 2100 - 2500
-      { "at": 90,  "kind": "plate", "angle": 0, "width": 13, "height": 3 },
-      { "at": 190, "sweep": 12, "sweepTime": 3.0, "width": 8, "angle": 90, "count": 2, "spacing": 100, "angleStep": 180 },
-      { "at": 340, "kind": "plate", "angle": 180, "width": 13, "height": 3 }
+    // Flat: plates as full-width walls would be impassable, so here they are partial and the jump is
+    // the way past. A plate has no answer in the tools, but it always has an answer in the track.
+    { "length": 120, "section": "flat", "speed": 140 },             // 1920 - 2040
+    { "length": 420, "obstacles": [                                 // 2040 - 2460
+      { "at": 100, "kind": "plate", "x": -14, "width": 26, "height": 2.5 },
+      { "at": 100, "kind": "plate", "x": 16,  "width": 22, "height": 2.5 },
+      { "at": 230, "width": 80, "height": 2.5 },
+      { "at": 300, "kind": "plate", "surface": "ceiling", "x": -12, "width": 24, "height": 2.5 },
+      { "at": 380, "kind": "target", "surface": "ceiling", "x": 14 }
     ] },
 
-    { "length": 260, "section": "wide", "speed": 150, "pickups": [  // 2500 - 2760
+    { "length": 260, "section": "tube", "speed": 145, "pickups": [  // 2460 - 2720
       { "at": 130, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 200, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
+      { "at": 200, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
-    // Ring gun against a mixed ring: it sweeps the targets and the breakables, and leaves every
-    // plate standing. One button, and it only solves half the wall.
-    { "length": 400, "section": "tube", "turn": 50, "obstacles": [  // 2760 - 3160
-      { "at": 140, "kind": "target", "angle": 0, "count": 3, "angleStep": 60 },
-      { "at": 140, "kind": "plate", "angle": 200, "width": 12, "height": 3 },
-      { "at": 280, "hits": 2, "angle": 90, "width": 9 },
-      { "at": 280, "kind": "plate", "angle": 270, "width": 12, "height": 3 }
+    // Plates narrowing the only line, with a shield past them worth the squeeze.
+    // A well among the plates. Both are things no tool answers, so the whole stretch is steering -
+    // but one of them costs a shield and the other costs the clock.
+    { "length": 380, "turn": -45, "pickups": [                      // 2720 - 3100
+      { "at": 330, "kind": "shield", "angle": 0 }
+    ], "warps": [
+      { "at": 150, "angle": -90 }
+    ], "obstacles": [
+      { "at": 110, "kind": "plate", "angle": 90,  "width": 13, "height": 3 },
+      { "at": 210, "kind": "plate", "angle": -90, "width": 13, "height": 3 },
+      { "at": 210, "kind": "plate", "angle": 180, "width": 11, "height": 3 }
     ] },
 
-    { "length": 240, "speed": 155, "pickups": [                     // 3160 - 3400
-      { "at": 120, "kind": "shield", "angle": 90 }
+    // Run for home: a plate at each bend of a twist, unseen until it is close and unanswerable when
+    // it arrives. The only way through is to have kept enough speed in hand to steer.
+    { "length": 200, "speed": 155, "turn": 70, "obstacles": [       // 3100 - 3300
+      { "at": 110, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
     ] },
-
-    // Run for home: movers and plates at every bend of a twist.
-    { "length": 200, "speed": 165, "turn": 75, "obstacles": [       // 3400 - 3600
-      { "at": 105, "sweep": 10, "sweepTime": 2.5, "width": 8, "angle": 0 }
-    ] },
-    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 3600 - 3800
+    { "length": 200, "turn": -75, "climb": 12, "obstacles": [       // 3300 - 3500
       { "at": 100, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
     ] },
-    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 3800 - 4000
-      { "at": 100, "sweep": 10, "sweepTime": 2.5, "width": 8, "angle": 90 }
+    { "length": 200, "turn": 65, "climb": -14, "obstacles": [       // 3500 - 3700
+      { "at": 100, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
     ] },
 
-    // Handover to Keys: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Crossfire: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4000 - 4120
-    { "length": 276 }                                               // 4120 - 4396
+    { "length": 120, "section": "tube" },                           // 3700 - 3820
+    { "length": 200 },                                              // 3820 - 4020
+    { "length": 76, "turn": 7 }                                     // 4020 - 4096
   ]
 }

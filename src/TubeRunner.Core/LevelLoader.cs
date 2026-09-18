@@ -90,6 +90,7 @@ public static class LevelLoader
         return new Level
         {
             Name = data.Name,
+            Id = Identifier(data),
             Next = data.Next,
             Speed = Positive(data.Speed, "speed"),
             SegmentLength = Positive(data.SegmentLength, "segmentLength"),
@@ -100,6 +101,25 @@ public static class LevelLoader
             Warps = warps,
             ThrustZones = thrustZones,
         };
+    }
+
+    /// <summary>
+    /// A level's <see cref="Level.Id"/>: what the file declares, or its name folded down to one if
+    /// it declares none. The fallback is there so a bench or scratch level needs no ceremony;
+    /// anything whose times are worth keeping should say its id out loud, because a name reworded
+    /// later would otherwise take the best times with it.
+    /// </summary>
+    private static string Identifier(LevelData data)
+    {
+        if (!string.IsNullOrWhiteSpace(data.Id)) return data.Id.Trim();
+
+        var id = new System.Text.StringBuilder();
+        foreach (char c in data.Name.ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(c)) id.Append(c);
+            else if (id.Length > 0 && id[^1] != '-') id.Append('-');
+        }
+        return id.ToString().Trim('-') is { Length: > 0 } name ? name : "untitled";
     }
 
     private static List<IReadOnlyList<OffsetKey>> ToBranches(SplitData split, int piece)
@@ -394,6 +414,7 @@ public static class LevelLoader
     private sealed class LevelData
     {
         public string Name { get; set; } = "Untitled";
+        public string? Id { get; set; }
         public string? Next { get; set; }
         public float Speed { get; set; } = 80f;
         public float SegmentLength { get; set; } = 60f;

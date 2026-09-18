@@ -1,139 +1,125 @@
 {
-  "name": "Keys",
+  "name": "Crossfire",
+  "id": "crossfire",
   "next": "level_21.json",
   "speed": 140,
   "segmentLength": 60,
 
-  // Shoot-to-open gates: a target that unlocks a wall further down the track. Shooting buys passage
-  // instead of points, and missing means arriving at something solid.
-  // The distance between a key and its door is the entire design lever. Too close and there is no
-  // time to react; too far and the key is forgotten. Every pairing here gives the shot time to land
-  // and the door time to be seen - and the doors are wide, so an unopened one really is a wall.
+  // Plates and movers with a shooting load that will not wait. Unstoppable comes back here, one
+  // level after plates were taught - so the player now knows there is one thing it cannot answer,
+  // and the level is built around that knowledge: ram lanes that end in a plate, where the habit
+  // of smashing through has to be broken mid-stretch.
   "theme": {
-    "darks": ["#101f2a", "#0d1922", "#152633"],
-    "lights": ["#5e8fa8", "#4e7a91", "#6d9fb8"],
-    "seamDark": "#060e14",
-    "seamLight": "#b6f0ff",
-    "far": "#03070a",
-    "ship": "#b6f0ff",
-    "block": "#bcd4e2",
-    "target": "#ffd23a",
-    "breakable": "#7cffb0",
+    "darks": ["#2e2016", "#261a12", "#38271b"],
+    "lights": ["#b08a5c", "#98754d", "#c49a68"],
+    "seamDark": "#170f08",
+    "seamLight": "#ffd9a0",
+    "far": "#0b0704",
+    "ship": "#ffd9a0",
+    "block": "#d6c3a8",
+    "target": "#ff5a3a",
+    "breakable": "#9adfff",
     "fadeStart": 35,
-    "fadeEnd": 345,
-    "glow": 0.35
+    "fadeEnd": 340,
+    "glow": 0.3
   },
 
   "sections": {
     "tube": { "radius": 6 },
-    "wide": { "radius": 7.5 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
     "box":  { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
-    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-    "branch":       { "radius": 6 },
-    "branch-tight": { "radius": 4.5 }
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "wide": { "radius": 7.5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 280 },                                              //    0 -  280
+    { "length": 200 },                                              //    0 -  200
 
-    // FREE LOOK. One key, one door, well apart and both on the floor line. Shoot it and fly through;
-    // do not, and the door costs a shield. Nothing else on the stretch.
-    { "length": 360, "section": "wide", "obstacles": [              //  280 -  640
-      { "at": 120, "kind": "target", "group": "k1" },
-      { "at": 320, "lockedBy": "k1", "width": 26, "height": 3 }
+    // Straight in: plates and movers together, so the unanswerable thing and the moving thing share
+    // a stretch from the start.
+    { "length": 380, "turn": 35, "obstacles": [                     //  200 -  580
+      { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 },
+      { "at": 200, "sweep": 10, "sweepTime": 3.2, "width": 8, "angle": 150 },
+      { "at": 310, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
     ] },
 
-    // Two pairs, keys and doors interleaved, so which key opens which door has to be tracked.
-    { "length": 460, "section": "tube", "pickups": [                //  640 - 1100
-      { "at": 60, "kind": "rapid-fire" }
+    // Rapid fire before a wall of breakables with plates seeded through it. Shooting opens most of
+    // it; which parts it cannot open is the read.
+    { "length": 400, "section": "wide", "pickups": [                //  580 -  980
+      { "at": 70, "kind": "rapid-fire" }
     ], "obstacles": [
-      { "at": 120, "kind": "target", "angle": 90,  "group": "k2" },
-      { "at": 170, "kind": "target", "angle": -90, "group": "k3" },
-      { "at": 320, "lockedBy": "k2", "angle": 0,   "width": 22, "height": 3 },
-      { "at": 410, "lockedBy": "k3", "angle": 180, "width": 22, "height": 3 }
+      { "at": 180, "hits": 2, "angle": 0,   "width": 9 },
+      { "at": 180, "kind": "plate", "angle": 90, "width": 11, "height": 3 },
+      { "at": 180, "hits": 2, "angle": 180, "width": 9 },
+      { "at": 300, "hits": 3, "angle": 270, "width": 9 },
+      { "at": 300, "kind": "plate", "angle": 45, "width": 11, "height": 3 }
     ] },
 
-    // A door with two keys: both have to go, and they sit on opposite walls, so opening it costs
-    // real travel around the tube as well as two shots.
-    { "length": 440, "turn": 40, "obstacles": [                     // 1100 - 1540
-      { "at": 110, "kind": "target", "angle": 90,  "group": "k4" },
-      { "at": 210, "kind": "target", "angle": -90, "group": "k4" },
-      { "at": 370, "lockedBy": "k4", "angle": 0, "width": 24, "height": 3 }
+    // THE RAM LANE. Unstoppable, then a corridor of blocks made to be smashed - with a plate at the
+    // end of it. The habit has to break before the corridor does.
+    { "length": 440, "section": "tube", "speed": 150, "pickups": [  //  980 - 1420
+      { "at": 60, "kind": "unstoppable" }
+    ], "obstacles": [
+      { "at": 150, "angle": 0,   "width": 10 },
+      { "at": 220, "angle": 90,  "width": 10 },
+      { "at": 290, "angle": 180, "width": 10 },
+      { "at": 360, "kind": "plate", "angle": 270, "width": 13, "height": 3 }
     ] },
 
-    { "length": 260, "section": "oval", "speed": 150, "pickups": [  // 1540 - 1800
-      { "at": 130, "kind": "shield", "angle": 180 }
+    { "length": 240, "section": "oval", "pickups": [                // 1420 - 1660
+      { "at": 120, "kind": "shield", "angle": 180 }
     ] },
 
-    // Keys behind plates: the shot has to be taken from a line the plates allow. The door is wide
-    // enough that missing the window means stopping hard or paying for it.
-    { "length": 460, "section": "tube", "obstacles": [              // 1800 - 2260
-      { "at": 120, "kind": "plate", "angle": 45,  "width": 11, "height": 3 },
-      { "at": 180, "kind": "target", "angle": 180, "group": "k5" },
-      { "at": 250, "kind": "plate", "angle": -45, "width": 11, "height": 3 },
-      { "at": 390, "lockedBy": "k5", "angle": 0, "width": 24, "height": 3 }
+    // Moving targets to shoot while plates crowd the line the shots have to be taken from. Shots fly
+    // from wherever the ship sits, so the plates dictate where it can shoot from at all.
+    { "length": 440, "section": "tube", "turn": -45, "obstacles": [ // 1660 - 2100
+      { "at": 120, "kind": "plate", "angle": 90,  "width": 12, "height": 3 },
+      { "at": 190, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 0 },
+      { "at": 290, "kind": "plate", "angle": -90, "width": 12, "height": 3 },
+      { "at": 360, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 180 }
     ] },
 
-    // A key on a mover: it slides while the shot is lined up, so the aim has to lead it - and the
-    // door is close enough behind that a missed first shot is felt.
-    { "length": 440, "speed": 155, "turn": -45, "obstacles": [      // 2260 - 2700
-      { "at": 130, "kind": "target", "sweep": 9, "sweepTime": 3.2, "angle": 0, "group": "k6" },
-      { "at": 350, "lockedBy": "k6", "angle": 90, "width": 24, "height": 3 }
+    // The box, at speed, with a shoal of movers and plates in the corners.
+    { "length": 400, "section": "box", "speed": 160, "obstacles": [ // 2100 - 2500
+      { "at": 90,  "kind": "plate", "angle": 0, "width": 13, "height": 3 },
+      { "at": 190, "sweep": 12, "sweepTime": 3.0, "width": 8, "angle": 90, "count": 2, "spacing": 100, "angleStep": 180 },
+      { "at": 340, "kind": "plate", "angle": 180, "width": 13, "height": 3 }
     ] },
 
-    { "length": 240, "section": "wide", "pickups": [                // 2700 - 2940
-      { "at": 120, "kind": "ring-gun" }
+    { "length": 260, "section": "wide", "speed": 150, "pickups": [  // 2500 - 2760
+      { "at": 130, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
     ] },
 
-    // A fork whose short road is locked: the key stands in the chamber before it, so the branch has
-    // to be paid for with a shot taken before the fork is even reached.
-    { "length": 160, "section": "chamber", "speed": 160, "obstacles": [   // 2940 - 3100
-      { "at": 70, "kind": "target", "angle": 90, "group": "kf" }
-    ] },
-    { "length": 440, "turn": 85, "split": {                         // 3100 - 3540
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
-          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
-        ]
-      },
-      "obstacles": [
-        { "at": 210, "branch": 0, "kind": "target", "angle": 90 },
-        { "at": 120, "branch": 1, "lockedBy": "kf", "angle": 0, "width": 20, "height": 3 }
-      ]
-    },
-    { "length": 140, "section": "tube" },                           // 3540 - 3680
-
-    // A key that is part of an ordered group: the ring gun cannot touch it, and it will not break
-    // until its turn. Two mechanics stacked, and the door behind them does not care.
-    { "length": 480, "section": "box", "speed": 160, "obstacles": [ // 3680 - 4160
-      { "at": 110, "kind": "target", "angle": 90,  "group": "k7", "order": 0 },
-      { "at": 200, "kind": "target", "angle": -90, "group": "k7", "order": 1 },
-      { "at": 400, "lockedBy": "k7", "angle": 0, "width": 26, "height": 3 }
+    // Ring gun against a mixed ring: it sweeps the targets and the breakables, and leaves every
+    // plate standing. One button, and it only solves half the wall.
+    { "length": 400, "section": "tube", "turn": 50, "obstacles": [  // 2760 - 3160
+      { "at": 140, "kind": "target", "angle": 0, "count": 3, "angleStep": 60 },
+      { "at": 140, "kind": "plate", "angle": 200, "width": 12, "height": 3 },
+      { "at": 280, "hits": 2, "angle": 90, "width": 9 },
+      { "at": 280, "kind": "plate", "angle": 270, "width": 12, "height": 3 }
     ] },
 
-    { "length": 240, "section": "tube", "pickups": [                // 4160 - 4400
+    { "length": 240, "speed": 155, "pickups": [                     // 3160 - 3400
       { "at": 120, "kind": "shield", "angle": 90 }
     ] },
 
-    // Run for home: a key before each bend of a twist, its door round the corner out of sight. The
-    // shot has to be taken on faith, before the thing it opens can be seen at all.
-    { "length": 220, "speed": 165, "turn": 70, "obstacles": [       // 4400 - 4620
-      { "at": 70,  "kind": "target", "angle": 0, "group": "k8" },
-      { "at": 180, "lockedBy": "k8", "angle": 0, "width": 22, "height": 3 }
+    // Run for home: movers and plates at every bend of a twist.
+    { "length": 200, "speed": 165, "turn": 75, "obstacles": [       // 3400 - 3600
+      { "at": 105, "sweep": 10, "sweepTime": 2.5, "width": 8, "angle": 0 }
     ] },
-    { "length": 220, "turn": -75, "climb": 14, "obstacles": [       // 4620 - 4840
-      { "at": 70,  "kind": "target", "angle": 180, "group": "k9" },
-      { "at": 180, "lockedBy": "k9", "angle": 180, "width": 22, "height": 3 }
+    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 3600 - 3800
+      { "at": 100, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
+    ] },
+    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 3800 - 4000
+      { "at": 100, "sweep": 10, "sweepTime": 2.5, "width": 8, "angle": 90 }
     ] },
 
-    // Handover to Attrition: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Keys: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4840 - 4960
-    { "length": 180 },                                              // 4960 - 5140
-    { "length": 96, "turn": 9.142857 }                              // 5140 - 5236
+    { "length": 120, "section": "tube" },                           // 4000 - 4120
+    { "length": 276 }                                               // 4120 - 4396
   ]
 }

@@ -1,5 +1,6 @@
 {
   "name": "Power Up",
+  "id": "power-up",
   "next": "level_03.json",
   "speed": 80,
   "segmentLength": 60,

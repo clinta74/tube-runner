@@ -1,5 +1,6 @@
 {
   "name": "Earthworks",
+  "id": "earthworks",
   "next": "level_08.json",
   "speed": 80,
   "segmentLength": 60,

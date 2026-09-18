@@ -21,15 +21,15 @@ public class SplitSavingTests(ITestOutputHelper output)
     [Theory]
     [InlineData("level_07.json")]
     [InlineData("level_08.json")]
-    [InlineData("level_09.json")]
-    [InlineData("level_11.json")]
-    [InlineData("level_14.json")]
-    [InlineData("level_17.json")]
-    [InlineData("level_20.json")]
-    [InlineData("level_22.json")]
+    [InlineData("level_10.json")]
+    [InlineData("level_12.json")]
+    [InlineData("level_15.json")]
+    [InlineData("level_18.json")]
+    [InlineData("level_21.json")]
     [InlineData("level_23.json")]
-    [InlineData("level_25.json")]
+    [InlineData("level_24.json")]
     [InlineData("level_26.json")]
+    [InlineData("level_27.json")]
     public void EverySplitIsWorthTaking(string name)
     {
         var level = LevelLoader.Parse(File.ReadAllText(LevelPath(name)));

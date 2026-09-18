@@ -1,5 +1,6 @@
 {
   "name": "First Loop",
+  "id": "first-loop",
   "next": "level_02.json",
   "speed": 70,
   "segmentLength": 60,

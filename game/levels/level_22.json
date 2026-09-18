@@ -1,164 +1,130 @@
 {
-  "name": "Roulette",
+  "name": "Attrition",
+  "id": "attrition",
   "next": "level_23.json",
   "speed": 145,
   "segmentLength": 60,
 
-  // Block D opens here: one shield in - the weakest refill of the four blocks - then the last new
-  // idea, which needs no new code at all. A fork where one branch hides a warp well.
-  // A fork was always time against shields: the short way is tighter and meaner. Putting a well down
-  // one branch adds a third thing to weigh, and it is the only one that can cost more than the fork
-  // saves - a warp throws the ship back up the track, so taking the quick way and hitting the well
-  // is worse than having taken the long way at all.
-  // The signs are the tell. A ring of them stands 75 units before every well, so the gamble is
-  // informed: the player can see which branch is carrying one before committing to it.
+  // Block C's test, and the point where the scarcity curve starts to bite. Everything from C -
+  // plates, keys and doors - over everything from A and B. One shield in the whole level, and it is
+  // most of the way through, so the run arrives at block D on whatever it managed to keep.
+  // The name is the design: nothing here is individually harder than what came before. It is long,
+  // it is dense, and it does not give anything back.
   "theme": {
-    "darks": ["#1d1526", "#17111e", "#251b30"],
-    "lights": ["#8d6fb5", "#795c9e", "#a084c4"],
-    "seamDark": "#0e0a13",
-    "seamLight": "#dcb8ff",
-    "far": "#060409",
-    "ship": "#dcb8ff",
-    "block": "#c9b8dd",
-    "target": "#ffcf3a",
-    "breakable": "#7cffc4",
+    "darks": ["#241a1a", "#1d1414", "#2c2020"],
+    "lights": ["#9c7070", "#865e5e", "#ad8080"],
+    "seamDark": "#120b0b",
+    "seamLight": "#ffb3b3",
+    "far": "#070404",
+    "ship": "#ffb3b3",
+    "block": "#d2b9b9",
+    "target": "#ff4040",
+    "breakable": "#ffd06b",
     "fadeStart": 35,
-    "fadeEnd": 345,
-    "glow": 0.35
+    "fadeEnd": 330,
+    "glow": 0.3
   },
 
   "sections": {
-    "tube":         { "radius": 6 },
-    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-    "wide-chamber": { "halfWidth": 19, "halfHeight": 6.5, "squareness": 0.6 },
-    "branch":       { "radius": 6 },
-    "branch-mid":   { "radius": 5 },
-    "branch-tight": { "radius": 4.5 },
-    "oval":         { "halfWidth": 9, "halfHeight": 4.5 }
+    "tube":   { "radius": 6 },
+    "narrow": { "radius": 4.5 },
+    "box":    { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "flat":   { "radius": 6, "opening": 1 },
+    "oval":   { "halfWidth": 9, "halfHeight": 4.5 }
   },
 
   "start": "tube",
   "track": [
-    // The block's refill: a single shield.
-    { "length": 320, "pickups": [                                   //    0 -  320
-      { "at": 290, "kind": "shield" }
-    ] },
+    { "length": 180 },                                              //    0 -  180
 
-    // FREE LOOK at the pairing. A wide chamber, then a fork whose quick branch is clean - no well
-    // anywhere. This is the fork the player already knows, so the next one can break the pattern.
-    { "length": 120, "section": "chamber", "speed": 150 },          //  320 -  440
-    { "length": 420, "turn": 80, "split": {                         //  440 -  860
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [140, -30, 0], [280, -30, 0], [420, -8, 0]] },
-          { "offsets": [[0, 8, 0], [140, 30, 0], [280, 30, 0], [420, 8, 0]], "section": "branch-tight" }
-        ]
-      },
-      "obstacles": [
-        { "at": 210, "branch": 0, "kind": "target" },
-        { "at": 140, "branch": 1, "angle": 0, "count": 3, "spacing": 60, "angleStep": 90 }
-      ]
-    },
-    { "length": 140, "section": "tube" },                           //  860 - 1000
-
-    // Now the gamble. Same shape, but the quick branch carries a well on its outer wall - where the
-    // tube curves away from the ship, so it is presented rather than seen edge-on. The signs are
-    // visible before the fork, so this is a choice and not an ambush.
-    { "length": 120, "section": "chamber", "speed": 155, "pickups": [    // 1000 - 1120
-      { "at": 60, "kind": "rapid-fire" }
-    ] },
-    { "length": 440, "turn": 85, "split": {                         // 1120 - 1560
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
-          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
-        ]
-      },
-      "warps": [
-        { "at": 300, "branch": 1, "angle": 90 }
-      ],
-      "obstacles": [
-        { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
-        { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
-      ]
-    },
-    { "length": 160, "section": "tube" },                           // 1560 - 1720
-
-    { "length": 280, "section": "oval", "speed": 160, "pickups": [  // 1720 - 2000
-      { "at": 140, "kind": "shield", "angle": 180 }
+    // No free look, no refill. Keys, doors and plates from the first bend.
+    { "length": 420, "turn": 40, "warps": [                         //  180 -  600
+      { "at": 260, "angle": -90 }
     ], "obstacles": [
-      { "at": 220, "kind": "target", "angle": 90 }
+      { "at": 100, "kind": "target", "angle": 90, "group": "k1" },
+      { "at": 200, "kind": "plate", "angle": 0, "width": 12, "height": 3 },
+      { "at": 350, "lockedBy": "k1", "angle": 180, "width": 24, "height": 3 }
     ] },
 
-    // A three-way. The middle road is the centreline: no saving, no well, nothing. Left is long and
-    // clear. Right is quickest, tightest, and carries the well. The safe answer is the boring one.
-    // A three-way needs room for three openings side by side at the fork. Three branches of radius 6
-    // want 36 units of width and a halfWidth-14 chamber offers 28, so this one widens out and the
-    // branches themselves are narrower - which suits it, being the tightest choice in the level.
-    { "length": 140, "section": "wide-chamber", "speed": 160 },     // 2000 - 2140
-    { "length": 480, "turn": 100, "split": {                        // 2140 - 2620
-        "section": "branch-mid",
-        "branches": [
-          // Only the fork and merge openings are checked, so these stay tucked in; the mid-split
-          // offsets are free to swing as wide as the saving needs.
-          { "offsets": [[0, -12, 0], [160, -44, 0], [320, -44, 0], [480, -12, 0]] },
-          { "offsets": [[0, 0, 0], [160, 0, 0], [320, 0, 0], [480, 0, 0]] },
-          { "offsets": [[0, 12, 0], [160, 44, 0], [320, 44, 0], [480, 12, 0]], "section": "branch-tight" }
-        ]
-      },
-      "pickups": [
-        { "at": 280, "branch": 2, "kind": "full-shields" }
-      ],
-      "warps": [
-        { "at": 350, "branch": 2, "angle": 90 }
-      ],
-      "obstacles": [
-        { "at": 240, "branch": 0, "kind": "target" },
-        { "at": 160, "branch": 1, "angle": 0, "count": 3, "spacing": 80, "angleStep": 120 },
-        { "at": 150, "branch": 2, "angle": 180, "count": 2, "spacing": 60 }
-      ]
-    },
-    { "length": 160, "section": "chamber" },                        // 2620 - 2780
-    { "length": 140, "section": "tube" },                           // 2780 - 2920
+    // Gates and plates on one stretch: one opens on a cycle and one never does, and telling them
+    // apart at speed is the whole problem. They are deliberately the same size.
+    { "length": 440, "section": "tube", "obstacles": [              //  600 - 1040
+      { "at": 100, "period": 2.2, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 100, "kind": "plate", "angle": 180, "width": 12, "height": 3 },
+      { "at": 250, "kind": "plate", "angle": 90,  "width": 12, "height": 3 },
+      { "at": 250, "period": 2.2, "phase": 0.5, "angle": 270, "width": 20, "height": 3 },
+      { "at": 380, "period": 2.2, "angle": 45,  "width": 20, "height": 3 }
+    ] },
 
-    // A well on the main line, to say the mechanic is not only a branch thing.
-    { "length": 380, "turn": -60, "speed": 165, "warps": [          // 2920 - 3300
-      { "at": 220, "angle": 90 }
+    // Held slow through a limit, with a key to shoot and its door waiting past the zone. The limit
+    // gives time to aim, which is the only kindness in the level.
+    { "length": 460, "section": "narrow", "thrustZones": [          // 1040 - 1500
+      { "at": 230, "length": 460 }
     ], "obstacles": [
-      { "at": 100, "angle": 180, "width": 9 }
+      { "at": 140, "kind": "target", "angle": 180, "group": "k2" },
+      { "at": 260, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
+      { "at": 400, "lockedBy": "k2", "angle": 90, "width": 20, "height": 3 }
     ] },
 
-    { "length": 240, "pickups": [                                   // 3300 - 3540
-      { "at": 120, "kind": "ring-gun" }
+    // Rapid fire - a tool, not a gift, and the only one until the shield.
+    { "length": 240, "section": "tube", "speed": 155, "pickups": [  // 1500 - 1740
+      { "at": 120, "kind": "rapid-fire" }
+    ] },
+
+    // Flat, with plates that cannot be shot, gates that open, and a forced jump between them.
+    { "length": 120, "section": "flat", "speed": 150 },             // 1740 - 1860
+    { "length": 460, "obstacles": [                                 // 1860 - 2320
+      { "at": 90,  "period": 2.2, "width": 80, "height": 2.5 },
+      { "at": 200, "kind": "plate", "x": -14, "width": 26, "height": 2.5 },
+      { "at": 200, "kind": "plate", "x": 16,  "width": 22, "height": 2.5 },
+      { "at": 320, "width": 80, "height": 2.5 },
+      { "at": 400, "kind": "plate", "surface": "ceiling", "x": -10, "width": 24, "height": 2.5 }
+    ] },
+
+    // The shield. Most of the way through, on the ceiling, off the fast line - it costs time to take
+    // and the run needs it anyway.
+    { "length": 260, "section": "tube", "speed": 155, "pickups": [  // 2320 - 2580
+      { "at": 130, "kind": "shield", "angle": 180 }
+    ] },
+
+    // An ordered group that is also a key, with plates crowding the lines it can be shot from, at
+    // the highest speed so far. Three mechanics on one stretch and no tool that shortcuts it.
+    { "length": 480, "section": "box", "speed": 165, "obstacles": [ // 2580 - 3060
+      { "at": 100, "kind": "plate", "angle": 45,  "width": 11, "height": 3 },
+      { "at": 160, "kind": "target", "angle": 90,  "group": "k3", "order": 0 },
+      { "at": 250, "kind": "plate", "angle": -45, "width": 11, "height": 3 },
+      { "at": 310, "kind": "target", "angle": -90, "group": "k3", "order": 1 },
+      { "at": 430, "lockedBy": "k3", "angle": 0, "width": 26, "height": 3 }
+    ] },
+
+    // A shoal in a limit: slow means more sweeps pass before arrival, the pairing from Undertow,
+    // now with plates fixed among the movers so part of the wall never opens.
+    { "length": 460, "section": "narrow", "turn": -45, "thrustZones": [  // 3060 - 3520
+      { "at": 230, "length": 460 }
     ], "obstacles": [
-      { "at": 180, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+      { "at": 110, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
+      { "at": 220, "kind": "plate", "angle": 120, "width": 9, "height": 3 },
+      { "at": 330, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 240 }
     ] },
 
-    // Run for home: a last fork, both branches carrying a well, so there is no clean way through -
-    // only a choice of which risk. The long way's well sits where the wall curves most.
-    { "length": 140, "section": "chamber", "speed": 170 },          // 3540 - 3680
-    { "length": 440, "turn": -90, "split": {                        // 3680 - 4120
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]], "section": "branch-tight" },
-          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]] }
-        ]
-      },
-      "warps": [
-        { "at": 260, "branch": 0, "angle": -90 },
-        { "at": 320, "branch": 1, "angle": 90 }
-      ],
-      "obstacles": [
-        { "at": 150, "branch": 0, "angle": 0, "count": 2, "spacing": 60, "angleStep": 120 },
-        { "at": 180, "branch": 1, "kind": "target", "angle": 180 }
-      ]
-    },
+    // Run for home. A twist, at full speed, with a plate or a gate at every bend and nothing given.
+    { "length": 200, "section": "tube", "speed": 170, "turn": 75, "obstacles": [   // 3520 - 3720
+      { "at": 105, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
+    ] },
+    { "length": 200, "turn": -80, "climb": 14, "obstacles": [       // 3720 - 3920
+      { "at": 100, "period": 2.0, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 200, "turn": 70, "climb": -16, "obstacles": [       // 3920 - 4120
+      { "at": 100, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
+    ] },
+    { "length": 200, "turn": -65, "climb": 12, "obstacles": [       // 4120 - 4320
+      { "at": 100, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
+    ] },
 
-    // Handover to Highwire: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Roulette: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4120 - 4240
-    { "length": 220 },                                              // 4240 - 4460
-    { "length": 56, "turn": -10.111111 }                            // 4460 - 4516
+    { "length": 120, "section": "tube" },                           // 4320 - 4440
+    { "length": 276 }                                               // 4440 - 4716
   ]
 }

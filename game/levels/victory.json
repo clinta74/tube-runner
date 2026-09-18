@@ -1,5 +1,6 @@
 {
   "name": "Victory",
+  "id": "victory",
   "speed": 105,
   "segmentLength": 60,
 

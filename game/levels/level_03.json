@@ -1,5 +1,6 @@
 {
   "name": "Throttle",
+  "id": "throttle",
   "next": "level_04.json",
   "speed": 85,
   "segmentLength": 60,

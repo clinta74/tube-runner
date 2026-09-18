@@ -1,159 +1,134 @@
 {
-  "name": "Long Odds",
+  "name": "Blackout",
+  "id": "blackout",
   "next": "level_26.json",
   "speed": 155,
   "segmentLength": 60,
 
-  // The longest level in the game, and the one that gives least. Block D's test, and the last thing
-  // before the finale, so what it really measures is how much the run has left.
-  // Endurance rather than spikes: no single stretch here is the hardest in the game, but there are
-  // more of them in a row than anywhere else, and the only refill is past the midpoint and off the
-  // fast line. A level that takes two shields is far worse than it looks on its own, because the
-  // finale comes next and nothing between them hands anything back.
+  // Visibility, used as the difficulty rather than density. A straight shows everything early; a
+  // bend hides it until the corner opens. A run of tight alternating bends - a twist - keeps the
+  // reveal short the whole way through, which is the cheapest way to make a level bite without
+  // adding a single obstacle.
+  // So this level is mostly twists, and the obstacles in them are ordinary. What makes it hard is
+  // that nothing is ever seen from far away. The theme helps: the fade is pulled in close, so the
+  // track ahead goes dark sooner than in any other level.
   "theme": {
-    "darks": ["#241a1a", "#1d1414", "#2c2020"],
-    "lights": ["#9c7070", "#865e5e", "#ad8080"],
-    "seamDark": "#120b0b",
-    "seamLight": "#ffb3b3",
-    "far": "#070404",
-    "ship": "#ffb3b3",
-    "block": "#d2b9b9",
-    "target": "#ff4040",
-    "breakable": "#ffd06b",
-    "fadeStart": 30,
-    "fadeEnd": 300,
-    "glow": 0.3
+    "darks": ["#0e1014", "#0b0d10", "#131519"],
+    "lights": ["#4c5560", "#3f4751", "#59636f"],
+    "seamDark": "#050607",
+    "seamLight": "#8fa8bd",
+    "far": "#000000",
+    "ship": "#cfe4f5",
+    "block": "#c8d4e0",
+    "target": "#ff5a5a",
+    "breakable": "#6fd8a8",
+    "fadeStart": 22,
+    "fadeEnd": 190,
+    "glow": 0.15
   },
 
   "sections": {
-    "tube":         { "radius": 6 },
-    "narrow":       { "radius": 4.8 },
-    "flat":         { "radius": 6, "opening": 1 },
-    "oval":         { "halfWidth": 9, "halfHeight": 4.5 },
-    "box":          { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
-    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
-    "branch":       { "radius": 6 },
-    "branch-tight": { "radius": 4.5 }
+    "tube":   { "radius": 6 },
+    "narrow": { "radius": 4.8 },
+    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":    { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 }
   },
 
   "start": "tube",
   "track": [
     { "length": 200 },                                              //    0 -  200
 
-    // Gates and blocks, straight in.
-    { "length": 400, "turn": 40, "obstacles": [                     //  200 -  600
-      { "at": 90,  "period": 2.2, "angle": 0, "width": 20, "height": 3 },
-      { "at": 200, "angle": 120, "width": 9 },
-      { "at": 310, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    // A straight with a hard pattern on it, shown in full. The same pattern comes back in a twist
+    // later on, and the difference between the two is the whole level.
+    { "length": 340, "obstacles": [                                 //  200 -  540
+      { "at": 90,  "angle": 0,   "width": 9 },
+      { "at": 170, "angle": 120, "width": 9 },
+      { "at": 250, "angle": 240, "width": 9 }
     ] },
 
-    // A limit with movers in it.
-    { "length": 440, "section": "narrow", "thrustZones": [          //  600 - 1040
-      { "at": 220, "length": 440 }
+    // The twist begins. Same three blocks, one per bend, each hidden until its corner opens.
+    { "length": 180, "turn": 75, "obstacles": [                     //  540 -  720
+      { "at": 100, "angle": 0, "width": 9 }
+    ] },
+    { "length": 180, "turn": -80, "climb": 12, "obstacles": [       //  720 -  900
+      { "at": 95, "angle": 120, "width": 9 }
+    ] },
+    { "length": 180, "turn": 70, "climb": -14, "obstacles": [       //  900 - 1080
+      { "at": 95, "angle": 240, "width": 9 }
+    ] },
+
+    { "length": 240, "section": "oval", "pickups": [                // 1080 - 1320
+      { "at": 120, "kind": "rapid-fire" }
+    ] },
+
+    // Gates in a twist. A gate needs its cycle read, and a bend gives no time to read one - so the
+    // answer here is to arrive slowly enough to watch it, which costs exactly what it sounds like.
+    { "length": 190, "section": "tube", "turn": -75, "obstacles": [ // 1320 - 1510
+      { "at": 110, "period": 2.2, "angle": 0, "width": 20, "height": 3 }
+    ] },
+    { "length": 190, "turn": 80, "climb": -12, "obstacles": [       // 1510 - 1700
+      { "at": 100, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 190, "turn": -70, "climb": 14, "obstacles": [       // 1700 - 1890
+      { "at": 100, "period": 2.2, "angle": 90, "width": 18, "height": 3 }
+    ] },
+
+    { "length": 240, "pickups": [                                   // 1890 - 2130
+      { "at": 120, "kind": "shield", "angle": 180 }
+    ] },
+
+    // Plates in a twist: unanswerable and unseen until close. Narrow bore, so the wall left over
+    // after a plate is small, and there is no time to find it from far off.
+    { "length": 200, "section": "narrow", "speed": 165, "turn": 80, "obstacles": [   // 2130 - 2330
+      { "at": 110, "kind": "plate", "angle": 0, "width": 10, "height": 3 }
+    ] },
+    { "length": 200, "turn": -85, "climb": 14, "obstacles": [       // 2330 - 2530
+      { "at": 100, "kind": "plate", "angle": 180, "width": 10, "height": 3 }
+    ] },
+    { "length": 200, "turn": 75, "climb": -16, "obstacles": [       // 2530 - 2730
+      { "at": 100, "kind": "plate", "angle": 90, "width": 10, "height": 3 }
+    ] },
+
+    // A straight to breathe, and to make the next twist feel darker by contrast.
+    { "length": 300, "section": "tube", "speed": 160, "pickups": [  // 2730 - 3030
+      { "at": 150, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 120, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 0 },
-      { "at": 250, "sweep": 7, "sweepTime": 2.8, "width": 6, "angle": 120 },
-      { "at": 370, "kind": "plate", "angle": 240, "width": 9, "height": 3 }
+      { "at": 230, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
-    // Keys and doors, with plates crowding the firing line.
-    { "length": 460, "section": "tube", "speed": 165, "pickups": [  // 1040 - 1500
-      { "at": 60, "kind": "rapid-fire" }
-    ], "obstacles": [
-      { "at": 140, "kind": "plate", "angle": 45, "width": 11, "height": 3 },
-      { "at": 200, "kind": "target", "angle": 180, "group": "k1" },
-      { "at": 390, "lockedBy": "k1", "angle": 0, "width": 24, "height": 3 }
+    // A well in a twist. The sign ring stands 75 units back - which, on a bend this tight, is the
+    // only reason it is fair at all: the signs come round the corner before the well does.
+    { "length": 210, "turn": -80, "warps": [                        // 3030 - 3240
+      { "at": 150, "angle": 90 }
+    ] },
+    { "length": 210, "turn": 85, "climb": 12, "obstacles": [        // 3240 - 3450
+      { "at": 105, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
     ] },
 
-    // Flat, with the jump rhythm and plates that cannot be shot.
-    { "length": 120, "section": "flat", "speed": 160 },             // 1500 - 1620
-    { "length": 460, "obstacles": [                                 // 1620 - 2080
-      { "at": 90,  "period": 2.2, "width": 80, "height": 2.5 },
-      { "at": 90,  "period": 2.2, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
-      { "at": 220, "kind": "plate", "x": -14, "width": 26, "height": 2.5 },
-      { "at": 330, "width": 80, "height": 2.5 },
-      { "at": 420, "kind": "target", "surface": "ceiling", "x": 12 }
-    ] },
-
-    // A fork with a well down the quick branch, from Roulette.
-    { "length": 140, "section": "chamber", "speed": 165 },          // 2080 - 2220
-    { "length": 460, "turn": 95, "split": {                         // 2220 - 2680
-        "section": "branch",
-        "branches": [
-          { "offsets": [[0, -8, 0], [155, -34, 0], [300, -34, 0], [460, -8, 0]] },
-          { "offsets": [[0, 8, 0], [155, 34, 0], [300, 34, 0], [460, 8, 0]], "section": "branch-tight" }
-        ]
-      },
-      "warps": [
-        { "at": 300, "branch": 1, "angle": 90 }
-      ],
-      "obstacles": [
-        { "at": 230, "branch": 0, "kind": "target", "angle": 90 },
-        { "at": 160, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
-      ]
-    },
-    { "length": 160, "section": "tube" },                           // 2680 - 2840
-
-    // The only refill in the level. Past the midpoint, on the ceiling, off the line.
-    { "length": 260, "section": "oval", "pickups": [                // 2840 - 3100
-      { "at": 130, "kind": "shield", "angle": 180 }
-    ] },
-
-    // An ordered group at speed, with a mover crossing the firing line.
-    { "length": 460, "section": "tube", "speed": 170, "turn": -45, "obstacles": [   // 3100 - 3560
-      { "at": 120, "kind": "target", "angle": 90,  "group": "a", "order": 0 },
-      { "at": 230, "sweep": 9, "sweepTime": 2.8, "width": 8, "angle": 0 },
-      { "at": 330, "kind": "target", "angle": -90, "group": "a", "order": 1 },
-      { "at": 420, "kind": "target", "angle": 180, "group": "a", "order": 2 }
-    ] },
-
-    // The box, dense, no tools.
-    { "length": 420, "section": "box", "speed": 175, "obstacles": [ // 3560 - 3980
-      { "at": 90,  "kind": "plate", "angle": 0, "width": 13, "height": 3 },
+    // The box in the dark: flat floor and ceiling change how the wall reads, and here it cannot be
+    // read in advance at all.
+    { "length": 380, "section": "box", "speed": 170, "turn": -55, "obstacles": [   // 3450 - 3830
+      { "at": 90,  "angle": 0,   "width": 10 },
       { "at": 190, "period": 2.0, "angle": 180, "width": 18, "height": 3 },
-      { "at": 290, "sweep": 12, "sweepTime": 2.6, "width": 8, "angle": 90 },
-      { "at": 380, "angle": 270, "width": 10 }
+      { "at": 300, "kind": "plate", "angle": 90, "width": 11, "height": 3 }
     ] },
 
-    // A limit right where the level most invites a push for the end.
-    { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [   // 3980 - 4380
-      { "at": 200, "length": 400 }
-    ], "obstacles": [
-      { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
-      { "at": 290, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 }
+    // Run for home: the tightest twist in the game, one thing per bend, nothing visible until it is.
+    { "length": 180, "section": "tube", "speed": 175, "turn": 85, "obstacles": [   // 3830 - 4010
+      { "at": 95, "angle": 0, "width": 9 }
+    ] },
+    { "length": 180, "turn": -90, "climb": 14, "obstacles": [       // 4010 - 4190
+      { "at": 95, "kind": "plate", "angle": 180, "width": 11, "height": 3 }
+    ] },
+    { "length": 180, "turn": 80, "climb": -16, "obstacles": [       // 4190 - 4370
+      { "at": 95, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
     ] },
 
-    { "length": 240, "section": "tube", "speed": 170, "pickups": [  // 4380 - 4620
-      { "at": 120, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 180, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }
-    ] },
-
-    // Wells on the run in, on the fast line, from Highwire.
-    { "length": 400, "section": "narrow", "speed": 175, "turn": -70, "warps": [   // 4620 - 5020
-      { "at": 140, "angle": 90 },
-      { "at": 310, "angle": -90 }
-    ] },
-
-    // Run for home: a long twist, one thing per bend, nothing given.
-    { "length": 190, "section": "tube", "speed": 180, "turn": 80, "obstacles": [   // 5020 - 5210
-      { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
-    ] },
-    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 5210 - 5400
-      { "at": 95, "period": 2.0, "angle": 180, "width": 20, "height": 3 }
-    ] },
-    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 5400 - 5590
-      { "at": 95, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 90 }
-    ] },
-    { "length": 190, "turn": -80, "climb": 12, "obstacles": [       // 5590 - 5780
-      { "at": 95, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
-    ] },
-
-    // Handover to Finale: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Long Odds: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 5780 - 5900
-    { "length": 160 },                                              // 5900 - 6060
-    { "length": 116, "turn": 11.047619 }                            // 6060 - 6176
+    { "length": 120, "section": "tube" },                           // 4370 - 4490
+    { "length": 200 },                                              // 4490 - 4690
+    { "length": 76, "turn": 7.6 }                                   // 4690 - 4766
   ]
 }
