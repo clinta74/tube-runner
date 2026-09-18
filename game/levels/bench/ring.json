@@ -4,10 +4,13 @@
   "speed": 90,
   "segmentLength": 60,
 
-  // A bench for the ring: a tube wide enough that only part of the way round it is on screen, with
+  // A bench for the ring: a bore wide enough that only part of the way round it is on screen, with
   // a second cylinder down the middle. The ship flies in the gap between them, and the jump crosses
   // it - outer wall underfoot, core overhead, exactly the relationship a flat section's floor and
   // ceiling have.
+  // A section says how much room its ring leaves ('ringHeight'), not how big the core is, and the
+  // most it may leave is 70% of the bore - so a taller ring is bought by widening the tube. At
+  // radius 22 that ceiling is 15.4, and the three rings below run from most of it down to a squeeze.
   "theme": {
     "darks": ["#1a1d26", "#15171f", "#20242f"],
     "lights": ["#6f7a9c", "#5e6786", "#828db2"],
@@ -18,71 +21,80 @@
     "block": "#dce3f0",
     "target": "#ffd23a",
     "breakable": "#7cffb0",
-    "fadeStart": 40,
-    "fadeEnd": 420,
+    "fadeStart": 60,
+    "fadeEnd": 520,
     "glow": 0.35
   },
 
   "sections": {
     "tube":       { "radius": 6 },
-    "mouth":      { "radius": 16 },
-    "ring":       { "radius": 16, "core": 0.45 },
-    "ring-tight": { "radius": 16, "core": 0.62 },
-    "ring-box":   { "halfWidth": 17, "halfHeight": 13, "squareness": 0.7, "core": 0.5 }
+    "mouth":      { "radius": 22 },
+    "ring-tall":  { "radius": 22, "ringHeight": 13 },
+    "ring":       { "radius": 22, "ringHeight": 9 },
+    "ring-tight": { "radius": 22, "ringHeight": 5 },
+    "ring-box":   { "halfWidth": 24, "halfHeight": 18, "squareness": 0.7, "ringHeight": 10 }
   },
 
   "start": "tube",
   "track": [
     // Open out into the wide bore first, so the core is not the thing that arrives.
     { "length": 260 },                                              //    0 -  260
-    { "length": 300, "section": "mouth" },                          //  260 -  560
+    { "length": 380, "section": "mouth" },                          //  260 -  640
 
     // The core grows in over one piece. Nothing to hit while the shape is changing.
-    { "length": 320, "section": "ring" },                           //  560 -  880
+    { "length": 360, "section": "ring-tall" },                      //  640 - 1000
 
-    // A straight ring. Blocks on both walls: the ones overhead can only be met by jumping up to the
-    // core, and the ones underfoot can only be met by coming back down.
-    { "length": 640, "obstacles": [                                 //  880 - 1520
-      { "at": 120, "angle": 0, "width": 7 },
-      { "at": 240, "surface": "ceiling", "angle": 0, "width": 7 },
-      { "at": 360, "angle": 60, "width": 7 },
-      { "at": 480, "surface": "ceiling", "angle": -60, "width": 7 }
+    // A tall ring: the most room this bore will give. Blocks on both walls - the ones overhead can
+    // only be met by jumping up to the core, and the ones underfoot by coming back down.
+    { "length": 700, "obstacles": [                                 // 1000 - 1700
+      { "at": 130, "angle": 0, "width": 8 },
+      { "at": 270, "surface": "ceiling", "angle": 0, "width": 8 },
+      { "at": 410, "angle": 60, "width": 8 },
+      { "at": 550, "surface": "ceiling", "angle": -60, "width": 8 }
     ] },
 
-    // Targets round the core, to see how much of it is on screen at once.
-    { "length": 520, "obstacles": [                                 // 1520 - 2040
-      { "at": 90,  "kind": "target", "surface": "ceiling", "angle": 0 },
-      { "at": 180, "kind": "target", "surface": "ceiling", "angle": 90 },
-      { "at": 270, "kind": "target", "surface": "ceiling", "angle": 180 },
-      { "at": 360, "kind": "target", "surface": "ceiling", "angle": -90 }
+    // Targets right round the core, to see how much of it is on screen at once.
+    { "length": 560, "obstacles": [                                 // 1700 - 2260
+      { "at": 100, "kind": "target", "surface": "ceiling", "angle": 0 },
+      { "at": 200, "kind": "target", "surface": "ceiling", "angle": 90 },
+      { "at": 300, "kind": "target", "surface": "ceiling", "angle": 180 },
+      { "at": 400, "kind": "target", "surface": "ceiling", "angle": -90 }
     ] },
 
     // A bend, to see the ring turn.
-    { "length": 520, "turn": 60, "obstacles": [                     // 2040 - 2560
-      { "at": 140, "angle": 0, "width": 8 },
-      { "at": 300, "surface": "ceiling", "angle": 0, "width": 8 }
+    { "length": 560, "turn": 60, "obstacles": [                     // 2260 - 2820
+      { "at": 150, "angle": 0, "width": 9 },
+      { "at": 320, "surface": "ceiling", "angle": 0, "width": 9 }
     ] },
 
-    // A thicker core, so the gap to fly in is thinner and the jump is shorter.
-    { "length": 480, "section": "ring-tight", "obstacles": [        // 2560 - 3040
-      { "at": 260, "angle": 0, "width": 8 },
-      { "at": 380, "surface": "ceiling", "angle": 0, "width": 8 }
+    // Middling room, then a squeeze: the same bore with the core grown out toward the ship, so the
+    // jump is shorter and the wall overhead is close enough to read on the approach.
+    { "length": 460, "section": "ring", "obstacles": [              // 2820 - 3280
+      { "at": 240, "angle": 0, "width": 9 },
+      { "at": 380, "surface": "ceiling", "angle": 0, "width": 9 }
+    ] },
+    { "length": 460, "section": "ring-tight", "obstacles": [        // 3280 - 3740
+      { "at": 250, "angle": 0, "width": 9 },
+      { "at": 380, "surface": "ceiling", "angle": 0, "width": 9 }
     ] },
 
     // A squarish ring: flat-ish walls above and below, with corners to read.
-    { "length": 520, "section": "ring-box", "obstacles": [          // 3040 - 3560
-      { "at": 200, "angle": 0, "width": 9 },
-      { "at": 340, "surface": "ceiling", "angle": 0, "width": 9 }
+    { "length": 560, "section": "ring-box", "obstacles": [          // 3740 - 4300
+      { "at": 220, "angle": 0, "width": 10 },
+      { "at": 380, "surface": "ceiling", "angle": 0, "width": 10 }
     ] },
 
-    // A shield, on the core, so there is a reason to be up there.
-    { "length": 420, "section": "ring", "pickups": [                // 3560 - 3980
+    // A shield on the core, so there is a reason to be up there, and then a stretch that brings the
+    // player back down before the ring closes - a core that shrinks away takes its wall with it.
+    { "length": 460, "section": "ring-tall", "pickups": [           // 4300 - 4760
       { "at": 180, "kind": "shield", "surface": "ceiling", "angle": 0 }
+    ], "obstacles": [
+      { "at": 360, "surface": "ceiling", "angle": 0, "width": 40 }
     ] },
 
     // The core shrinks away again and the bore closes back to an ordinary tube.
-    { "length": 320, "section": "mouth" },                          // 3980 - 4300
-    { "length": 300, "section": "tube" },                           // 4300 - 4600
-    { "length": 300 }                                               // 4600 - 4900
+    { "length": 380, "section": "mouth" },                          // 4760 - 5140
+    { "length": 340, "section": "tube" },                           // 5140 - 5480
+    { "length": 300 }                                               // 5480 - 5780
   ]
 }

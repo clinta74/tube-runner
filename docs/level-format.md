@@ -38,7 +38,7 @@ A section is a cross-section shape. Every shape blends smoothly into every other
 | `halfWidth`, `halfHeight` | Semi-axes. Open planes sit at ±`halfHeight`. |
 | `squareness` | 0 = ellipse, 1 = rounded rectangle with flat floor and ceiling. |
 | `opening` | 0 = closed tube, 1 = open flat planes (see below). |
-| `core` | A cylinder down the middle, as a share of the section: 0.2 to 0.75, or 0 for none. See below. |
+| `ringHeight` | Room to fly in between the wall and a cylinder down the middle. See below. |
 
 ```json
 "sections": {
@@ -51,16 +51,31 @@ A section is a cross-section shape. Every shape blends smoothly into every other
 
 ### Rings: a cylinder down the middle
 
-A section with a `core` has a second cylinder running down the middle of it, and the ship flies in
-the ring between the two. `core` is that cylinder's size as a share of the section, from 0.2 to
-0.75; 0, the default, is an ordinary hollow tube.
+A section with a `ringHeight` has a second cylinder running down the middle of it, and the ship
+flies in the ring between the two. `ringHeight` is **how much room the ring leaves to fly in**,
+measured where the gap is tightest; without one, the section is an ordinary hollow tube.
 
 ```json
 "sections": {
-  "mouth": { "radius": 16 },
-  "ring":  { "radius": 16, "core": 0.45 }
+  "mouth": { "radius": 22 },
+  "ring":  { "radius": 22, "ringHeight": 13 }
 }
 ```
+
+**A taller ring is bought by widening the bore.** The height must be at least 3, for the ship and
+its jump, and at most **70% of the section's narrow half-size**, so that what is left is a core big
+enough to be a wall in its own right rather than a pole down the middle. That ceiling rises with the
+bore, which is the only way to get more room overhead:
+
+| Bore | Most room a ring may leave |
+|---|---|
+| radius 12 | 8.4 |
+| radius 16 | 11.2 |
+| radius 22 | 15.4 |
+| radius 30 | 21 |
+
+On a section that is not round, the height is measured on its **narrow** axis, so the gap is wider
+than the number everywhere else and the number is still what says whether the ship fits.
 
 It is a third arrangement alongside the hollow tube and the open planes, and it borrows one rule
 from each:
@@ -79,7 +94,8 @@ quarter of the way round the outer wall is a quarter of the way round the core, 
 units. A jump keeps the *place*, not the number, so the ship lands under where it left.
 
 **Make the bore wide.** A ring only reads as one when the wall is too big to see all of at once —
-radius 14 to 18 against the usual 6. Below about 10 it looks like a tube with something stuck in it.
+radius 20 and up against the usual 6, so the floor under the ship is nearly flat and the far side of
+the wall arcs overhead. Below about 12 it looks like a tube with something stuck in it.
 
 **The core blocks the view**, which is most of what it is for: what is on the far side of the ring is
 hidden until you come round to it, so a wide bore stops being an easy one.

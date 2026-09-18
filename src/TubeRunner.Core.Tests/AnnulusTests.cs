@@ -129,28 +129,34 @@ public class AnnulusTests
         Assert.Equal(before, game.Ship.Pose(0f).Point, Compare);
     }
 
-    [Theory]
-    [InlineData(0.1f, "between 0.2 and 0.75")]
-    [InlineData(0.9f, "between 0.2 and 0.75")]
-    public void ACoreOutsideTheUsableRange_FailsToLoad(float core, string says)
+    // A ring is authored by how much room it leaves to fly in, and the most it may leave is a share
+    // of the bore - so a taller ring is something a level buys by making the tube wider, rather than
+    // by whittling the core down to a pole.
+    [Fact]
+    public void ATallerRing_NeedsAWiderBore()
     {
-        var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse($$"""
-            {
-              "sections": { "ring": { "radius": 12, "core": {{core}} } },
-              "start": "ring",
-              "track": [ { "length": 400 } ]
-            }
-            """));
+        Assert.Contains("between 3 and 8.4", Error(12f, 10f));
 
-        Assert.Contains(says, e.Message);
+        var wider = LevelLoader.Parse(Level(20f, 10f)).Track.SectionAt(0);
+        Assert.True(wider.IsAnnulus);
+        Assert.Equal(10f, wider.RingHeight, 3);
+        Assert.Equal(14f, wider.MaxRingHeight, 3);
+    }
+
+    [Theory]
+    [InlineData(2f)]    // no room for the ship, let alone its jump
+    [InlineData(10f)]   // nothing left of the core but a pole
+    public void ARingOutsideTheUsableRange_FailsToLoad(float height)
+    {
+        Assert.Contains("must be between", Error(12f, height));
     }
 
     [Fact]
-    public void ACoreInAnOpenSection_FailsToLoad()
+    public void ARingInAnOpenSection_FailsToLoad()
     {
         var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse("""
             {
-              "sections": { "bad": { "radius": 12, "core": 0.5, "opening": 1 } },
+              "sections": { "bad": { "radius": 12, "ringHeight": 5, "opening": 1 } },
               "start": "bad",
               "track": [ { "length": 400 } ]
             }
@@ -158,6 +164,17 @@ public class AnnulusTests
 
         Assert.Contains("nothing for the core to sit inside", e.Message);
     }
+
+    private static string Error(float radius, float height) =>
+        Assert.Throws<LevelFormatException>(() => LevelLoader.Parse(Level(radius, height))).Message;
+
+    private static string Level(float radius, float height) => $$"""
+        {
+          "sections": { "ring": { "radius": {{radius}}, "ringHeight": {{height}} } },
+          "start": "ring",
+          "track": [ { "length": 400 } ]
+        }
+        """;
 
     private static readonly VectorComparer Compare = new();
 

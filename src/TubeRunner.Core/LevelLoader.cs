@@ -487,17 +487,25 @@ public static class LevelLoader
         {
             throw new LevelFormatException($"Section '{name}': squareness and opening must be between 0 and 1.");
         }
-        // Under a fifth and the core is a thread with no room to ride; over three quarters and the
-        // ring left to fly in is thinner than the ship's own jump.
-        if (s.Core != 0f && s.Core is < 0.2f or > 0.75f)
+        var section = new CrossSection(halfWidth, halfHeight, s.Squareness, s.Opening);
+        if (s.RingHeight <= 0f) return section;
+
+        if (s.Opening > 0f)
         {
-            throw new LevelFormatException($"Section '{name}': 'core' is the middle cylinder's share of the section and must be between 0.2 and 0.75, or 0 for none.");
+            throw new LevelFormatException(
+                $"Section '{name}': a section cannot have a 'ringHeight' and be open; there would be nothing for the core to sit inside.");
         }
-        if (s.Core > 0f && s.Opening > 0f)
+        // The floor is what the ship and its jump need. The ceiling is a share of the bore, so a
+        // wider one carries a taller ring: what has to be left behind is a core big enough to be a
+        // wall in its own right rather than a pole down the middle.
+        if (s.RingHeight < CrossSection.MinRingHeight || s.RingHeight > section.MaxRingHeight)
         {
-            throw new LevelFormatException($"Section '{name}': a section cannot have a 'core' and be open; there would be nothing for the core to sit inside.");
+            throw new LevelFormatException(
+                $"Section '{name}': 'ringHeight' is the room the ring leaves to fly in and must be between "
+                + $"{CrossSection.MinRingHeight:0.#} and {section.MaxRingHeight:0.#} for a bore this size. "
+                + "Widen the section to allow a taller ring.");
         }
-        return new CrossSection(halfWidth, halfHeight, s.Squareness, s.Opening, s.Core);
+        return section.WithRing(s.RingHeight);
     }
 
     private static Theme ToTheme(ThemeData? t)
@@ -576,7 +584,7 @@ public static class LevelLoader
         public float HalfHeight { get; set; }
         public float Squareness { get; set; }
         public float Opening { get; set; }
-        public float Core { get; set; }
+        public float RingHeight { get; set; }
     }
 
     private sealed class PieceData
