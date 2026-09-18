@@ -205,16 +205,17 @@ v0.4.2 (update check, build tool):
   and nothing else. Zones had carried their own `min`/`max`, and floors of 1.3 dragged every ship to
   the middle of the range on entry. The keys are now rejected by the loader. Every zone covers its
   whole section. A second kind, `"kind": "ceiling"`, cuts the top 75% instead (ceiling about 0.81);
-  level 15's zones use it, which keeps Restraint about holding back.
+  Restraint's zones use it, which keeps that level about holding back.
 - **Thrust bar and jump cue enlarged.** The bar has a dark backing and a rim so the full range reads
   over bright walls, and the closed-off part is hatched with the fill ghosted through it. The on-track
   jump lines are thicker too.
 - **Unstoppable warning.** Three falling beeps across the last second, then a power-down tone.
-- **Restraint rebuilt** (level 15) for its ceiling zones: slow, so every section bends and the zones
+- **Restraint rebuilt** for its ceiling zones: slow, so every section bends and the zones
   are the densest stretches, with spirals of blocks and targets threaded through them.
-- **Loop the Loop** (level 8b, between Crossroads and Neon Run): an early wireframe level of vertical,
-  flat and dive loops and switchbacks. Named 8b rather than renumbering, since best times are keyed by
-  file name. `TrackClearanceTests` now fails any level whose track passes through itself; a loop at
+- **Loop the Loop** (between Crossroads and Neon Run): an early wireframe level of vertical,
+  flat and dive loops and switchbacks. It shipped as `level_08b.json`, because best times were keyed
+  by file name and renumbering would have moved every time after it onto the wrong level; it is
+  level 9 now that they are keyed by a level id instead. `TrackClearanceTests` now fails any level whose track passes through itself; a loop at
   one steady rate closes back onto its own entry, and `level-format.md` gives the shapes that clear.
 - **Game icon.** `game/icon.svg`, rendered to `icon.ico` by `tube icon`; used for the window, the exe,
   the Start menu shortcut and the installed-apps entry.
@@ -395,6 +396,54 @@ Azure Trusted Signing is ~$10/mo. All three are OV, so a new release can still b
 builds SmartScreen reputation — only an EV certificate (~$300–500/yr, USB token, so local signing only)
 avoids that wait. Once one exists: set the secrets, add `--signed` in the workflow, set `Manufacturer` to
 the validated name, and check a downloaded MSI on a machine that has never seen the game.
+
+## After v0.5.0
+
+### Sequential level numbers, and a stable key for a best time
+
+*Shipped.* A best time used to be keyed by the level's file name, which put the running order into
+the save file: inserting a level renumbers every file after it, and each saved time would have slid
+silently onto whichever level took that number. That is why Loop the Loop shipped as `8b`.
+
+Levels now declare an `id` that never changes, `BestTimes` keys on that, and a save written by an
+older build is migrated onto the ids as it is read - keeping the faster time where both forms of a
+key are present, and leaving keys it does not know alone, so a save from a later build survives an
+older one. With that in place the numbering is what it should be: 1 to 31, no gaps and no letters.
+
+`LevelLoaderTests.EveryShippedLevel_DeclaresItsOwnId` holds every level to saying its id out loud,
+and to each one being different.
+
+### Locks: power-ups that have to be shot for, and apertures
+
+*Shipped.* Two new things a key can open, both built on the `group`/`lockedBy` pair that
+shoot-to-open gates already used, and a block of four levels around them (23-26, pushing Roulette
+onwards to 27-31).
+
+- **A pickup now takes a `lockedBy`.** Until its group is down the pad is dead: drawn dark with its
+  label in the key's colour, and flying over it does nothing. It is the gentlest lock in the game -
+  a miss costs the prize, not a shield - which is what makes it the right way to teach the idea.
+- **An aperture is a ring of blades** sealing the tube that irises open as its keys fall. The loader
+  cuts it into blades and each one is an ordinary locked obstacle from there, so the collision, the
+  shooting and unstoppable needed no changes at all; only the view did. Blades are drawn from the
+  middle of the tube outwards, shaded across their own width so a ring reads as a count of blades
+  rather than a flat disc, and turn round their own sector as they open. A lip stays in the wall
+  whether the ring is shut, part open or long gone.
+- **A `lockedBy` naming a group nothing is in now fails to load.** Left alone it is a wall that never
+  opens or a pad that never lights, and both read as a missed shot rather than as a typo.
+- **`tube play --shot <file>`** saves one frame and quits, which is how the blades were checked
+  without asking anyone to fly to them and describe what they saw. `levels/bench/aperture.json` is
+  the bench it was aimed at.
+
+Still open:
+
+- **The ring gun is a skeleton key.** One sweep destroys every key it passes, so it opens an
+  aperture outright. Levels ration charges around rings and use ordered key groups where a ring has
+  to resist one (a sweep takes a single member of an ordered group). If that turns out to read as a
+  bug rather than as a rule, the alternative is a key kind the ring cannot touch.
+- **Blades have no break-up.** An aperture rammed under unstoppable bursts like any other block.
+  Blades spinning off would be the right look and wants the same work as cracks on breakables.
+- **No sound of its own.** A ring opening is the one piece of machinery in the game with no noise;
+  `EngineAudio` has the voices for it.
 
 ## Standing constraints
 

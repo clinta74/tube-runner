@@ -1,134 +1,167 @@
 {
-  "name": "Blackout",
-  "id": "blackout",
+  "name": "Iris",
+  "id": "iris",
   "next": "level_26.json",
-  "speed": 155,
+  "speed": 150,
   "segmentLength": 60,
 
-  // Visibility, used as the difficulty rather than density. A straight shows everything early; a
-  // bend hides it until the corner opens. A run of tight alternating bends - a twist - keeps the
-  // reveal short the whole way through, which is the cheapest way to make a level bite without
-  // adding a single obstacle.
-  // So this level is mostly twists, and the obstacles in them are ordinary. What makes it hard is
-  // that nothing is ever seen from far away. The theme helps: the fade is pulled in close, so the
-  // track ahead goes dark sooner than in any other level.
+  // The block's second idea: an aperture. A ring of blades that seals the tube and irises open as
+  // its keys are shot, one blade's worth at a time.
+  // It is the first lock in the game that opens by degrees. A door is open or shut; an aperture with
+  // three keys is a tube with one side clear and the other walled, and which side that is depends on
+  // which key the player got. So the question stops being "did the shot land" and becomes "which
+  // shot, and where do I want to be when I arrive".
+  // The level is slower than the two before it on purpose. A sealed ring costs a shield, and a ring
+  // is read by counting blades, which takes a beat the run for home of a 165 level does not give.
+  // Ordering, deliberately: a ring with a gap in it first, so the first aperture can be flown
+  // through without a shot at all; then one key over the whole ring; then the ring divided; then the
+  // rings that decide which way a fork can be taken.
+  // The ring gun is held back until the aperture whose keys are ordered, where it costs a charge per
+  // key instead of opening the ring outright. Handed out earlier it is a skeleton key.
   "theme": {
-    "darks": ["#0e1014", "#0b0d10", "#131519"],
-    "lights": ["#4c5560", "#3f4751", "#59636f"],
-    "seamDark": "#050607",
-    "seamLight": "#8fa8bd",
-    "far": "#000000",
-    "ship": "#cfe4f5",
-    "block": "#c8d4e0",
-    "target": "#ff5a5a",
-    "breakable": "#6fd8a8",
-    "fadeStart": 22,
-    "fadeEnd": 190,
-    "glow": 0.15
+    "darks": ["#0d2426", "#0a1c1e", "#12302f"],
+    "lights": ["#4f9e9b", "#428684", "#5fb3af"],
+    "seamDark": "#04100f",
+    "seamLight": "#a8fff4",
+    "far": "#020808",
+    "ship": "#a8fff4",
+    "block": "#c4e8e4",
+    "target": "#ffd23a",
+    "breakable": "#7cffb0",
+    "fadeStart": 35,
+    "fadeEnd": 345,
+    "glow": 0.4
   },
 
   "sections": {
-    "tube":   { "radius": 6 },
-    "narrow": { "radius": 4.8 },
-    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
-    "box":    { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 }
+    "tube":         { "radius": 6 },
+    "wide":         { "radius": 7.5 },
+    "oval":         { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":          { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 -  200
-
-    // A straight with a hard pattern on it, shown in full. The same pattern comes back in a twist
-    // later on, and the difference between the two is the whole level.
-    { "length": 340, "obstacles": [                                 //  200 -  540
-      { "at": 90,  "angle": 0,   "width": 9 },
-      { "at": 170, "angle": 120, "width": 9 },
-      { "at": 250, "angle": 240, "width": 9 }
+    { "length": 340, "pickups": [                                   //    0 -  340
+      { "at": 300, "kind": "shield" }
     ] },
 
-    // The twist begins. Same three blocks, one per bend, each hidden until its corner opens.
-    { "length": 180, "turn": 75, "obstacles": [                     //  540 -  720
-      { "at": 100, "angle": 0, "width": 9 }
-    ] },
-    { "length": 180, "turn": -80, "climb": 12, "obstacles": [       //  720 -  900
-      { "at": 95, "angle": 120, "width": 9 }
-    ] },
-    { "length": 180, "turn": 70, "climb": -14, "obstacles": [       //  900 - 1080
-      { "at": 95, "angle": 240, "width": 9 }
+    // FREE LOOK. Eight blades with the two on the floor left out, so the ring can simply be flown
+    // through on the line the ship is already holding. Its key is there to be shot by anyone who
+    // wants the rest of the tube, and costs nothing to ignore.
+    { "length": 500, "section": "wide", "obstacles": [              //  340 -  840
+      { "at": 90, "kind": "target", "angle": 90, "group": "i1" }
+    ], "apertures": [
+      { "at": 340, "blades": 8, "open": 2, "keys": ["i1"] }
     ] },
 
-    { "length": 240, "section": "oval", "pickups": [                // 1080 - 1320
-      { "at": 120, "kind": "rapid-fire" }
+    // The same ring with its gap turned onto the ceiling. Nothing has to be shot here either, but
+    // the way through is no longer the way the ship was already going.
+    { "length": 480, "section": "tube", "turn": 35, "obstacles": [  //  840 - 1320
+      { "at": 90, "kind": "target", "angle": -90, "group": "i2" }
+    ], "apertures": [
+      { "at": 330, "blades": 8, "open": 2, "angle": 180, "keys": ["i2"] }
     ] },
 
-    // Gates in a twist. A gate needs its cycle read, and a bend gives no time to read one - so the
-    // answer here is to arrive slowly enough to watch it, which costs exactly what it sounds like.
-    { "length": 190, "section": "tube", "turn": -75, "obstacles": [ // 1320 - 1510
-      { "at": 110, "period": 2.2, "angle": 0, "width": 20, "height": 3 }
-    ] },
-    { "length": 190, "turn": 80, "climb": -12, "obstacles": [       // 1510 - 1700
-      { "at": 100, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
-    ] },
-    { "length": 190, "turn": -70, "climb": 14, "obstacles": [       // 1700 - 1890
-      { "at": 100, "period": 2.2, "angle": 90, "width": 18, "height": 3 }
+    // The first sealed ring. One key over all six blades, a long way in front of it, on a straight
+    // where the ring can be seen the whole time the shot is being lined up. Miss it and it is a wall.
+    { "length": 520, "section": "wide", "obstacles": [              // 1320 - 1840
+      { "at": 80, "kind": "target", "angle": 120, "group": "i3" }
+    ], "apertures": [
+      { "at": 380, "blades": 6, "keys": ["i3"] }
     ] },
 
-    { "length": 240, "pickups": [                                   // 1890 - 2130
-      { "at": 120, "kind": "shield", "angle": 180 }
+    // A shield first, then a sealed ring on a bend, where the ring is not in sight until the shot
+    // has to be taken.
+    { "length": 460, "section": "tube", "speed": 155, "turn": -50, "obstacles": [ // 1840 - 2300
+      { "at": 80, "kind": "target", "angle": 0, "group": "i4" }
+    ], "pickups": [
+      { "at": 150, "kind": "shield", "angle": 90 }
+    ], "apertures": [
+      { "at": 360, "blades": 6, "keys": ["i4"] }
     ] },
 
-    // Plates in a twist: unanswerable and unseen until close. Narrow bore, so the wall left over
-    // after a plate is small, and there is no time to find it from far off.
-    { "length": 200, "section": "narrow", "speed": 165, "turn": 80, "obstacles": [   // 2130 - 2330
-      { "at": 110, "kind": "plate", "angle": 0, "width": 10, "height": 3 }
-    ] },
-    { "length": 200, "turn": -85, "climb": 14, "obstacles": [       // 2330 - 2530
-      { "at": 100, "kind": "plate", "angle": 180, "width": 10, "height": 3 }
-    ] },
-    { "length": 200, "turn": 75, "climb": -16, "obstacles": [       // 2530 - 2730
-      { "at": 100, "kind": "plate", "angle": 90, "width": 10, "height": 3 }
-    ] },
-
-    // A straight to breathe, and to make the next twist feel darker by contrast.
-    { "length": 300, "section": "tube", "speed": 160, "pickups": [  // 2730 - 3030
-      { "at": 150, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 230, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    // Divided. Three keys over six blades open opposite pairs, so each shot clears a quarter of the
+    // way round and the ring is a different wall depending on which ones landed. The bend after it
+    // is to the right, so the right-hand pair is the one worth having.
+    { "length": 560, "section": "wide", "obstacles": [              // 2300 - 2860
+      { "at": 90,  "kind": "target", "angle": 45,   "group": "i5" },
+      { "at": 170, "kind": "target", "angle": 165,  "group": "i6" },
+      { "at": 250, "kind": "target", "angle": -75,  "group": "i7" }
+    ], "apertures": [
+      { "at": 430, "blades": 6, "angle": 30, "keys": ["i5", "i6", "i7"] }
     ] },
 
-    // A well in a twist. The sign ring stands 75 units back - which, on a bend this tight, is the
-    // only reason it is fair at all: the signs come round the corner before the well does.
-    { "length": 210, "turn": -80, "warps": [                        // 3030 - 3240
-      { "at": 150, "angle": 90 }
+    // A fork with a ring in each mouth, and one key each. The keys stand in the chamber before it,
+    // so what the player shoots decides which roads are open before the fork is even reached - and
+    // shooting both leaves the choice where it was, as a choice.
+    { "length": 200, "section": "chamber", "speed": 158, "obstacles": [ // 2860 - 3060
+      { "at": 60,  "kind": "target", "angle": 90,  "group": "ia" },
+      { "at": 130, "kind": "target", "angle": -90, "group": "ib" }
     ] },
-    { "length": 210, "turn": 85, "climb": 12, "obstacles": [        // 3240 - 3450
-      { "at": 105, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
+    { "length": 440, "turn": 85, "split": {                         // 3060 - 3500
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "apertures": [
+        { "at": 70, "branch": 0, "blades": 6, "keys": ["ia"] },
+        { "at": 70, "branch": 1, "blades": 6, "keys": ["ib"] }
+      ],
+      "obstacles": [
+        { "at": 250, "branch": 1, "angle": 90, "width": 6 }
+      ],
+      "pickups": [
+        { "at": 330, "branch": 1, "kind": "shield" }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 3500 - 3640
+
+    // The ring gun, and the one ring it cannot simply delete: its keys are an ordered group, so a
+    // sweep takes the one whose turn it is and is spent. Three keys, three charges, or shoot them.
+    { "length": 260, "section": "wide", "pickups": [                // 3640 - 3900
+      { "at": 120, "kind": "ring-gun" }
+    ] },
+    { "length": 540, "section": "tube", "speed": 160, "obstacles": [ // 3900 - 4440
+      { "at": 100, "kind": "target", "angle": 90,   "group": "i8", "order": 0 },
+      { "at": 180, "kind": "target", "angle": 210,  "group": "i8", "order": 1 },
+      { "at": 260, "kind": "target", "angle": -30,  "group": "i8", "order": 2 }
+    ], "apertures": [
+      { "at": 430, "blades": 6, "keys": ["i8"] }
     ] },
 
-    // The box in the dark: flat floor and ceiling change how the wall reads, and here it cannot be
-    // read in advance at all.
-    { "length": 380, "section": "box", "speed": 170, "turn": -55, "obstacles": [   // 3450 - 3830
-      { "at": 90,  "angle": 0,   "width": 10 },
-      { "at": 190, "period": 2.0, "angle": 180, "width": 18, "height": 3 },
-      { "at": 300, "kind": "plate", "angle": 90, "width": 11, "height": 3 }
+    // A ring in a boxy section, where the blades follow corners instead of a curve, with a locked
+    // pad past it so there is something on the other side worth arriving with.
+    { "length": 500, "section": "box", "obstacles": [               // 4440 - 4940
+      { "at": 90, "kind": "target", "angle": 180, "group": "i9" }
+    ], "apertures": [
+      { "at": 300, "blades": 6, "keys": ["i9"] }
+    ], "pickups": [
+      { "at": 420, "kind": "shield", "lockedBy": "i9" }
     ] },
 
-    // Run for home: the tightest twist in the game, one thing per bend, nothing visible until it is.
-    { "length": 180, "section": "tube", "speed": 175, "turn": 85, "obstacles": [   // 3830 - 4010
-      { "at": 95, "angle": 0, "width": 9 }
+    // Run for home. Two rings on a twist, each key round the bend before the ring it opens, so the
+    // shot is taken at the only moment the target is in sight at all.
+    { "length": 240, "section": "tube", "turn": 70, "obstacles": [  // 4940 - 5180
+      { "at": 60, "kind": "target", "angle": 0, "group": "ic" }
+    ], "apertures": [
+      { "at": 190, "blades": 6, "open": 1, "keys": ["ic"] }
     ] },
-    { "length": 180, "turn": -90, "climb": 14, "obstacles": [       // 4010 - 4190
-      { "at": 95, "kind": "plate", "angle": 180, "width": 11, "height": 3 }
-    ] },
-    { "length": 180, "turn": 80, "climb": -16, "obstacles": [       // 4190 - 4370
-      { "at": 95, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
+    { "length": 240, "turn": -75, "climb": 12, "obstacles": [       // 5180 - 5420
+      { "at": 60, "kind": "target", "angle": 180, "group": "id" }
+    ], "apertures": [
+      { "at": 190, "blades": 6, "open": 1, "angle": 180, "keys": ["id"] }
     ] },
 
-    // Handover to Long Odds: straighten and blend into its tube, then the first 276 units of its
-    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
-    // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4370 - 4490
-    { "length": 200 },                                              // 4490 - 4690
-    { "length": 76, "turn": 7.6 }                                   // 4690 - 4766
+    // Handover to Shutter: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here;
+    // the level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 5420 - 5540
+    { "length": 276 }                                               // 5540 - 5816
   ]
 }

@@ -1,0 +1,134 @@
+{
+  "name": "Blackout",
+  "id": "blackout",
+  "next": "level_30.json",
+  "speed": 155,
+  "segmentLength": 60,
+
+  // Visibility, used as the difficulty rather than density. A straight shows everything early; a
+  // bend hides it until the corner opens. A run of tight alternating bends - a twist - keeps the
+  // reveal short the whole way through, which is the cheapest way to make a level bite without
+  // adding a single obstacle.
+  // So this level is mostly twists, and the obstacles in them are ordinary. What makes it hard is
+  // that nothing is ever seen from far away. The theme helps: the fade is pulled in close, so the
+  // track ahead goes dark sooner than in any other level.
+  "theme": {
+    "darks": ["#0e1014", "#0b0d10", "#131519"],
+    "lights": ["#4c5560", "#3f4751", "#59636f"],
+    "seamDark": "#050607",
+    "seamLight": "#8fa8bd",
+    "far": "#000000",
+    "ship": "#cfe4f5",
+    "block": "#c8d4e0",
+    "target": "#ff5a5a",
+    "breakable": "#6fd8a8",
+    "fadeStart": 22,
+    "fadeEnd": 190,
+    "glow": 0.15
+  },
+
+  "sections": {
+    "tube":   { "radius": 6 },
+    "narrow": { "radius": 4.8 },
+    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":    { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 200 },                                              //    0 -  200
+
+    // A straight with a hard pattern on it, shown in full. The same pattern comes back in a twist
+    // later on, and the difference between the two is the whole level.
+    { "length": 340, "obstacles": [                                 //  200 -  540
+      { "at": 90,  "angle": 0,   "width": 9 },
+      { "at": 170, "angle": 120, "width": 9 },
+      { "at": 250, "angle": 240, "width": 9 }
+    ] },
+
+    // The twist begins. Same three blocks, one per bend, each hidden until its corner opens.
+    { "length": 180, "turn": 75, "obstacles": [                     //  540 -  720
+      { "at": 100, "angle": 0, "width": 9 }
+    ] },
+    { "length": 180, "turn": -80, "climb": 12, "obstacles": [       //  720 -  900
+      { "at": 95, "angle": 120, "width": 9 }
+    ] },
+    { "length": 180, "turn": 70, "climb": -14, "obstacles": [       //  900 - 1080
+      { "at": 95, "angle": 240, "width": 9 }
+    ] },
+
+    { "length": 240, "section": "oval", "pickups": [                // 1080 - 1320
+      { "at": 120, "kind": "rapid-fire" }
+    ] },
+
+    // Gates in a twist. A gate needs its cycle read, and a bend gives no time to read one - so the
+    // answer here is to arrive slowly enough to watch it, which costs exactly what it sounds like.
+    { "length": 190, "section": "tube", "turn": -75, "obstacles": [ // 1320 - 1510
+      { "at": 110, "period": 2.2, "angle": 0, "width": 20, "height": 3 }
+    ] },
+    { "length": 190, "turn": 80, "climb": -12, "obstacles": [       // 1510 - 1700
+      { "at": 100, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
+    ] },
+    { "length": 190, "turn": -70, "climb": 14, "obstacles": [       // 1700 - 1890
+      { "at": 100, "period": 2.2, "angle": 90, "width": 18, "height": 3 }
+    ] },
+
+    { "length": 240, "pickups": [                                   // 1890 - 2130
+      { "at": 120, "kind": "shield", "angle": 180 }
+    ] },
+
+    // Plates in a twist: unanswerable and unseen until close. Narrow bore, so the wall left over
+    // after a plate is small, and there is no time to find it from far off.
+    { "length": 200, "section": "narrow", "speed": 165, "turn": 80, "obstacles": [   // 2130 - 2330
+      { "at": 110, "kind": "plate", "angle": 0, "width": 10, "height": 3 }
+    ] },
+    { "length": 200, "turn": -85, "climb": 14, "obstacles": [       // 2330 - 2530
+      { "at": 100, "kind": "plate", "angle": 180, "width": 10, "height": 3 }
+    ] },
+    { "length": 200, "turn": 75, "climb": -16, "obstacles": [       // 2530 - 2730
+      { "at": 100, "kind": "plate", "angle": 90, "width": 10, "height": 3 }
+    ] },
+
+    // A straight to breathe, and to make the next twist feel darker by contrast.
+    { "length": 300, "section": "tube", "speed": 160, "pickups": [  // 2730 - 3030
+      { "at": 150, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 230, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    ] },
+
+    // A well in a twist. The sign ring stands 75 units back - which, on a bend this tight, is the
+    // only reason it is fair at all: the signs come round the corner before the well does.
+    { "length": 210, "turn": -80, "warps": [                        // 3030 - 3240
+      { "at": 150, "angle": 90 }
+    ] },
+    { "length": 210, "turn": 85, "climb": 12, "obstacles": [        // 3240 - 3450
+      { "at": 105, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
+    ] },
+
+    // The box in the dark: flat floor and ceiling change how the wall reads, and here it cannot be
+    // read in advance at all.
+    { "length": 380, "section": "box", "speed": 170, "turn": -55, "obstacles": [   // 3450 - 3830
+      { "at": 90,  "angle": 0,   "width": 10 },
+      { "at": 190, "period": 2.0, "angle": 180, "width": 18, "height": 3 },
+      { "at": 300, "kind": "plate", "angle": 90, "width": 11, "height": 3 }
+    ] },
+
+    // Run for home: the tightest twist in the game, one thing per bend, nothing visible until it is.
+    { "length": 180, "section": "tube", "speed": 175, "turn": 85, "obstacles": [   // 3830 - 4010
+      { "at": 95, "angle": 0, "width": 9 }
+    ] },
+    { "length": 180, "turn": -90, "climb": 14, "obstacles": [       // 4010 - 4190
+      { "at": 95, "kind": "plate", "angle": 180, "width": 11, "height": 3 }
+    ] },
+    { "length": 180, "turn": 80, "climb": -16, "obstacles": [       // 4190 - 4370
+      { "at": 95, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
+    ] },
+
+    // Handover to Long Odds: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4370 - 4490
+    { "length": 200 },                                              // 4490 - 4690
+    { "length": 76, "turn": 7.6 }                                   // 4690 - 4766
+  ]
+}

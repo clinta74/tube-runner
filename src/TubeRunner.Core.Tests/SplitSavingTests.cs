@@ -28,8 +28,12 @@ public class SplitSavingTests(ITestOutputHelper output)
     [InlineData("level_21.json")]
     [InlineData("level_23.json")]
     [InlineData("level_24.json")]
+    [InlineData("level_25.json")]
     [InlineData("level_26.json")]
     [InlineData("level_27.json")]
+    [InlineData("level_28.json")]
+    [InlineData("level_30.json")]
+    [InlineData("level_31.json")]
     public void EverySplitIsWorthTaking(string name)
     {
         var level = LevelLoader.Parse(File.ReadAllText(LevelPath(name)));
@@ -52,6 +56,33 @@ public class SplitSavingTests(ITestOutputHelper output)
             Assert.True(best - worst >= MinSpread,
                 $"{name}: the split at {split.StartS:0} spreads only {best - worst:0.0}% between its "
                 + "quickest and slowest branches, so the routes feel the same.");
+        }
+    }
+
+    /// <summary>
+    /// Every level that has a split is on the list above. The list is written by hand, and a level
+    /// renumbered or added while it is not updated silently stops being measured - which is how a
+    /// fork can go flat without anything failing.
+    /// </summary>
+    [Fact]
+    public void EveryLevelWithASplit_IsOnTheList()
+    {
+        var listed = typeof(SplitSavingTests)
+            .GetMethod(nameof(EverySplitIsWorthTaking))!
+            .GetCustomAttributes(typeof(InlineDataAttribute), false)
+            .Cast<InlineDataAttribute>()
+            .Select(d => (string)d.GetData(null!).First()[0]!)
+            .ToList();
+
+        Assert.Equal(listed.Count, listed.Distinct().Count());
+
+        var directory = Path.GetDirectoryName(LevelPath("x"))!;
+        foreach (var file in Directory.GetFiles(directory, "level_*.json"))
+        {
+            var name = Path.GetFileName(file);
+            bool splits = LevelLoader.Parse(File.ReadAllText(file)).Track.Splits.Count > 0;
+            Assert.True(splits == listed.Contains(name),
+                splits ? $"{name} has splits but is not on the list" : $"{name} is on the list but has no splits");
         }
     }
 
