@@ -41,12 +41,14 @@
     { "length": 260 },                                              //    0 -  260
     { "length": 380, "section": "mouth" },                          //  260 -  640
 
-    // The core grows in over one piece. Nothing to hit while the shape is changing.
-    { "length": 360, "section": "ring-tall" },                      //  640 - 1000
+    // The core grows in over one piece. Nothing to hit while the shape is changing, and the blend is
+    // kept short: a core has to pass through nothing at all on its way in, and the shorter the blend
+    // the less of the bore is spent with a needle down the middle of it.
+    { "length": 180, "section": "ring-tall" },                      //  640 -  820
 
     // A tall ring: the most room this bore will give. Blocks on both walls - the ones overhead can
     // only be met by jumping up to the core, and the ones underfoot by coming back down.
-    { "length": 700, "obstacles": [                                 // 1000 - 1700
+    { "length": 700, "obstacles": [                                 //  820 - 1520
       { "at": 130, "angle": 0, "width": 8 },
       { "at": 270, "surface": "ceiling", "angle": 0, "width": 8 },
       { "at": 410, "angle": 60, "width": 8 },
@@ -54,7 +56,7 @@
     ] },
 
     // Targets right round the core, to see how much of it is on screen at once.
-    { "length": 560, "obstacles": [                                 // 1700 - 2260
+    { "length": 560, "obstacles": [                                 // 1520 - 2080
       { "at": 100, "kind": "target", "surface": "ceiling", "angle": 0 },
       { "at": 200, "kind": "target", "surface": "ceiling", "angle": 90 },
       { "at": 300, "kind": "target", "surface": "ceiling", "angle": 180 },
@@ -62,39 +64,39 @@
     ] },
 
     // A bend, to see the ring turn.
-    { "length": 560, "turn": 60, "obstacles": [                     // 2260 - 2820
+    { "length": 560, "turn": 60, "obstacles": [                     // 2080 - 2640
       { "at": 150, "angle": 0, "width": 9 },
       { "at": 320, "surface": "ceiling", "angle": 0, "width": 9 }
     ] },
 
     // Middling room, then a squeeze: the same bore with the core grown out toward the ship, so the
     // jump is shorter and the wall overhead is close enough to read on the approach.
-    { "length": 460, "section": "ring", "obstacles": [              // 2820 - 3280
+    { "length": 460, "section": "ring", "obstacles": [              // 2640 - 3100
       { "at": 240, "angle": 0, "width": 9 },
       { "at": 380, "surface": "ceiling", "angle": 0, "width": 9 }
     ] },
-    { "length": 460, "section": "ring-tight", "obstacles": [        // 3280 - 3740
+    { "length": 460, "section": "ring-tight", "obstacles": [        // 3100 - 3560
       { "at": 250, "angle": 0, "width": 9 },
       { "at": 380, "surface": "ceiling", "angle": 0, "width": 9 }
     ] },
 
     // A squarish ring: flat-ish walls above and below, with corners to read.
-    { "length": 560, "section": "ring-box", "obstacles": [          // 3740 - 4300
+    { "length": 560, "section": "ring-box", "obstacles": [          // 3560 - 4120
       { "at": 220, "angle": 0, "width": 10 },
       { "at": 380, "surface": "ceiling", "angle": 0, "width": 10 }
     ] },
 
     // A shield on the core, so there is a reason to be up there, and then a stretch that brings the
     // player back down before the ring closes - a core that shrinks away takes its wall with it.
-    { "length": 460, "section": "ring-tall", "pickups": [           // 4300 - 4760
+    { "length": 460, "section": "ring-tall", "pickups": [           // 4120 - 4580
       { "at": 180, "kind": "shield", "surface": "ceiling", "angle": 0 }
     ], "obstacles": [
       { "at": 360, "surface": "ceiling", "angle": 0, "width": 40 }
     ] },
 
     // The core shrinks away again and the bore closes back to an ordinary tube.
-    { "length": 380, "section": "mouth" },                          // 4760 - 5140
-    { "length": 340, "section": "tube" },                           // 5140 - 5480
-    { "length": 300 }                                               // 5480 - 5780
+    { "length": 200, "section": "mouth" },                          // 4580 - 4780
+    { "length": 340, "section": "tube" },                           // 4780 - 5120
+    { "length": 300 }                                               // 5120 - 5420
   ]
 }
