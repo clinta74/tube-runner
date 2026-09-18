@@ -443,12 +443,21 @@ public sealed class GameSession
     /// so anything drawing obstacles by whether they are destroyed will leave a door standing that
     /// the ship then flies straight through.
     /// </summary>
-    public bool IsUnlocked(Obstacle o)
+    public bool IsUnlocked(Obstacle o) => o.LockedBy is not null && KeysAreDown(o.LockedBy);
+
+    /// <summary>
+    /// Whether a power-up pad is live: its keys are down, or it never had any. A locked pad is dead
+    /// until its group is shot out - flying over it does nothing - so the view has to ask this too,
+    /// or a pad that cannot be taken would sit there looking exactly like one that can.
+    /// </summary>
+    public bool IsLive(Pickup p) => p.LockedBy is null || KeysAreDown(p.LockedBy);
+
+    /// <summary>Whether every target in a key group has been destroyed.</summary>
+    private bool KeysAreDown(string group)
     {
-        if (o.LockedBy is null) return false;
         foreach (var key in _obstacles)
         {
-            if (key.Group == o.LockedBy && !key.Destroyed) return false;
+            if (key.Group == group && !key.Destroyed) return false;
         }
         return true;
     }
@@ -475,6 +484,9 @@ public sealed class GameSession
         foreach (var p in Nearby(_pickups, p => p.S, from, to))
         {
             if (p.Collected || p.Branch != pos.Branch || to < p.S - reach || from > p.S + reach) continue;
+            // A locked pad is not there yet. Passing over one before its keys are down leaves it
+            // behind rather than arming it, which is what makes the key worth the detour.
+            if (!IsLive(p)) continue;
 
             float lateral = Ship.IsJumping
                 ? MathF.Abs(pos.X - p.X)

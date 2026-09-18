@@ -103,6 +103,23 @@ public class LevelLoaderTests
         }
     }
 
+    // A level's id is its key in the save file, so it has to be said out loud rather than fall out
+    // of the level's name: reword "Neon Run" and the fallback would quietly move every time saved
+    // against it. Two levels sharing one would be worse still - they would share a best time.
+    [Fact]
+    public void EveryShippedLevel_DeclaresItsOwnId()
+    {
+        var ids = new Dictionary<string, string>();
+        foreach (var file in Directory.GetFiles(LevelsDirectory(), "*.json"))
+        {
+            var text = File.ReadAllText(file);
+            Assert.Contains("\"id\"", text);
+            var id = LevelLoader.Parse(text).Id;
+            Assert.False(ids.TryGetValue(id, out string? other), $"{file} and {other} share the id '{id}'");
+            ids[id] = file;
+        }
+    }
+
     [Fact]
     public void TheRunIsAChain_NotALoop()
     {

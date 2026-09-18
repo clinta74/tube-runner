@@ -28,53 +28,60 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 6 | **Over and Under** | Flat sections under pressure: walls that force jump after jump | Flat, round | ✅ |
 | 7 | **Earthworks** | Boxy sections, a long flat run, a fork | Box, flat, split | ✅ |
 | 8 | **Crossroads** | Forks as a real choice: short-and-mean vs long-and-clear | Split-heavy | ✅ |
-| 8b | **Loop the Loop** | A first look at the wireframe style: loops and switchbacks, the whole track in view | Round, wireframe | ✅ |
-| 9 | **Neon Run** | Everything, faster | All | ✅ |
-| 10 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ✅ |
-| 11 | **Metronome** | Gates in rhythm with jumps | Flat, round | ✅ |
-| 12 | **Firing Order** | Target groups that must be shot in order | Round, oval | ✅ |
-| 13 | **Gauntlet** | Block A's test: gates and order together, dense | All, incl. flat and box | ✅ |
-| 14 | **Speed Trap** | Speed-limit zones: stretches that cost a shield if taken fast | Round, narrow | ✅ |
-| 15 | **Restraint** | Limits right after the straights that invite speed | Round, oval | ✅ |
-| 16 | **Shoal** | Movers: blocks that slide around the tube as you close | Round, wide | ✅ |
-| 17 | **Undertow** | Block B's test: limits, gates and movers at once | All | ✅ |
-| 18 | **Scarlands** | Hazard plates: wall you cannot break, shoot or ram | Box, flat, wide | ✅ |
-| 19 | **Crossfire** | Plates and movers with a shooting load that won't wait | Round, box | ✅ |
-| 20 | **Keys** | Shoot-to-open gates: a target that unlocks the way ahead | Round, box | ✅ |
-| 21 | **Attrition** | Block C's test, on thin resources | All | ✅ |
-| 22 | **Roulette** | Forks where one branch hides a warp well | Split-heavy | ✅ |
-| 23 | **Highwire** | Narrow tubes at speed, warps on the fast line — drawn see-through | Round, split, wire | ✅ |
-| 24 | **Blackout** | Visibility: twists that show you almost nothing | All | ✅ |
-| 25 | **Long Odds** | Endurance: the longest level, and almost nothing given | All | ✅ |
-| 26 | **Finale** | No new ideas, just the hardest mix | All | ✅ |
+| 9 | **Loop the Loop** | A first look at the wireframe style: loops and switchbacks, the whole track in view | Round, wireframe | ✅ |
+| 10 | **Neon Run** | Everything, faster | All | ✅ |
+| 11 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ✅ |
+| 12 | **Metronome** | Gates in rhythm with jumps | Flat, round | ✅ |
+| 13 | **Firing Order** | Target groups that must be shot in order | Round, oval | ✅ |
+| 14 | **Gauntlet** | Block A's test: gates and order together, dense | All, incl. flat and box | ✅ |
+| 15 | **Speed Trap** | Speed-limit zones: stretches that cost a shield if taken fast | Round, narrow | ✅ |
+| 16 | **Restraint** | Limits right after the straights that invite speed | Round, oval | ✅ |
+| 17 | **Shoal** | Movers: blocks that slide around the tube as you close | Round, wide | ✅ |
+| 18 | **Undertow** | Block B's test: limits, gates and movers at once | All | ✅ |
+| 19 | **Scarlands** | Hazard plates: wall you cannot break, shoot or ram | Box, flat, wide | ✅ |
+| 20 | **Crossfire** | Plates and movers with a shooting load that won't wait | Round, box | ✅ |
+| 21 | **Keys** | Shoot-to-open gates: a target that unlocks the way ahead | Round, box | ✅ |
+| 22 | **Attrition** | Block C's test, on thin resources | All | ✅ |
+| 23 | **Tollgate** | Power-ups that have to be shot for: a pad is dead until its key falls | Round, wide, box | ✅ |
+| 24 | **Ransom** | Locks with a bill: three-key doors, ordered keys, a pad behind a door | All | ✅ |
+| 25 | **Iris** | Apertures: a ring of blades that irises open as its keys are shot | Round, wide, box | ✅ |
+| 26 | **Shutter** | Block D's test: rings under gates, movers, plates and speed | All | ✅ |
+| 27 | **Roulette** | Forks where one branch hides a warp well | Split-heavy | ✅ |
+| 28 | **Highwire** | Narrow tubes at speed, warps on the fast line — drawn see-through | Round, split, wire | ✅ |
+| 29 | **Blackout** | Visibility: twists that show you almost nothing | All | ✅ |
+| 30 | **Long Odds** | Endurance: the longest level, and almost nothing given | All | ✅ |
+| 31 | **Finale** | No new ideas, just the hardest mix | All | ✅ |
 
-File names match these numbers - 8b is `level_08b.json`, added between 8 and 9 without renumbering, since best
-times are keyed by file name - and the run goes all the way through to the finale.
+File names match these numbers, and the run goes all the way through to the finale. They are free to
+be renumbered when a level is inserted, because a best time is saved against the level's `id` rather
+than its file name; see [level-format.md](level-format.md).
 
-## Levels 10-26: blocks of four
+## Levels 11-31: blocks of four
 
-Everything is taught by level 9, so the back half needs new ideas or it becomes one level played
-seventeen times. Seven arrive across 10-25, and 26 introduces nothing at all.
+Everything the early game teaches is taught by level 10, so the back half needs new ideas or it
+becomes one level played twenty times. Nine arrive across 11-30, and the finale introduces nothing
+at all.
 
 They are grouped in **blocks of four**, and the two curves are deliberately out of phase:
 
-- **A block opens with a refill and a new mechanic.** Levels 10, 14, 18 and 22 each hand shields back
-  and then teach something, so a new idea is always learned with resources in hand.
+- **A block opens with a refill and a new mechanic.** Levels 11, 15, 19, 23 and 27 each hand shields
+  back and then teach something, so a new idea is always learned with resources in hand.
 - **The rest of the block tests it while resources thin out.** By the fourth level of a block the
   player is running on what they saved.
 
 That phasing is the whole point. Pickups getting rarer and mechanics arriving would otherwise stack,
 and learning a new hazard on a last shield is how a run dies to unfairness rather than difficulty.
-Each block's opening refill is also weaker than the last: full shields at 10, full at 14, a pair of
-shields at 18, a single one at 22.
+Each block's opening refill is also weaker than the last: full shields at 11, full at 15, a pair of
+shields at 19, a pair at 23 of which one has to be shot for, and a single one at 27.
 
 | Block | Levels | Opens with | New ideas |
 |---|---|---|---|
-| A | 10-13 | Full shields | Timed gates (10), ordered target groups (12) |
-| B | 14-17 | Full shields | Speed-limit zones (14), around-the-tube movers (16) |
-| C | 18-21 | Two shields | Hazard plates (18), shoot-to-open gates (20) |
-| D | 22-25 | One shield | Warps down one fork only (22) |
-| - | 26 | Nothing | None. The finale is a test, not a lesson. |
+| A | 11-14 | Full shields | Timed gates (11), ordered target groups (13) |
+| B | 15-18 | Full shields | Speed-limit zones (15), around-the-tube movers (17) |
+| C | 19-22 | Two shields | Hazard plates (19), shoot-to-open gates (21) |
+| D | 23-26 | A shield, and one behind a key | Locked power-ups (23), apertures (25) |
+| E | 27-30 | One shield | Warps down one fork (27) |
+| - | 31 | Nothing | None. The finale is a test, not a lesson. |
 
 **What each new mechanic is for**
 
@@ -100,17 +107,25 @@ ignore speed or make the player *spend* it.
   passage instead of points, and missing it means arriving at a wall.
 - **Warps down one fork** — needs no new code. A fork where the quick branch might also throw you
   back up the track turns a route choice into a gamble.
+- **Power-ups that have to be shot for** — a pad with a `lockedBy` is dead until its key group is
+  destroyed. The gentlest lock in the game: missing the key costs the prize, not a shield, which is
+  what makes it the right way to introduce the idea that shooting buys things. It also gives the
+  resource economy a dial it never had — a shield can be *offered* without being *given*.
+- **Apertures** — a ring of blades sealing the tube that irises open as its keys fall, one key's
+  worth at a time. The first lock that opens by degrees: a three-key ring is a tube with one side
+  clear and the other walled, and which side that is depends on which shot landed. Put one in each
+  mouth of a fork and the keys decide which roads are open before the fork is reached.
 
 **Deliberately not built:** tubes that roll or twist, and walls that close as you approach. Both need
 engine subsystems that do not exist — a roll channel through frame propagation, and chunk rebuilding
 for animated geometry — and neither is worth holding seventeen levels for.
 
-**Keep the old mechanics running underneath the new ones.** The first cut of 10–26 scheduled a new
-idea into every block and quietly let forks and wells lapse: they appeared at 7–9, vanished for
-twelve levels, and came back at 22. That is long enough for a player to forget the game has
-branching at all, and it dumped the whole reintroduction on block D, making level 22 far denser than
-the other block openers. A fork now lands every third level from 11, and a well every third from 12,
-offset so they alternate rather than stack. **Nothing already taught should go more than three or
+**Keep the old mechanics running underneath the new ones.** The first cut of the back half
+scheduled a new idea into every block and quietly let forks and wells lapse: they appeared at 7–10,
+vanished for twelve levels, and came back at 27. That is long enough for a player to forget the game has
+branching at all, and it dumped the whole reintroduction on one block, making its opener far denser
+than the others. A fork now lands every third level from 11, and a well every third from 12, offset
+so they alternate rather than stack. **Nothing already taught should go more than three or
 four levels unused** — a mechanic the game stops using reads as a mechanic the game abandoned.
 
 ## A run, not a level
@@ -197,8 +212,8 @@ how obstacles are arranged.
 | 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 3146 |
 | 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4926 |
 | 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4496 |
-| 8b | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4556 |
-| 9 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 5116 |
+| 9 | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4556 |
+| 10 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 5116 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
 they answer. Their rarer prizes — the extra shield, and shields inside a split — sit off the fast
@@ -215,18 +230,20 @@ line or down the meaner branch, so they cost something to take.
 | Extra shield | 2, on the ceiling | going off-line to reach it; it is spent first and never refilled |
 | Rapid fire | 2, before tough blocks | 2, 4-hit blocks |
 | Ring gun | 2, before a ring of targets | 2, second ring at an offset angle |
-| Unstoppable | 6, before the breakable rows | 7 at the box, 9 before the twisting finish |
+| Unstoppable | 6, before the breakable rows | 7 at the box, 10 before the twisting finish; 26, against a ring no shot opens |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
 | Forks | 7 | 8, three junctions where the short way is the tight one; then every third level from 11 |
-| Warp zones | 8, in the run for home | every third level from 12, and all through block D |
-| Timed gates | 10, a single gate on a straight | 11, gates in rhythm with jumps |
-| Ordered target groups | 12, one group at a time | 13, groups mixed into a dense run |
-| Speed-limit zones | 14, one limit after a straight | 15, limits where the track invites speed |
-| Movers | 16, one block sliding on a straight | 17, movers with gates and limits |
-| Hazard plates | 18, a plate you cannot shoot | 19, plates narrowing the only line |
-| Shoot-to-open gates | 20, one target, one gate | 21, keys you must hit while dodging |
-| Warps down one fork | 22, a fork where one way is a gamble | 25, when there is nothing left to lose |
+| Warp zones | 8, in the run for home | every third level from 12, and all through block E |
+| Timed gates | 11, a single gate on a straight | 12, gates in rhythm with jumps |
+| Ordered target groups | 13, one group at a time | 14, groups mixed into a dense run |
+| Speed-limit zones | 15, one limit after a straight | 16, limits where the track invites speed |
+| Movers | 17, one block sliding on a straight | 18, movers with gates and limits |
+| Hazard plates | 19, a plate you cannot shoot | 20, plates narrowing the only line |
+| Shoot-to-open gates | 21, one target, one gate | 22, keys you must hit while dodging |
+| Locked power-ups | 23, one key, one dead pad on a straight | 24, pads behind doors and wells; then the branch prize at 27, the dark at 29, the last prize at 30, and the finale's one offer |
+| Apertures | 25, a ring with a gap you can fly through | 26, rings under gates, movers, plates and speed; then see-through at 28, in the dark at 29, divided at 30, and divided again into the finale's fork |
+| Warps down one fork | 27, a fork where one way is a gamble | 30, when there is nothing left to lose |
 
 ## Placeholder art to replace later
 

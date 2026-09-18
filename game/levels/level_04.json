@@ -1,5 +1,6 @@
 {
   "name": "Ovals",
+  "id": "ovals",
   "next": "level_05.json",
   "speed": 95,
   "segmentLength": 60,

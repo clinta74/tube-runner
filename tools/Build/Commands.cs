@@ -18,6 +18,7 @@ internal static class Commands
                         --summary            open straight onto the end-of-run results screen
                         --menu               open straight onto the Escape menu
                         --settings           open straight onto the settings page
+                        --shot <file>        save one frame to that file, then quit
 
           export      Export the standalone Windows build to builds/windows, and zip it.
                         --version <x.y.z>    stamp the version, so the game checks for newer releases
@@ -46,7 +47,7 @@ internal static class Commands
         switch (args[0])
         {
             case "play":
-                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings"], values: ["level", "start", "record-fps"]));
+                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings"], values: ["level", "start", "record-fps", "shot"]));
                 break;
             case "export":
                 Export(Options.Parse(options, flags: ["debug", "signed"], values: ["version"]));
@@ -96,6 +97,7 @@ internal static class Commands
         if (options.Flag("summary")) game.Add("--summary");
         if (options.Flag("menu")) game.Add("--menu");
         if (options.Flag("settings")) game.Add("--settings");
+        if (options.Value("shot") is string shot) game.Add("--shot=" + Path.GetFullPath(shot));
         if (game.Count > 0) engine.AddRange(["--", .. game]);
 
         Proc.Run(godot, engine, wait: false);

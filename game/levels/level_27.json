@@ -1,0 +1,169 @@
+{
+  "name": "Roulette",
+  "id": "roulette",
+  "next": "level_28.json",
+  "speed": 145,
+  "segmentLength": 60,
+
+  // Block D opens here: one shield in - the weakest refill of the four blocks - then the last new
+  // idea, which needs no new code at all. A fork where one branch hides a warp well.
+  // A fork was always time against shields: the short way is tighter and meaner. Putting a well down
+  // one branch adds a third thing to weigh, and it is the only one that can cost more than the fork
+  // saves - a warp throws the ship back up the track, so taking the quick way and hitting the well
+  // is worse than having taken the long way at all.
+  // The signs are the tell. A ring of them stands 75 units before every well, so the gamble is
+  // informed: the player can see which branch is carrying one before committing to it.
+  "theme": {
+    "darks": ["#1d1526", "#17111e", "#251b30"],
+    "lights": ["#8d6fb5", "#795c9e", "#a084c4"],
+    "seamDark": "#0e0a13",
+    "seamLight": "#dcb8ff",
+    "far": "#060409",
+    "ship": "#dcb8ff",
+    "block": "#c9b8dd",
+    "target": "#ffcf3a",
+    "breakable": "#7cffc4",
+    "fadeStart": 35,
+    "fadeEnd": 345,
+    "glow": 0.35
+  },
+
+  "sections": {
+    "tube":         { "radius": 6 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "wide-chamber": { "halfWidth": 19, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-mid":   { "radius": 5 },
+    "branch-tight": { "radius": 4.5 },
+    "oval":         { "halfWidth": 9, "halfHeight": 4.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    // The block's refill: a single shield.
+    { "length": 320, "pickups": [                                   //    0 -  320
+      { "at": 290, "kind": "shield" }
+    ] },
+
+    // FREE LOOK at the pairing. A wide chamber, then a fork whose quick branch is clean - no well
+    // anywhere. This is the fork the player already knows, so the next one can break the pattern.
+    { "length": 120, "section": "chamber", "speed": 150 },          //  320 -  440
+    { "length": 420, "turn": 80, "split": {                         //  440 -  860
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [140, -30, 0], [280, -30, 0], [420, -8, 0]] },
+          { "offsets": [[0, 8, 0], [140, 30, 0], [280, 30, 0], [420, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        { "at": 210, "branch": 0, "kind": "target" },
+        { "at": 140, "branch": 1, "angle": 0, "count": 3, "spacing": 60, "angleStep": 90 }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           //  860 - 1000
+
+    // Now the gamble. Same shape, but the quick branch carries a well on its outer wall - where the
+    // tube curves away from the ship, so it is presented rather than seen edge-on. The signs are
+    // visible before the fork, so this is a choice and not an ambush.
+    { "length": 120, "section": "chamber", "speed": 155, "pickups": [ // 1000 - 1120
+      { "at": 60, "kind": "rapid-fire" }
+    ] },
+    { "length": 440, "turn": 85, "split": {                         // 1120 - 1560
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "warps": [
+        { "at": 300, "branch": 1, "angle": 90 }
+      ],
+      "obstacles": [
+        { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
+      ]
+    },
+    { "length": 160, "section": "tube" },                           // 1560 - 1720
+
+    { "length": 280, "section": "oval", "speed": 160, "pickups": [  // 1720 - 2000
+      { "at": 140, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 220, "kind": "target", "angle": 90 }
+    ] },
+
+    // A three-way. The middle road is the centreline: no saving, no well, nothing. Left is long and
+    // clear. Right is quickest, tightest, and carries the well. The safe answer is the boring one.
+    // A three-way needs room for three openings side by side at the fork. Three branches of radius 6
+    // want 36 units of width and a halfWidth-14 chamber offers 28, so this one widens out and the
+    // branches themselves are narrower - which suits it, being the tightest choice in the level.
+    // The prize down the gambling road is itself behind a key, and the key is back here in the
+    // chamber - so the road has to be paid for before it can be seen whether it was worth taking.
+    { "length": 140, "section": "wide-chamber", "speed": 160, "obstacles": [ // 2000 - 2140
+      { "at": 70, "kind": "target", "angle": -90, "group": "rk" }
+    ] },
+    { "length": 480, "turn": 100, "split": {                        // 2140 - 2620
+        "section": "branch-mid",
+        "branches": [
+          // Only the fork and merge openings are checked, so these stay tucked in; the mid-split
+          // offsets are free to swing as wide as the saving needs.
+          { "offsets": [[0, -12, 0], [160, -44, 0], [320, -44, 0], [480, -12, 0]] },
+          { "offsets": [[0, 0, 0], [160, 0, 0], [320, 0, 0], [480, 0, 0]] },
+          { "offsets": [[0, 12, 0], [160, 44, 0], [320, 44, 0], [480, 12, 0]], "section": "branch-tight" }
+        ]
+      },
+      "pickups": [
+        { "at": 280, "branch": 2, "kind": "full-shields", "lockedBy": "rk" }
+      ],
+      "warps": [
+        { "at": 350, "branch": 2, "angle": 90 }
+      ],
+      "obstacles": [
+        { "at": 240, "branch": 0, "kind": "target" },
+        { "at": 160, "branch": 1, "angle": 0, "count": 3, "spacing": 80, "angleStep": 120 },
+        { "at": 150, "branch": 2, "angle": 180, "count": 2, "spacing": 60 }
+      ]
+    },
+    { "length": 160, "section": "chamber" },                        // 2620 - 2780
+    { "length": 140, "section": "tube" },                           // 2780 - 2920
+
+    // A well on the main line, to say the mechanic is not only a branch thing.
+    { "length": 380, "turn": -60, "speed": 165, "warps": [          // 2920 - 3300
+      { "at": 220, "angle": 90 }
+    ], "obstacles": [
+      { "at": 100, "angle": 180, "width": 9 }
+    ] },
+
+    { "length": 240, "pickups": [                                   // 3300 - 3540
+      { "at": 120, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 180, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    ] },
+
+    // Run for home: a last fork, both branches carrying a well, so there is no clean way through -
+    // only a choice of which risk. The long way's well sits where the wall curves most.
+    { "length": 140, "section": "chamber", "speed": 170 },          // 3540 - 3680
+    { "length": 440, "turn": -90, "split": {                        // 3680 - 4120
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]], "section": "branch-tight" },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]] }
+        ]
+      },
+      "warps": [
+        { "at": 260, "branch": 0, "angle": -90 },
+        { "at": 320, "branch": 1, "angle": 90 }
+      ],
+      "obstacles": [
+        { "at": 150, "branch": 0, "angle": 0, "count": 2, "spacing": 60, "angleStep": 120 },
+        { "at": 180, "branch": 1, "kind": "target", "angle": 180 }
+      ]
+    },
+
+    // Handover to Highwire: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4120 - 4240
+    { "length": 220 },                                              // 4240 - 4460
+    { "length": 56, "turn": -10.111111 }                            // 4460 - 4516
+  ]
+}

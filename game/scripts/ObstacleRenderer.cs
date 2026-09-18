@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using TubeRunner.Core;
 using Theme = TubeRunner.Core.Theme;
@@ -33,8 +34,23 @@ public partial class ObstacleRenderer : Node3D
     private const float SignRing = 75f;
     private const int SignsInRing = 4;
 
+    /// <summary>Seconds a blade takes to swing out of the way once its key falls.</summary>
+    private const float IrisTime = 0.45f;
+
+    /// <summary>How far in a shut blade reaches, as a share of the way to the middle. Not quite 0:
+    /// blades that met at a point would flicker against each other there.</summary>
+    private const float IrisShut = 0.06f;
+
+    /// <summary>Blades are cut a little wider than their share, so they overlap rather than leave seams.</summary>
+    private const float BladeOverlap = 1.12f;
+
+    /// <summary>How far round its own sector a blade turns as it opens. What makes it read as an iris.</summary>
+    private const float BladeSwirl = 0.9f;
+
     private readonly Dictionary<Obstacle, View> _views = new();
     private readonly Dictionary<Obstacle, View> _socketViews = new();
+    private readonly Dictionary<Obstacle, View> _lipViews = new();
+    private readonly List<Obstacle> _apertureRings = new();
     private readonly Dictionary<(double S, bool Opens, Surface Surface), View> _jumpMarkViews = new();
     private readonly List<(double S, bool Opens, Surface Surface)> _jumpMarks = new();
     private readonly Dictionary<Pickup, View> _pickupViews = new();
@@ -48,6 +64,7 @@ public partial class ObstacleRenderer : Node3D
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
     private Func<Obstacle, View> _createSocket = null!;
+    private Func<Obstacle, View> _createLip = null!;
     private Func<(double S, bool Opens, Surface Surface), View> _createJumpMark = null!;
     private Func<Pickup, View> _createPickup = null!;
     private Func<(Warp Warp, int Index), View> _createSign = null!;
@@ -81,6 +98,8 @@ public partial class ObstacleRenderer : Node3D
     private readonly Dictionary<string, int> _keyGroups = new();
     private readonly Dictionary<string, StandardMaterial3D> _keyMaterials = new();
     private readonly Dictionary<string, StandardMaterial3D> _doorMaterials = new();
+    private readonly Dictionary<string, StandardMaterial3D> _bladeMaterials = new();
+    private StandardMaterial3D _deadPadMaterial = null!;
     private readonly Dictionary<string, StandardMaterial3D> _waitingMaterials = new();
     private Color _targetColor;
     private float _themeGlow;
@@ -111,6 +130,7 @@ public partial class ObstacleRenderer : Node3D
     {
         foreach (var view in _views.Values) view.Node.QueueFree();
         foreach (var view in _socketViews.Values) view.Node.QueueFree();
+        foreach (var view in _lipViews.Values) view.Node.QueueFree();
         foreach (var view in _jumpMarkViews.Values) view.Node.QueueFree();
         foreach (var view in _pickupViews.Values) view.Node.QueueFree();
         foreach (var view in _signViews.Values) view.Node.QueueFree();
@@ -122,6 +142,8 @@ public partial class ObstacleRenderer : Node3D
         // Sockets and jump marks are keyed by things that do not survive a level change, so without
         // clearing these their nodes would stay in the tree for the rest of the run, unreachable.
         _socketViews.Clear();
+        _lipViews.Clear();
+        _apertureRings.Clear();
         _jumpMarkViews.Clear();
         _dustViews.Clear();
         _pickupViews.Clear();
@@ -140,6 +162,7 @@ public partial class ObstacleRenderer : Node3D
         _session = session;
         _createObstacle = CreateObstacleView;
         _createSocket = CreateSocketView;
+        _createLip = CreateApertureLipView;
         _createJumpMark = CreateJumpMarkView;
 
         _jumpMarks.Clear();
@@ -184,14 +207,27 @@ public partial class ObstacleRenderer : Node3D
         _keyGroups.Clear();
         _keyMaterials.Clear();
         _doorMaterials.Clear();
+        _bladeMaterials.Clear();
         _waitingMaterials.Clear();
-        // Obstacles arrive sorted by distance, so this walks the level in the order it is flown.
+        // One blade of each aperture stands for the whole ring, for the lip left in the wall. The
+        // lip stays whether the ring is shut, part open or long gone, for the same reason a gate
+        // keeps its socket: where the machinery is should be readable on the approach.
+        _apertureRings.Clear();
+        var rings = new HashSet<string>();
         foreach (var o in session.Obstacles)
         {
-            if (o.LockedBy is not null && !_keyGroups.ContainsKey(o.LockedBy))
-            {
-                _keyGroups[o.LockedBy] = _keyGroups.Count;
-            }
+            if (o.Aperture is not null && rings.Add(o.Aperture)) _apertureRings.Add(o);
+        }
+        // Obstacles and pads both arrive sorted by distance, so merging them by distance walks the
+        // level in the order it is flown - and a pad is as much a locked thing as a door is, so a
+        // stretch whose only lock switches a power-up on still gets the next colour in the cycle.
+        var locked = session.Obstacles.Select(o => (o.S, o.LockedBy))
+            .Concat(session.Pickups.Select(p => (p.S, p.LockedBy)))
+            .Where(l => l.LockedBy is not null)
+            .OrderBy(l => l.S);
+        foreach (var (_, group) in locked)
+        {
+            if (!_keyGroups.ContainsKey(group!)) _keyGroups[group!] = _keyGroups.Count;
         }
         // The socket a gate withdraws into, left on the wall so its position is readable even when
         // nothing is standing there. Dark, unlit, and flush: a mark, not an obstacle.
@@ -226,6 +262,14 @@ public partial class ObstacleRenderer : Node3D
         _signPost = new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.07f, Height = 1.4f, RadialSegments = 6 };
         _wellIcon = new CylinderMesh { TopRadius = 0.8f, BottomRadius = 0.8f, Height = 0.06f, RadialSegments = 24 };
 
+        // A pad whose keys are still standing. Unlit and almost black, so it reads as switched off
+        // rather than as a power-up in an unusual colour - the label on it says what it will be.
+        _deadPadMaterial = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.08f, 0.09f, 0.11f),
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        };
+
         _shotMesh = new CapsuleMesh { Radius = 0.12f, Height = 1.4f };
         _burstMesh = new SphereMesh { Radius = 0.15f, Height = 0.3f, RadialSegments = 6, Rings = 3 };
         // A unit ring in the XZ plane, stretched to each section's size.
@@ -248,6 +292,11 @@ public partial class ObstacleRenderer : Node3D
         // lives can be read on the approach even while it is withdrawn.
         foreach (var o in _session.Obstacles)
         {
+            if (o.Aperture is not null)
+            {
+                UpdateBlade(o, s, origin);
+                continue;
+            }
             // A door whose keys have been shot is no longer solid, so it must stop being drawn -
             // otherwise it stands there looking like a wall and the ship sails through it, and the
             // whole point of shooting the key is lost. It bursts as it goes, so the shot that opened
@@ -257,7 +306,14 @@ public partial class ObstacleRenderer : Node3D
             Sync(_views, o, there, o.Destroyed || open, _createObstacle, origin);
             if (o.Period > 0f) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
         }
-        foreach (var p in _session.Pickups) Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
+        foreach (var ring in _apertureRings) Sync(_lipViews, ring, InView(ring.S, s), burst: false, _createLip, origin);
+        foreach (var p in _session.Pickups)
+        {
+            Sync(_pickupViews, p, !p.Collected && InView(p.S, s), p.Collected, _createPickup, origin);
+            // A locked pad switches on the moment its keys are down. Nothing else about it changes,
+            // so the pad the player flew past dark is recognisably the one now lit.
+            if (_pickupViews.TryGetValue(p, out var pad)) ShowPadPower(p, pad);
+        }
         foreach (var mark in _jumpMarks)
         {
             Sync(_jumpMarkViews, mark, InView(mark.S, s), burst: false, _createJumpMark, origin);
@@ -311,6 +367,8 @@ public partial class ObstacleRenderer : Node3D
 
     private View CreateObstacleView(Obstacle o)
     {
+        if (o.Aperture is not null) return CreateBladeView(o);
+
         var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f);
         bool target = o.Kind == ObstacleKind.Target;
         float size = Mathf.Min(o.Width, o.Height);
@@ -339,6 +397,191 @@ public partial class ObstacleRenderer : Node3D
             Obstacle = o,
             Slides = o.Period > 0f,
         };
+    }
+
+    /// <summary>
+    /// One blade of an aperture. Unlike everything else on a wall a blade is drawn from the middle
+    /// of the tube outwards: it is a wedge reaching from the wall almost to the centre, and the ring
+    /// of them seals the tube. So the node sits on the centreline with the section's own axes, and
+    /// the shape itself is rebuilt as the blade swings - which is also what lets one aperture hug an
+    /// oval or a boxy section as readily as a round one.
+    /// </summary>
+    private View CreateBladeView(Obstacle o)
+    {
+        var frame = _session.Track.FrameAt(o.S, o.Branch);
+        var material = BladeMaterial(o.LockedBy!);
+        var node = new MeshInstance3D { Mesh = BuildBlade(o, open: 0f), MaterialOverride = material };
+        AddChild(node);
+        return new View(node, frame.Position, frame.Forward.ToGodot(), frame.Up.ToGodot(), Spins: false, material)
+        {
+            Obstacle = o,
+        };
+    }
+
+    /// <summary>
+    /// Keeps one blade's view in step with its key. A blade does not blink out when its group falls:
+    /// it turns round its own sector and opens outwards over <see cref="IrisTime"/>, so the ring
+    /// reads as machinery working rather than as blocks being deleted, and the player can see which
+    /// way round is now clear while they are still far enough back to steer for it.
+    /// </summary>
+    private void UpdateBlade(Obstacle o, double s, Vector3d origin)
+    {
+        bool open = _session.IsUnlocked(o);
+        _views.TryGetValue(o, out var view);
+        if (open && view is not null) view.OpenedAt ??= _time;
+
+        float progress = view?.OpenedAt is float began ? (_time - began) / IrisTime : 0f;
+        // A blade whose key fell before the ring came into view has no swing to show and is simply
+        // never made; one already swinging keeps its view until it has finished getting out of the way.
+        bool gone = o.Destroyed || (open && (view is null || progress >= 1f));
+        bool there = !gone && InView(o.S, s);
+        Sync(_views, o, there, burst: o.Destroyed, _createObstacle, origin);
+
+        if (there && _views.TryGetValue(o, out view) && view.OpenedAt is not null)
+        {
+            // Eased, so the blade leans into the swing and settles out of it rather than jerking
+            // away at a constant rate - the difference between machinery and a slide.
+            ((MeshInstance3D)view.Node).Mesh = BuildBlade(o, Mathf.SmoothStep(0f, 1f, Mathf.Clamp(progress, 0f, 1f)));
+        }
+    }
+
+    /// <summary>
+    /// The blade as a wedge in the section's own plane, extruded along the track. <paramref name="open"/>
+    /// runs 0 (shut, reaching almost to the middle) to 1 (gone, folded back into the wall), and turns
+    /// the blade round the tube as it goes, which is what makes the ring read as an iris rather than
+    /// as a set of shutters.
+    /// </summary>
+    private Mesh BuildBlade(Obstacle o, float open)
+    {
+        const int steps = 10;
+        var shape = _shapes.Get(_session.Track.SectionAt(o.S, o.Branch));
+        float center = shape.Loop(o.Surface, o.X) + open * BladeSwirl * o.Width;
+        float half = o.Width * 0.5f * BladeOverlap;
+        float inner = IrisShut + (1f - IrisShut) * open;
+        float z = o.Length * 0.5f;
+
+        var outer = new Vector3[steps + 1];
+        var hole = new Vector3[steps + 1];
+        for (int i = 0; i <= steps; i++)
+        {
+            var (surface, x) = shape.Wrap(Surface.Floor, center + half * (2f * i / steps - 1f));
+            var p = shape.PointAt(surface, x);
+            outer[i] = new Vector3(p.X, p.Y, 0f);
+            hole[i] = new Vector3(p.X * inner, p.Y * inner, 0f);
+        }
+
+        // Blades are stacked a little along the track in the order they go round, so they overlap
+        // the way real leaves do instead of meeting edge to edge in one plane.
+        float lean = o.Blade * 0.06f;
+        var front = new Vector3(0f, 0f, -z + lean);
+        var back = new Vector3(0f, 0f, z + lean);
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+
+        // Shaded across its own width, bright at the leading edge and falling away to the trailing
+        // one. A ring of blades all the same colour reads as one flat disc from any distance worth
+        // reacting at; the gradient is what makes it a count of blades instead.
+        Color Shade(int i) { float v = 0.95f - 0.42f * i / steps; return new Color(v, v, v); }
+        void Vertex(Vector3 p, Color c)
+        {
+            st.SetColor(c);
+            st.AddVertex(p);
+        }
+        void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color first, Color second)
+        {
+            Vertex(a, first); Vertex(b, first); Vertex(c, second);
+            Vertex(a, first); Vertex(c, second); Vertex(d, second);
+        }
+        for (int i = 0; i < steps; i++)
+        {
+            Color near = Shade(i), far = Shade(i + 1);
+            Quad(hole[i] + front, outer[i] + front, outer[i + 1] + front, hole[i + 1] + front, near, far);
+            Quad(hole[i] + back, outer[i] + back, outer[i + 1] + back, hole[i + 1] + back, near, far);
+            // The edge facing the hole: the only one the ship ever sees head on, and the one that
+            // gives the blade thickness at the moment that matters. Lit brightest, so the shut ring
+            // has a hard rim around the middle rather than fading into itself.
+            Quad(hole[i] + front, hole[i + 1] + front, hole[i + 1] + back, hole[i] + back,
+                new Color(1f, 1f, 1f), new Color(1f, 1f, 1f));
+        }
+        st.GenerateNormals();
+        return st.Commit();
+    }
+
+    /// <summary>
+    /// The lip an aperture is set into: a shallow ring left in the wall whether the blades are shut,
+    /// part open or long gone. Same reasoning as a gate's socket - where the machinery lives should
+    /// be readable on the approach, and a ring that has already been opened should still say so.
+    /// </summary>
+    private View CreateApertureLipView(Obstacle o)
+    {
+        const int segments = 64;
+        const float depth = 0.5f;
+        var shape = _shapes.Get(_session.Track.SectionAt(o.S, o.Branch));
+        float z = o.Length * 0.5f + 0.08f;
+
+        var wall = new Vector3[segments + 1];
+        var edge = new Vector3[segments + 1];
+        for (int i = 0; i <= segments; i++)
+        {
+            var (surface, x) = shape.Wrap(Surface.Floor, shape.Perimeter * i / segments);
+            var point = shape.PointAt(surface, x);
+            var normal = shape.NormalAt(surface, x);
+            wall[i] = new Vector3(point.X, point.Y, 0f);
+            edge[i] = new Vector3(point.X + normal.X * depth, point.Y + normal.Y * depth, 0f);
+        }
+
+        var front = new Vector3(0f, 0f, -z);
+        var back = new Vector3(0f, 0f, z);
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        {
+            st.AddVertex(a); st.AddVertex(b); st.AddVertex(c);
+            st.AddVertex(a); st.AddVertex(c); st.AddVertex(d);
+        }
+        for (int i = 0; i < segments; i++)
+        {
+            Quad(wall[i] + front, edge[i] + front, edge[i + 1] + front, wall[i + 1] + front);
+            Quad(wall[i] + back, edge[i] + back, edge[i + 1] + back, wall[i + 1] + back);
+            Quad(edge[i] + front, edge[i + 1] + front, edge[i + 1] + back, edge[i] + back);
+        }
+        st.GenerateNormals();
+
+        var frame = _session.Track.FrameAt(o.S, o.Branch);
+        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = _socketMaterial };
+        AddChild(node);
+        return new View(node, frame.Position, frame.Forward.ToGodot(), frame.Up.ToGodot(), Spins: false, _socketMaterial);
+    }
+
+    // A blade wears its pair's colour like a door does, but lit a little further up: a door is one
+    // slab to notice, while an aperture is a ring the player has to count blades on.
+    private StandardMaterial3D BladeMaterial(string group)
+    {
+        if (_bladeMaterials.TryGetValue(group, out var material)) return material;
+        material = Glowing(PairColor(group).Darkened(0.3f), 0.35f + _themeGlow);
+        material.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+        material.VertexColorUseAsAlbedo = true;
+        _bladeMaterials[group] = material;
+        return material;
+    }
+
+    /// <summary>
+    /// Switches a locked pad on or off. While its keys stand the pad is dead and its label wears the
+    /// key's colour, so what the player is looking at is "the thing k2 turns on" rather than a
+    /// power-up that inexplicably did nothing when they flew over it.
+    /// </summary>
+    private void ShowPadPower(Pickup p, View view)
+    {
+        bool live = _session.IsLive(p);
+        if (view.LiveShown == live) return;
+        view.LiveShown = live;
+
+        var (color, _) = PickupLooks[p.Kind];
+        ((MeshInstance3D)view.Node).MaterialOverride = live ? _pickupMaterials[p.Kind] : _deadPadMaterial;
+        if (view.Node.GetChildCount() > 0 && view.Node.GetChild(0) is Label3D label)
+        {
+            label.Modulate = live ? color : PairColor(p.LockedBy!).Darkened(0.3f);
+        }
     }
 
     // Placeholder power-up: a glowing pad set into the surface with a floating label.
@@ -763,6 +1006,12 @@ public partial class ObstacleRenderer : Node3D
 
         /// <summary>Whether this withdraws into the wall on a gate's cycle. Sockets never do.</summary>
         public bool Slides { get; init; }
+
+        /// <summary>When an aperture blade's key fell, so its swing can be timed; null while it is shut.</summary>
+        public float? OpenedAt { get; set; }
+
+        /// <summary>Whether a pad was last drawn switched on; null before it has been decided.</summary>
+        public bool? LiveShown { get; set; }
     }
 
     private sealed record Burst(CpuParticles3D Node, Vector3d Center, float Expires);

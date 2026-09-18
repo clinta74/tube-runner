@@ -1,0 +1,142 @@
+{
+  "name": "Highwire",
+  "id": "highwire",
+  "next": "level_29.json",
+  "speed": 150,
+  "segmentLength": 60,
+
+  // Narrow tubes at speed, with wells sitting on the fast line. A well is a hazard to steer around,
+  // never a gap to thread - it takes about a third of the way round the tube, leaving two thirds
+  // safe - so the narrower the bore, the more of the remaining wall the ship has to give up.
+  //
+  // The one level drawn as a see-through wireframe, and this is the one that earns it. Everything
+  // here is about reading structure ahead of time: which way a bore bends, where a well is cut into
+  // the far side, which branch of the fork carries one. With the wall open all of that is visible
+  // from a long way back, so the level stops being about discovering hazards and becomes about
+  // committing to a line through hazards already seen.
+  //
+  // The fork's chamber walls are dropped in this style, so the two branches simply diverge in front
+  // of the player - which is what a fork always was and never looked like.
+  "theme": {
+    "wire": true,
+    "darks": ["#1d1526", "#17111e", "#251b30"],
+    "lights": ["#8d6fb5", "#795c9e", "#a084c4"],
+    "seamDark": "#0e0a13",
+    "seamLight": "#dcb8ff",
+    "far": "#060409",
+    "ship": "#ffffff",
+    "block": "#ff8a3a",
+    "target": "#ffcf3a",
+    "breakable": "#7cffc4",
+    // Reaches much further than a solid level: the wire fade only dims lines to a quarter, and the
+    // track is built out to twice this, so this is what sets how far ahead the level can be read.
+    "fadeStart": 60,
+    "fadeEnd": 520,
+    "glow": 0.45
+  },
+
+  "sections": {
+    "tube":         { "radius": 6 },
+    "narrow":       { "radius": 4.8 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 },
+    "wide":         { "radius": 7.5 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 220 },                                              //    0 -  220
+
+    // A well on a bend in a full-width tube: the shape from Roulette, as a reminder.
+    { "length": 360, "turn": -65, "warps": [                        //  220 -  580
+      { "at": 200, "angle": 90 }
+    ] },
+
+    // Now the same well in a narrow bore. Nothing changed about the well; there is simply less wall
+    // left to use, so the same hazard is a much tighter steer.
+    { "length": 380, "section": "narrow", "turn": 70, "warps": [    //  580 -  960
+      { "at": 210, "angle": 90 }
+    ] },
+
+    { "length": 260, "section": "wide", "speed": 160, "pickups": [  //  960 - 1220
+      { "at": 130, "kind": "rapid-fire" }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": 180 }
+    ] },
+
+    // Two wells on one bend, on opposite walls, with the safe line threading between them. This is
+    // the closest the game comes to a well being a gap - and it is still a steer, not a thread.
+    { "length": 420, "section": "narrow", "turn": -75, "warps": [   // 1220 - 1640
+      { "at": 150, "angle": 90 },
+      { "at": 320, "angle": -90 }
+    ] },
+
+    { "length": 240, "section": "tube", "pickups": [                // 1640 - 1880
+      { "at": 120, "kind": "shield", "angle": 180 }
+    ] },
+
+    // A fork in a narrow chamber: the quick branch is tighter still and carries a well, so the fast
+    // line and the risky line are the same line.
+    { "length": 140, "section": "chamber", "speed": 165 },          // 1880 - 2020
+    { "length": 460, "turn": 95, "split": {                         // 2020 - 2480
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [155, -34, 0], [300, -34, 0], [460, -8, 0]] },
+          { "offsets": [[0, 8, 0], [155, 34, 0], [300, 34, 0], [460, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "warps": [
+        { "at": 300, "branch": 1, "angle": 90 }
+      ],
+      "obstacles": [
+        { "at": 230, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 160, "branch": 1, "angle": 180, "width": 7 }
+      ]
+    },
+    { "length": 160, "section": "tube" },                           // 2480 - 2640
+
+    // A ring in the see-through style. Blades are visible from much further out here than a solid
+    // level allows, so this one asks for aim at distance rather than reaction - and a gap is left in
+    // it, because a sealed ring at 165 in a wire level is read long before it can be reached.
+    { "length": 400, "section": "wide", "obstacles": [              // 2640 - 3040
+      { "at": 80, "kind": "target", "angle": 90, "group": "hk" }
+    ], "apertures": [
+      { "at": 300, "blades": 6, "open": 1, "keys": ["hk"] }
+    ] },
+
+    // Wells with obstacles, so the steer around one is also a dodge. The blocks sit opposite each
+    // well, which means the safe wall is the one the block is on.
+    { "length": 440, "section": "narrow", "speed": 170, "turn": -60, "warps": [ // 3040 - 3480
+      { "at": 140, "angle": 90 },
+      { "at": 330, "angle": 180 }
+    ], "obstacles": [
+      { "at": 140, "angle": -90, "width": 7 },
+      { "at": 330, "angle": 0, "width": 7 }
+    ] },
+
+    { "length": 240, "section": "tube", "pickups": [                // 3480 - 3720
+      { "at": 120, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 180, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    ] },
+
+    // Run for home: a twist through the narrow bore with a well at every other bend, each one out of
+    // sight until the corner opens. The signs arrive before the bend, which is the only warning.
+    { "length": 210, "section": "narrow", "speed": 175, "turn": 80, "warps": [ // 3720 - 3930
+      { "at": 130, "angle": 90 }
+    ] },
+    { "length": 210, "turn": -85, "climb": 14, "obstacles": [       // 3930 - 4140
+      { "at": 105, "angle": 0, "width": 7 }
+    ] },
+    { "length": 210, "turn": 75, "climb": -16, "warps": [           // 4140 - 4350
+      { "at": 120, "angle": -90 }
+    ] },
+
+    // Handover to Blackout: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
+    // level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4350 - 4470
+    { "length": 276 }                                               // 4470 - 4746
+  ]
+}

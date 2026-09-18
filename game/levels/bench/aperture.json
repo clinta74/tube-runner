@@ -1,0 +1,74 @@
+{
+  "name": "Aperture Bench",
+  "id": "bench-aperture",
+  "speed": 30,
+  "segmentLength": 60,
+
+  // A bench for looking at apertures, not a level. It runs slowly, and each ring's key sits on the
+  // floor line where the ship will fly into it, so a run with nobody at the controls still opens
+  // every ring - which is what makes `tube play --level bench/aperture.json --start <n> --shot <f>`
+  // able to catch a ring shut, mid-swing and open without a hand on the trigger.
+  "theme": {
+    "darks": ["#101f2a", "#0d1922", "#152633"],
+    "lights": ["#5e8fa8", "#4e7a91", "#6d9fb8"],
+    "seamDark": "#060e14",
+    "seamLight": "#b6f0ff",
+    "far": "#03070a",
+    "ship": "#b6f0ff",
+    "block": "#bcd4e2",
+    "target": "#ffd23a",
+    "breakable": "#7cffb0",
+    "fadeStart": 35,
+    "fadeEnd": 345,
+    "glow": 0.35
+  },
+
+  "sections": {
+    "tube": { "radius": 6 },
+    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":  { "halfWidth": 8, "halfHeight": 5, "squareness": 1 }
+  },
+
+  "start": "tube",
+  "track": [
+    // Station 1, a round tube. Shut at 400 with the key still standing at 430.
+    { "length": 600, "obstacles": [                                 //    0 -  600
+      { "at": 430, "kind": "target", "group": "k1" }
+    ], "apertures": [
+      { "at": 470, "blades": 6, "keys": ["k1"] }
+    ] },
+
+    // Station 2: three keys over six blades, each rammed in turn, so the ring opens a third at a time.
+    { "length": 600, "obstacles": [                                 //  600 - 1200
+      { "at": 200, "kind": "target", "group": "k2" },
+      { "at": 240, "kind": "target", "group": "k3" },
+      { "at": 280, "kind": "target", "group": "k4" }
+    ], "apertures": [
+      { "at": 470, "blades": 6, "keys": ["k2", "k3", "k4"] }
+    ] },
+
+    // Station 3: eight blades with two left out, so there is a way through before a shot is fired.
+    { "length": 600, "section": "oval", "obstacles": [              // 1200 - 1800
+      { "at": 430, "kind": "target", "group": "k5" }
+    ], "apertures": [
+      { "at": 470, "blades": 8, "open": 2, "keys": ["k5"] }
+    ] },
+
+    // Station 4: the same ring in a boxy section, to see blades follow a shape that is not round.
+    { "length": 600, "section": "box", "obstacles": [               // 1800 - 2400
+      { "at": 430, "kind": "target", "group": "k6" }
+    ], "apertures": [
+      { "at": 470, "blades": 6, "keys": ["k6"] }
+    ] },
+
+    // Station 5: a locked power-up, dark until its key falls, with an unlocked one beside it.
+    { "length": 600, "section": "tube", "obstacles": [              // 2400 - 3000
+      { "at": 200, "kind": "target", "group": "k7" }
+    ], "pickups": [
+      { "at": 430, "kind": "shield", "lockedBy": "k7" },
+      { "at": 500, "kind": "ring-gun" }
+    ] },
+
+    { "length": 400 }                                               // 3000 - 3400
+  ]
+}

@@ -31,6 +31,13 @@ To test a section while designing, launch a level partway through it (from the r
 tube play --level level_02.json --start 3000
 ```
 
+To see how a stretch actually looks without flying to it, add `--shot`: the game runs on for a moment,
+saves one frame to that file, and quits.
+
+```bash
+tube play --level bench/aperture.json --start 370 --shot builds/shots/iris.png
+```
+
 ## Export a standalone build
 
 One-time setup: install Godot's export templates (in the editor, **Editor > Manage Export Templates >

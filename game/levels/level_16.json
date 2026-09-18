@@ -1,109 +1,138 @@
 {
-  "name": "Shoal",
+  "name": "Restraint",
+  "id": "restraint",
   "next": "level_17.json",
   "speed": 130,
   "segmentLength": 60,
 
-  // Movers - blocks that slide around the tube while the ship closes on them, so the gap aimed at is
-  // not the gap arrived at. They sweep around the surface only: moving along the track would break
-  // the collision sweep's ordering, and a hazard that tunnels at speed is worse than no hazard.
-  // A mover's sweep time against the closing speed is the whole design lever. Slow sweeps can be
-  // read and beaten; fast ones have to be guessed, so they are used sparingly and never in packs.
+  // Ceiling zones where the track most invites speed. Level 15 taught the zone; this one puts every
+  // zone at the end of something that makes the player want to push - a long clear run, a wide bore,
+  // a stretch they have just cleared and feel good about - and takes the top three quarters of the
+  // throttle away. The lesson is throttle discipline: arrive fast and the ship is hauled down anyway.
+  //
+  // Held that slow, a straight tube is dead air. So nothing here is straight, and the zones are the
+  // densest stretches in the level: slow is what makes room for a spiral of blocks with targets
+  // threaded through it, and the bends keep the next one out of sight until it is close.
   "theme": {
-    "darks": ["#152430", "#111d28", "#1b2b38"],
-    "lights": ["#6d94ad", "#5c8099", "#7fa3ba"],
-    "seamDark": "#081219",
-    "seamLight": "#8fe0ff",
-    "far": "#04090e",
-    "ship": "#8fe0ff",
-    "block": "#b9cfe0",
-    "target": "#ff5f8a",
-    "breakable": "#7cffd4",
+    "darks": ["#20281c", "#1a2117", "#283021"],
+    "lights": ["#8fa878", "#7b9366", "#9db487"],
+    "seamDark": "#0f130c",
+    "seamLight": "#d4ff9f",
+    "far": "#070a06",
+    "ship": "#d4ff9f",
+    "block": "#cbd8bb",
+    "target": "#ff7a3a",
+    "breakable": "#ffe36b",
     "fadeStart": 35,
-    "fadeEnd": 345,
-    "glow": 0.3
+    "fadeEnd": 340,
+    "glow": 0.25
   },
 
   "sections": {
-    "tube": { "radius": 6 },
-    "wide": { "radius": 7.5 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 }
+    "tube":   { "radius": 6 },
+    "narrow": { "radius": 4.5 },
+    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
+    "wide":   { "radius": 7.5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 280 },                                              //    0 -  280
+    { "length": 280, "turn": 25 },                                  //    0 -  280
 
-    // FREE LOOK. One block, sliding slowly, in a wide bore with room to go round either side. Long
-    // sweep time so its rhythm can be watched rather than guessed.
-    { "length": 240, "section": "wide", "obstacles": [              //  280 -  520
-      { "at": 160, "sweep": 11, "sweepTime": 4.5, "width": 8 }
+    // The widest bore in the level, fast, with a few easy targets to feel good about.
+    { "length": 320, "section": "wide", "speed": 155, "turn": -45, "climb": 10, "obstacles": [   //  280 -  600
+      { "at": 120, "kind": "target", "angle": 0, "count": 3, "spacing": 90, "angleStep": 120 }
     ] },
 
-    // Two sliding in opposite directions, crossing in the middle. Where they cross is a wall; where
-    // they part is a door. Same sweep time, so the pattern is readable.
-    { "length": 340, "section": "tube", "obstacles": [              //  520 -  860
-      { "at": 150, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 0 },
-      { "at": 150, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 180 },
-      { "at": 270, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 90 }
-    ] },
-
-    { "length": 260, "speed": 140, "pickups": [                     //  860 - 1120
-      { "at": 130, "kind": "rapid-fire" }
+    // And the limit lands the moment it closes. This is the shape the whole level repeats.
+    { "length": 300, "section": "narrow", "turn": 70, "climb": -12, "thrustZones": [   //  600 -  900
+      { "at": 150, "length": 300, "kind": "ceiling" }
     ], "obstacles": [
-      { "at": 200, "kind": "target", "angle": 90 }
+      { "at": 50,  "angle": 0, "width": 7, "count": 5, "spacing": 50, "angleStep": 72 },
+      { "at": 75,  "kind": "target", "angle": 180, "count": 4, "spacing": 50, "angleStep": 72 }
     ] },
 
-    // Movers and fixed blocks together. The fixed ones make the gap look safe from a distance; the
-    // movers are what close it by the time the ship arrives.
-    { "length": 400, "turn": 40, "obstacles": [                     // 1120 - 1520
-      { "at": 90,  "angle": 0,   "width": 9 },
-      { "at": 170, "sweep": 10, "sweepTime": 3.5, "width": 7, "angle": 120 },
-      { "at": 260, "angle": 240, "width": 9 },
-      { "at": 340, "sweep": 10, "sweepTime": 3.5, "width": 7, "angle": 60 }
+    { "length": 260, "section": "tube", "speed": 140, "turn": -55, "pickups": [   //  900 - 1160
+      { "at": 130, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 210, "kind": "target", "angle": 0 }
     ] },
 
-    { "length": 240, "section": "oval", "speed": 145, "pickups": [  // 1520 - 1760
-      { "at": 120, "kind": "shield", "angle": 180 }
+    // A gauntlet cleared at speed, then immediately a limit. Clearing something well is exactly when
+    // a player pushes hardest, so this is where the cost lands.
+    { "length": 340, "speed": 150, "turn": -40, "climb": -14, "obstacles": [   // 1160 - 1500
+      { "at": 60, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 },
+      { "at": 90, "kind": "target", "angle": 180, "count": 2, "spacing": 110 }
+    ] },
+    { "length": 300, "section": "narrow", "turn": 80, "climb": 14, "thrustZones": [   // 1500 - 1800
+      { "at": 150, "length": 300, "kind": "ceiling" }
+    ], "obstacles": [
+      { "at": 40,  "angle": 90, "width": 7, "count": 5, "spacing": 55, "angleStep": -90 },
+      { "at": 70,  "kind": "target", "angle": -90, "count": 4, "spacing": 55, "angleStep": 90 }
     ] },
 
-    // Movers to shoot past rather than dodge: targets riding the same sweep, so the aim has to lead
-    // them. Shots fly straight from wherever the ship sits, so this is steering, not aiming.
-    { "length": 380, "section": "tube", "turn": -45, "pickups": [   // 1760 - 2140
+    // Gates inside a limit, round a bend. The gate wants the throttle used as timing; the limit caps
+    // how much of it there is to use, so only the slow half of the range is left to time with.
+    { "length": 360, "section": "tube", "speed": 145, "turn": -60, "pickups": [  // 1800 - 2160
+      { "at": 50, "kind": "rapid-fire" }
+    ], "thrustZones": [
+      { "at": 180, "length": 360, "kind": "ceiling" }
+    ], "obstacles": [
+      { "at": 120, "period": 2.4, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 170, "kind": "target", "angle": 90, "count": 3, "spacing": 30, "angleStep": 60 },
+      { "at": 240, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 300, "kind": "target", "angle": -90, "count": 3, "spacing": 20, "angleStep": -60 }
+    ] },
+
+    { "length": 240, "section": "oval", "speed": 150, "turn": 50, "pickups": [  // 2160 - 2400
       { "at": 60, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 150, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 0 },
-      { "at": 250, "kind": "target", "sweep": 8, "sweepTime": 3.0, "angle": 180 },
-      { "at": 330, "sweep": 9, "sweepTime": 3.0, "width": 8, "angle": 90 }
+      { "at": 150, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 },
+      { "at": 210, "angle": 90, "width": 9 }
     ] },
 
-    // A shoal: four movers on one sweep, in step, so the whole wall breathes side to side. Reading
-    // the phase once solves all of them - and reading it wrong costs the lot.
-    { "length": 440, "speed": 150, "obstacles": [                   // 2140 - 2580
-      { "at": 80, "sweep": 9, "sweepTime": 4.0, "width": 7, "angle": 0, "count": 4, "spacing": 95, "angleStep": 90 }
+    // The longest run in the level, at its highest speed, weaving. Then the tightest limit.
+    { "length": 460, "section": "tube", "speed": 165, "turn": -40, "climb": 18, "obstacles": [   // 2400 - 2860
+      { "at": 120, "angle": 0,   "width": 8 },
+      { "at": 240, "angle": 180, "width": 8 },
+      { "at": 360, "angle": 90,  "width": 8 }
+    ] },
+    // A well inside a limit: held slow, so there is time to see it and no speed to steer with. The
+    // narrow bore is what makes it bite - a mouth takes a third of the wall whatever the tube.
+    { "length": 340, "section": "narrow", "turn": 75, "climb": -18, "thrustZones": [   // 2860 - 3200
+      { "at": 170, "length": 340, "kind": "ceiling" }
+    ], "warps": [
+      { "at": 240, "angle": 90 }
+    ], "obstacles": [
+      { "at": 60,  "angle": 0,   "width": 7 },
+      { "at": 110, "kind": "target", "angle": 180 },
+      { "at": 150, "angle": 180, "width": 7 },
+      { "at": 190, "kind": "target", "angle": 0 },
+      { "at": 300, "angle": -90, "width": 7 }
     ] },
 
-    { "length": 260, "section": "wide", "pickups": [                // 2580 - 2840
-      { "at": 130, "kind": "shield", "angle": 90 }
+    { "length": 240, "section": "tube", "speed": 150, "turn": -65, "pickups": [  // 3200 - 3440
+      { "at": 120, "kind": "shield", "angle": 90 }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": -90 }
     ] },
 
-    // Movers on a twist, where the bend hides them until they are close and the sweep cannot be read
-    // in advance. Fast sweeps, but only one at a time: guessing should cost one shield, not three.
-    { "length": 200, "section": "tube", "speed": 155, "turn": 70, "obstacles": [   // 2840 - 3040
-      { "at": 110, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 0 }
+    // Run for home through a twist, no limits: the restraint is over, spend everything.
+    { "length": 190, "speed": 165, "turn": 75, "obstacles": [       // 3440 - 3630
+      { "at": 60, "angle": 0, "count": 3, "spacing": 45, "angleStep": 120 }
     ] },
-    { "length": 200, "turn": -75, "climb": 12, "obstacles": [       // 3040 - 3240
-      { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 180 }
+    { "length": 190, "turn": -80, "climb": 14, "obstacles": [       // 3630 - 3820
+      { "at": 70, "kind": "target", "angle": 180 },
+      { "at": 120, "angle": 60, "count": 2, "spacing": 30, "angleStep": 120 }
     ] },
-    { "length": 200, "turn": 65, "climb": -14, "obstacles": [       // 3240 - 3440
-      { "at": 100, "sweep": 10, "sweepTime": 2.6, "width": 8, "angle": 90 }
+    { "length": 190, "turn": 70, "climb": -16, "obstacles": [       // 3820 - 4010
+      { "at": 95, "angle": 90, "count": 3, "angleStep": 60 }
     ] },
 
-    // Handover to Undertow: straighten and blend into its tube, then the first 276 units of its
+    // Handover to Shoal: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 3440 - 3560
-    { "length": 180 },                                              // 3560 - 3740
-    { "length": 96, "turn": 8.842105 }                              // 3740 - 3836
+    { "length": 120, "section": "tube" },                           // 4010 - 4130
+    { "length": 276 }                                               // 4130 - 4406
   ]
 }

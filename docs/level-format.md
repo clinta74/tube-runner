@@ -10,6 +10,7 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | Field | Default | Meaning |
 |---|---|---|
 | `name` | `"Untitled"` | Shown when the level starts. |
+| `id` | from `name` | Stable key for the level's best time. See below. |
 | `next` | none | File name of the following level. |
 | `speed` | `80` | Starting forward speed, units per second. Track pieces can change it. |
 | `segmentLength` | `60` | Distance between wall seams. The checker pattern can change at each seam. |
@@ -18,6 +19,14 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | `start` | required | Section name the track starts with. |
 | `track` | required | Ordered list of track pieces. |
 | `obstacles` | none | Obstacles placed from the start of the track. Usually better inside track pieces; see below. |
+| `apertures` | none | Aperture rings placed from the start of the track. Usually better inside track pieces; see below. |
+
+**Every shipped level declares an `id`**, and once written it never changes. Best times are saved
+against it, so a level keeps its times through being renamed, renumbered, or having another level
+inserted in front of it - none of which the file name survives. A level without one falls back to
+its name folded down (`"Neon Run"` becomes `neon-run`), which is fine for a bench file and nothing
+else; `LevelLoaderTests.EveryShippedLevel_DeclaresItsOwnId` holds the real levels to saying it out
+loud, and to each one being different.
 
 ## Sections
 
@@ -262,6 +271,32 @@ hands out can be replaced later, and this cannot.
 Put a power-up in a calm stretch the first time a level uses it, then follow it with the obstacle it
 answers: a ring of targets after the ring gun, tough blocks after rapid fire.
 
+### Power-ups that have to be shot for
+
+A pickup can take a `lockedBy`, naming a target group exactly as a door does. Until every target in
+that group is destroyed the pad is **dead**: it is drawn dark, with its label in the key's colour,
+and flying over it does nothing at all. Shoot the keys and it lights up in its own colour and can be
+taken.
+
+```json
+"obstacles": [ { "at": 80, "kind": "target", "angle": 90, "group": "k1" } ],
+"pickups":   [ { "at": 260, "kind": "shield", "lockedBy": "k1" } ]
+```
+
+This is the **gentlest** lock in the game, and the one to teach the idea with: missing the key costs
+a reward, not a shield. A locked door punishes a miss with a wall, so it wants to arrive after the
+player already knows what a key is for.
+
+Two rules make it a decision rather than a detour:
+
+- **Put the key off the line to the pad.** If steering to the key also steers to the pad, the lock
+  costs nothing and may as well not be there.
+- **Leave time between them.** The shot has to land and be seen to land, or a dead pad reads as a
+  broken one. Treat the distance between key and pad the way you would a key and its door.
+
+A pad can be locked by a group of several keys, and the same group can open a pad and a door at once
+- which is how a stretch can offer "shoot these and you get through *and* get paid".
+
 ## The run-out at the end of a level
 
 **Leave the last 260 units of a level empty.** A level counts as finished that far before its track
@@ -297,6 +332,12 @@ Four extras on an obstacle, all of them optional, and all of them usable togethe
 { "at": 400, "kind": "target", "group": "k" },     // the key
 { "at": 520, "lockedBy": "k", "width": 30 }        // the door it opens
 ```
+
+A `lockedBy` naming a group nothing is in is a mistake the level refuses to load with, and so is a
+group whose last key stands further down the track than the thing it opens. Left to load, the first
+is a wall that never opens or a pad that never lights, and the second is a key that cannot be shot
+in time however well the level is flown - and both read as the player having missed a shot rather
+than as a typo.
 
 **A `plate` cannot be shot, broken or rammed** — only flown around. Every other obstacle has a way
 out, including unstoppable, which turns any collision into a free scored break. A plate is the one
@@ -346,6 +387,60 @@ There is no aiming, so the player lines a target up by steering onto it. That is
 ordered group a puzzle worth having: they must steer to each one in turn, in the order you set,
 rather than hold the trigger and sweep. It also means a group spread around the tube takes real
 travel to clear, while one stacked at a single `angle` takes almost none.
+
+## Apertures
+
+An **aperture** is a ring of blades that seals the tube and irises open as its keys are shot. It goes
+in an `apertures` list on a piece (or at the top level), and it is the one obstacle authored as a
+whole rather than a piece at a time: the loader cuts it into blades, and each blade is an ordinary
+locked obstacle from then on.
+
+```json
+{ "length": 500, "obstacles": [
+    { "at": 80,  "kind": "target", "angle": 90,  "group": "k1" },
+    { "at": 140, "kind": "target", "angle": -90, "group": "k2" }
+  ], "apertures": [
+    { "at": 360, "blades": 6, "keys": ["k1", "k2"] }
+  ] }
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `at` | required | Distance of the ring from the start of its piece (or of the track). |
+| `branch` | none | Inside a split, which branch. Required there, not allowed elsewhere. |
+| `blades` | `6` | How many sectors the ring is cut into, 3 to 12. |
+| `keys` | required | Target groups. Blade *n* is opened by key *n* in turn, wrapping round. |
+| `open` | `0` | Blades left out entirely, counting from the floor, so there is a way through from the start. |
+| `angle` | `0` | Turns the whole ring, in degrees, so the blades (and any gap) sit where you want them. |
+| `height` | `2.5` | How far a blade stands off the wall, for the collision. |
+| `length` | `2.5` | Thickness along the track. |
+| `hits` | `0` | Shots to break a single blade. 0, the default, means shots do nothing - the keys are the way through. |
+
+**One key over every blade is the pure version:** the whole ring spirals open at once, and it is the
+shape to introduce the idea with. More keys divide the ring, and a blade opens when *its* key falls,
+so a part-opened aperture is a tube with a way round one side of it and a wall on the other. Three
+keys over six blades open opposite pairs together, which reads much better than three neighbours
+leaving in a row.
+
+**Keep `keys` to three or fewer.** Every key group takes one of the four pair colours, and an
+aperture the player cannot read the colours off is just a wall with extra steps.
+
+**A shut aperture is a sealed ring.** Arriving at one with its keys still standing costs a shield,
+so the first aperture a level shows should leave a sector `open`, and the first fully sealed one
+should come after the player has opened a couple. Blades are drawn from the middle of the tube
+outwards and shaded across their own width, so how much of the ring is left can be read at distance;
+the lip they sit in stays in the wall whether the ring is shut, part open or long gone.
+
+**Unstoppable smashes blades, the ring gun opens them.** A ring sweep destroys every key it passes,
+so one charge opens an aperture outright - treat that as a deliberate skeleton key and ration the
+charges, or make the keys an **ordered group**, which the ring takes one member of per shot. Then a
+three-key aperture costs three charges, which is a price worth paying rather than a free pass.
+
+**Apertures need a closed tube.** A flat section has no way round, so the level fails to load rather
+than ringing half a tube.
+
+**An aperture over a fork** is the strongest use of the idea: put one in each branch's mouth and the
+keys decide which way the player is allowed to go, instead of which way they choose to go.
 
 ## Thrust zones
 

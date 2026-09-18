@@ -1,169 +1,166 @@
 {
-  "name": "Finale",
-  "speed": 160,
+  "name": "Shutter",
+  "id": "shutter",
+  "next": "level_27.json",
+  "speed": 158,
   "segmentLength": 60,
 
-  // The end of the run. No new ideas - that is the rule for this level. Everything here has been
-  // taught, tested and paid for somewhere in the twenty-five levels before it, and the only thing
-  // that is new is how much of it arrives at once.
-  // It gives nothing. There is no refill anywhere in it: whatever the run still has when it starts
-  // is what it finishes on, which is the whole point of a run being a run rather than a level.
-  // The one mercy is that it is honest. Every hazard here is a kind the player knows, placed the way
-  // that kind has always been placed - wells where the wall curves away, limits after a straight
-  // that invites speed, plates alone rather than mixed into a wall of breakables. It is hard because
-  // it is relentless, not because it lies.
+  // The block's test, and the fourth level of it, so resources are thin and nothing here is a free
+  // look. Rings arrive with everything else the game has: keys that slide, keys behind gates, keys
+  // flanked by plates, rings on bends that are not in sight until the shot has to be taken.
+  // Two kinds of pressure the earlier levels kept off an aperture, both here:
+  //   - a ring at the end of a long clear straight, which is the one place the throttle will already
+  //     be wound up. The shot is the same shot; the time to take it is a third of what it was.
+  //   - a ring divided three ways where only one quarter of it leads anywhere, so opening the wrong
+  //     side is worse than opening nothing, because it costs the shot and still ends at a wall.
+  // Unstoppable is the level's one mercy, and it is placed where it answers a ring rather than a
+  // block: blades break like anything else under it, which is the last thing the block has to say
+  // about locks - that the game's biggest hammer is still an answer, and a plate still is not.
   "theme": {
-    "darks": ["#14121c", "#100e17", "#1b1826"],
-    "lights": ["#8a7fb5", "#766a9e", "#9d92c8"],
-    "seamDark": "#090811",
-    "seamLight": "#ffffff",
-    "far": "#000000",
-    "ship": "#ffffff",
-    "block": "#cdc5e4",
-    "target": "#ff3a6a",
-    "breakable": "#6bffc4",
-    "fadeStart": 30,
-    "fadeEnd": 320,
-    "glow": 0.45
+    "darks": ["#191b22", "#14161c", "#1f222b"],
+    "lights": ["#6d7590", "#5c637b", "#7f88a5"],
+    "seamDark": "#0a0b0e",
+    "seamLight": "#cfe0ff",
+    "far": "#040508",
+    "ship": "#cfe0ff",
+    "block": "#d8dde8",
+    "target": "#ffd23a",
+    "breakable": "#7cffb0",
+    "fadeStart": 35,
+    "fadeEnd": 345,
+    "glow": 0.3
   },
 
   "sections": {
     "tube":         { "radius": 6 },
-    "narrow":       { "radius": 4.8 },
-    "flat":         { "radius": 6, "opening": 1 },
+    "wide":         { "radius": 7.5 },
+    "narrow":       { "radius": 5 },
     "oval":         { "halfWidth": 9, "halfHeight": 4.5 },
     "box":          { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
     "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
     "branch":       { "radius": 6 },
-    "branch-tight": { "radius": 4.5 },
-    "wide":         { "radius": 7.5 }
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
   "track": [
-    // The shortest run-in of any level. There is nothing to learn.
-    { "length": 160 },                                              //    0 -  160
-
-    // 1. Gates, from level 10. Straight into the rhythm, no free look, three in staggered phase.
-    { "length": 420, "turn": 40, "obstacles": [                     //  160 -  580
-      { "at": 120, "period": 2.0, "phase": 0,    "angle": 0,   "width": 20, "height": 3 },
-      { "at": 220, "period": 2.0, "phase": 0.33, "angle": 120, "width": 20, "height": 3 },
-      { "at": 340, "period": 2.0, "phase": 0.66, "angle": 240, "width": 20, "height": 3 }
+    // One shield, and it is all the level gives away for the next two thousand units.
+    { "length": 340, "pickups": [                                   //    0 -  340
+      { "at": 300, "kind": "shield" }
     ] },
 
-    // 2. An ordered group, from 12, spread right round the wall so clearing it costs travel.
-    { "length": 400, "section": "wide", "speed": 165, "obstacles": [    //  580 -  980
-      { "at": 110, "kind": "target", "angle": 180, "group": "a", "order": 0 },
-      { "at": 200, "kind": "target", "angle": 60,  "group": "a", "order": 1 },
-      { "at": 290, "kind": "target", "angle": -60, "group": "a", "order": 2 }
+    // A key on a mover, sliding while the shot is lined up, and its ring close enough behind that a
+    // missed first shot is felt rather than merely noted.
+    { "length": 480, "section": "wide", "obstacles": [              //  340 -  820
+      { "at": 100, "kind": "target", "sweep": 10, "sweepTime": 3.0, "angle": 0, "group": "s1" }
+    ], "apertures": [
+      { "at": 330, "blades": 6, "keys": ["s1"] }
     ] },
 
-    // 3. A limit with a shoal in it, from 17. Held slow, so more sweeps pass before arrival.
-    { "length": 440, "section": "narrow", "thrustZones": [          //  980 - 1420
-      { "at": 220, "length": 440 }
-    ], "obstacles": [
-      { "at": 110, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 },
-      { "at": 230, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 120 },
-      { "at": 350, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 240 }
+    // A gate in front of the key: the shot only passes on the half of the cycle the gate is down for,
+    // and the ring behind does not wait.
+    { "length": 500, "section": "tube", "turn": -45, "obstacles": [ //  820 - 1320
+      { "at": 110, "period": 2.2, "angle": 0, "width": 22, "height": 3 },
+      { "at": 200, "kind": "target", "angle": 0, "group": "s2" }
+    ], "apertures": [
+      { "at": 380, "blades": 6, "keys": ["s2"] }
     ] },
 
-    // The only tool in the level, and it is a tool rather than a gift: it answers the next stretch
-    // and nothing else.
-    { "length": 220, "section": "tube", "speed": 170, "pickups": [  // 1420 - 1640
-      { "at": 110, "kind": "rapid-fire" }
+    // The long clear straight, and the ring at the end of it. Nothing is in the way, which is the
+    // trap: the throttle goes up because there is no reason for it not to, and then there is.
+    { "length": 620, "section": "wide", "speed": 164, "obstacles": [ // 1320 - 1940
+      { "at": 430, "kind": "target", "angle": 90, "group": "s3" }
+    ], "apertures": [
+      { "at": 560, "blades": 6, "keys": ["s3"] }
     ] },
 
-    // 4. Plates seeded through a wall of breakables, from 18 and 19. Shooting opens most of it.
-    { "length": 420, "obstacles": [                                 // 1640 - 2060
-      { "at": 120, "hits": 2, "angle": 0,   "width": 9 },
-      { "at": 120, "kind": "plate", "angle": 90, "width": 11, "height": 3 },
-      { "at": 120, "hits": 2, "angle": 180, "width": 9 },
-      { "at": 270, "hits": 3, "angle": 270, "width": 9 },
-      { "at": 270, "kind": "plate", "angle": 45, "width": 11, "height": 3 }
+    // Plates either side of the key, so the shot has to be taken from a line that is already the
+    // wrong line for the ring's own gap.
+    { "length": 520, "section": "box", "obstacles": [               // 1940 - 2460
+      { "at": 110, "kind": "plate", "angle": 45,  "width": 12, "height": 3 },
+      { "at": 190, "kind": "target", "angle": 180, "group": "s4" },
+      { "at": 260, "kind": "plate", "angle": -45, "width": 12, "height": 3 }
+    ], "apertures": [
+      { "at": 400, "blades": 6, "open": 1, "angle": 180, "keys": ["s4"] }
     ] },
 
-    // 5. Flat, with the jump rhythm from 11 and plates that cannot be shot, from 18.
-    { "length": 120, "section": "flat", "speed": 165 },             // 2060 - 2180
-    { "length": 460, "obstacles": [                                 // 2180 - 2640
-      { "at": 90,  "period": 2.0, "width": 80, "height": 2.5 },
-      { "at": 90,  "period": 2.0, "phase": 0.5, "surface": "ceiling", "width": 80, "height": 2.5 },
-      { "at": 220, "kind": "plate", "x": -14, "width": 26, "height": 2.5 },
-      { "at": 220, "kind": "plate", "x": 16,  "width": 22, "height": 2.5 },
-      { "at": 350, "width": 80, "height": 2.5 },
-      { "at": 430, "kind": "plate", "surface": "ceiling", "x": -10, "width": 24, "height": 2.5 }
+    { "length": 260, "section": "tube", "pickups": [                // 2460 - 2720
+      { "at": 120, "kind": "shield", "angle": 90 }
     ] },
 
-    // 6. A key and its door, from 20, with the door round a bend and out of sight when the shot has
-    // to be taken.
-    { "length": 240, "section": "tube", "speed": 170, "obstacles": [    // 2640 - 2880
-      { "at": 120, "kind": "target", "angle": 180, "group": "k1" }
+    // A fork with a ring in the quick mouth and nothing in the slow one: the tight road can be taken
+    // only by whoever shot for it, and the long road is there for whoever did not.
+    { "length": 180, "section": "chamber", "obstacles": [           // 2720 - 2900
+      { "at": 70, "kind": "target", "angle": 90, "group": "sf" }
     ] },
-    { "length": 300, "turn": 70, "obstacles": [                     // 2880 - 3180
-      { "at": 180, "lockedBy": "k1", "angle": 0, "width": 24, "height": 3 }
-    ] },
-
-    // 7. The three-way from 22: the middle road is the centreline and carries nothing, the quick
-    // road is tightest and carries the well. The prize sits down the meanest route.
-    { "length": 140, "section": "chamber", "speed": 175 },          // 3180 - 3320
-    { "length": 460, "turn": 95, "split": {                         // 3320 - 3780
+    { "length": 440, "turn": 85, "split": {                         // 2900 - 3340
         "section": "branch",
         "branches": [
-          { "offsets": [[0, -8, 0], [155, -34, 0], [300, -34, 0], [460, -8, 0]] },
-          { "offsets": [[0, 8, 0], [155, 34, 0], [300, 34, 0], [460, 8, 0]], "section": "branch-tight" }
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
         ]
       },
-      "warps": [
-        { "at": 300, "branch": 1, "angle": 90 }
+      "apertures": [
+        { "at": 70, "branch": 1, "blades": 6, "keys": ["sf"] }
       ],
       "obstacles": [
-        { "at": 230, "branch": 0, "kind": "target", "angle": 90 },
-        { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
+        { "at": 200, "branch": 0, "angle": 0, "count": 2, "spacing": 110, "angleStep": 120, "width": 7 },
+        { "at": 260, "branch": 1, "sweep": 7, "sweepTime": 2.6, "angle": 90, "width": 6 }
+      ],
+      "pickups": [
+        { "at": 350, "branch": 1, "kind": "rapid-fire" }
       ]
     },
-    { "length": 160, "section": "tube" },                           // 3780 - 3940
+    { "length": 140, "section": "tube" },                           // 3340 - 3480
 
-    // 8. Wells on the fast line in a narrow bore, from 23.
-    { "length": 420, "section": "narrow", "speed": 180, "turn": -70, "warps": [   // 3940 - 4360
-      { "at": 140, "angle": 90 },
-      { "at": 320, "angle": -90 }
+    // Divided three ways, and the bend after it is hard right - so only the right-hand pair of
+    // blades is worth a shot, and opening the other two costs the shots and still ends at a wall.
+    { "length": 540, "section": "wide", "speed": 166, "obstacles": [ // 3480 - 4020
+      { "at": 90,  "kind": "target", "angle": 30,   "group": "s5" },
+      { "at": 170, "kind": "target", "angle": 150,  "group": "s6" },
+      { "at": 250, "kind": "target", "angle": -90,  "group": "s7" }
+    ], "apertures": [
+      { "at": 400, "blades": 6, "angle": 30, "keys": ["s5", "s6", "s7"] }
     ] },
+    { "length": 220, "section": "tube", "turn": 70 },               // 4020 - 4240
 
-    // 9. The box, dense, at the highest speed in the game.
-    { "length": 420, "section": "box", "speed": 190, "obstacles": [ // 4360 - 4780
-      { "at": 90,  "kind": "plate", "angle": 0, "width": 13, "height": 3 },
-      { "at": 190, "period": 1.9, "angle": 180, "width": 18, "height": 3 },
-      { "at": 290, "sweep": 12, "sweepTime": 2.4, "width": 8, "angle": 90 },
-      { "at": 380, "angle": 270, "width": 10 }
-    ] },
-
-    // 10. A last limit, exactly where a player would push for the line. It is the cruellest placing
-    // in the game and it is the one the whole of block B taught.
-    { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [   // 4780 - 5180
-      { "at": 200, "length": 400 }
-    ], "obstacles": [
-      { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
-      { "at": 290, "sweep": 7, "sweepTime": 2.4, "width": 6, "angle": 0 }
-    ] },
-
-    // Run for home. The longest twist in the game, one thing per bend, at full speed, in the dark.
-    { "length": 190, "section": "tube", "speed": 195, "turn": 80, "obstacles": [   // 5180 - 5370
-      { "at": 100, "kind": "plate", "angle": 0, "width": 12, "height": 3 }
-    ] },
-    { "length": 190, "turn": -85, "climb": 14, "obstacles": [       // 5370 - 5560
-      { "at": 95, "period": 1.9, "angle": 180, "width": 20, "height": 3 }
-    ] },
-    { "length": 190, "turn": 75, "climb": -16, "obstacles": [       // 5560 - 5750
-      { "at": 95, "sweep": 10, "sweepTime": 2.2, "width": 8, "angle": 90 }
-    ] },
-    { "length": 190, "turn": -80, "climb": 12, "warps": [           // 5750 - 5940
-      { "at": 110, "angle": 0 }
-    ] },
-    { "length": 190, "turn": 85, "climb": -14, "obstacles": [       // 5940 - 6130
-      { "at": 95, "kind": "plate", "angle": 180, "width": 12, "height": 3 }
+    // Unstoppable, and two rings whose keys are the hardest shots in the level: small, off the line,
+    // and close in front of the ring they open. The hammer is the answer for whichever one the shot
+    // missed - blades break under it like anything else - and the plate between them is the reminder
+    // that it is not the answer to everything.
+    { "length": 680, "section": "oval", "obstacles": [              // 4240 - 4920
+      { "at": 170, "kind": "target", "angle": 150, "group": "s8" },
+      { "at": 430, "kind": "target", "angle": -150, "group": "sc" },
+      { "at": 500, "kind": "plate", "angle": 90, "width": 12, "height": 3 }
+    ], "pickups": [
+      { "at": 60, "kind": "unstoppable" }
+    ], "apertures": [
+      { "at": 300, "blades": 6, "keys": ["s8"] },
+      { "at": 620, "blades": 6, "keys": ["sc"] }
     ] },
 
-    // The last stretch is clear and straight. After twenty-six levels, the finish should be a thing
-    // you can see coming.
-    { "length": 320 }                                               // 6130 - 6450
+    // Run for home. A twist at full speed with a ring on every bend, each key round the corner in
+    // front of its own ring and nothing else in sight.
+    { "length": 240, "speed": 170, "section": "tube", "turn": 75, "obstacles": [ // 4920 - 5160
+      { "at": 60, "kind": "target", "angle": 0, "group": "s9" }
+    ], "apertures": [
+      { "at": 190, "blades": 6, "open": 1, "keys": ["s9"] }
+    ] },
+    { "length": 240, "turn": -80, "climb": 14, "obstacles": [       // 5160 - 5400
+      { "at": 60, "kind": "target", "angle": 180, "group": "sa" }
+    ], "apertures": [
+      { "at": 190, "blades": 6, "open": 1, "angle": 180, "keys": ["sa"] }
+    ] },
+    { "length": 240, "turn": 65, "climb": -12, "obstacles": [       // 5400 - 5640
+      { "at": 60, "kind": "target", "angle": 90, "group": "sb" }
+    ], "apertures": [
+      { "at": 190, "blades": 6, "open": 1, "angle": 90, "keys": ["sb"] }
+    ] },
+
+    // Handover to Roulette: straighten and blend into its tube, then the first 276 units of its
+    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here;
+    // the level finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 5640 - 5760
+    { "length": 276 }                                               // 5760 - 6036
   ]
 }

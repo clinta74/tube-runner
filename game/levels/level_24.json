@@ -1,133 +1,158 @@
 {
-  "name": "Blackout",
+  "name": "Ransom",
+  "id": "ransom",
   "next": "level_25.json",
   "speed": 155,
   "segmentLength": 60,
 
-  // Visibility, used as the difficulty rather than density. A straight shows everything early; a
-  // bend hides it until the corner opens. A run of tight alternating bends - a twist - keeps the
-  // reveal short the whole way through, which is the cheapest way to make a level bite without
-  // adding a single obstacle.
-  // So this level is mostly twists, and the obstacles in them are ordinary. What makes it hard is
-  // that nothing is ever seen from far away. The theme helps: the fade is pulled in close, so the
-  // track ahead goes dark sooner than in any other level.
+  // Tollgate's test. Nothing new: locked pads from 23, doors from 21, ordered groups from 13, forks
+  // and wells from further back. What changes is that the locks now come with a bill attached.
+  // Three things are stacked here that were kept apart before:
+  //   - doors with three keys, spread far enough apart that they cannot be cleared in one sweep;
+  //   - keys that are also ordered, so they will not break out of turn and the ring gun takes one
+  //     member a shot rather than clearing the group;
+  //   - a pad and a door on the same group, where the shot that opens the way also pays for it.
+  // And the level charges for misses. A pad missed costs the prize; a door missed costs a shield;
+  // the well down the quick branch costs the clock. Every lock here is worth something different,
+  // which is the whole point of putting them in one level.
   "theme": {
-    "darks": ["#0e1014", "#0b0d10", "#131519"],
-    "lights": ["#4c5560", "#3f4751", "#59636f"],
-    "seamDark": "#050607",
-    "seamLight": "#8fa8bd",
-    "far": "#000000",
-    "ship": "#cfe4f5",
-    "block": "#c8d4e0",
-    "target": "#ff5a5a",
-    "breakable": "#6fd8a8",
-    "fadeStart": 22,
-    "fadeEnd": 190,
-    "glow": 0.15
+    "darks": ["#2b1418", "#231014", "#351a1f"],
+    "lights": ["#a8545f", "#8f4751", "#bd6470"],
+    "seamDark": "#16080b",
+    "seamLight": "#ffb3bd",
+    "far": "#090304",
+    "ship": "#ffb3bd",
+    "block": "#e4c6ca",
+    "target": "#ffe14a",
+    "breakable": "#7cffb0",
+    "fadeStart": 35,
+    "fadeEnd": 345,
+    "glow": 0.35
   },
 
   "sections": {
-    "tube":   { "radius": 6 },
-    "narrow": { "radius": 4.8 },
-    "oval":   { "halfWidth": 9, "halfHeight": 4.5 },
-    "box":    { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 }
+    "tube":         { "radius": 6 },
+    "wide":         { "radius": 7.5 },
+    "narrow":       { "radius": 5 },
+    "oval":         { "halfWidth": 9, "halfHeight": 4.5 },
+    "box":          { "halfWidth": 9.5, "halfHeight": 4.2, "squareness": 1 },
+    "chamber":      { "halfWidth": 14, "halfHeight": 6.5, "squareness": 0.6 },
+    "branch":       { "radius": 6 },
+    "branch-tight": { "radius": 4.5 }
   },
 
   "start": "tube",
   "track": [
-    { "length": 200 },                                              //    0 -  200
-
-    // A straight with a hard pattern on it, shown in full. The same pattern comes back in a twist
-    // later on, and the difference between the two is the whole level.
-    { "length": 340, "obstacles": [                                 //  200 -  540
-      { "at": 90,  "angle": 0,   "width": 9 },
-      { "at": 170, "angle": 120, "width": 9 },
-      { "at": 250, "angle": 240, "width": 9 }
+    { "length": 340, "pickups": [                                   //    0 -  340
+      { "at": 300, "kind": "rapid-fire" }
     ] },
 
-    // The twist begins. Same three blocks, one per bend, each hidden until its corner opens.
-    { "length": 180, "turn": 75, "obstacles": [                     //  540 -  720
-      { "at": 100, "angle": 0, "width": 9 }
-    ] },
-    { "length": 180, "turn": -80, "climb": 12, "obstacles": [       //  720 -  900
-      { "at": 95, "angle": 120, "width": 9 }
-    ] },
-    { "length": 180, "turn": 70, "climb": -14, "obstacles": [       //  900 - 1080
-      { "at": 95, "angle": 240, "width": 9 }
+    // Three keys, one door. They are far enough apart around the tube that clearing them is a lap of
+    // the wall, and the door is wide enough that arriving with one still standing is a wall.
+    { "length": 540, "section": "wide", "obstacles": [              //  340 -  880
+      { "at": 100, "kind": "target", "angle": 45,   "group": "r1" },
+      { "at": 190, "kind": "target", "angle": 165,  "group": "r1" },
+      { "at": 280, "kind": "target", "angle": -75,  "group": "r1" },
+      { "at": 450, "lockedBy": "r1", "angle": 0, "width": 28, "height": 3 }
     ] },
 
-    { "length": 240, "section": "oval", "pickups": [                // 1080 - 1320
-      { "at": 120, "kind": "rapid-fire" }
+    // The same three keys, now ordered, so they have to be taken in turn: the one whose turn it is
+    // burns bright and the rest sit dim. The pad behind the door is on the same group, so the last
+    // shot opens the way and pays for it at once.
+    { "length": 520, "section": "tube", "turn": -45, "obstacles": [ //  880 - 1400
+      { "at": 110, "kind": "target", "angle": 90,   "group": "r2", "order": 0 },
+      { "at": 200, "kind": "target", "angle": -120, "group": "r2", "order": 1 },
+      { "at": 290, "kind": "target", "angle": 180,  "group": "r2", "order": 2 },
+      { "at": 420, "lockedBy": "r2", "angle": 0, "width": 26, "height": 3 }
+    ], "pickups": [
+      { "at": 470, "kind": "shield", "lockedBy": "r2" }
     ] },
 
-    // Gates in a twist. A gate needs its cycle read, and a bend gives no time to read one - so the
-    // answer here is to arrive slowly enough to watch it, which costs exactly what it sounds like.
-    { "length": 190, "section": "tube", "turn": -75, "obstacles": [ // 1320 - 1510
-      { "at": 110, "period": 2.2, "angle": 0, "width": 20, "height": 3 }
-    ] },
-    { "length": 190, "turn": 80, "climb": -12, "obstacles": [       // 1510 - 1700
-      { "at": 100, "period": 2.2, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
-    ] },
-    { "length": 190, "turn": -70, "climb": 14, "obstacles": [       // 1700 - 1890
-      { "at": 100, "period": 2.2, "angle": 90, "width": 18, "height": 3 }
-    ] },
-
-    { "length": 240, "pickups": [                                   // 1890 - 2130
-      { "at": 120, "kind": "shield", "angle": 180 }
+    // A well between a key and the pad it lights. Both are up on the far side, and the well is high
+    // on the wall where the curve turns it toward the ship, so it reads from a long way out - the
+    // gamble is whether the prize is worth flying that line at all.
+    { "length": 480, "section": "oval", "speed": 158, "obstacles": [ // 1400 - 1880
+      { "at": 90, "kind": "target", "angle": 120, "group": "r3" }
+    ], "warps": [
+      { "at": 280, "angle": 150, "back": 200, "span": 0.24 }
+    ], "pickups": [
+      { "at": 400, "kind": "shield", "angle": 180, "lockedBy": "r3" }
     ] },
 
-    // Plates in a twist: unanswerable and unseen until close. Narrow bore, so the wall left over
-    // after a plate is small, and there is no time to find it from far off.
-    { "length": 200, "section": "narrow", "speed": 165, "turn": 80, "obstacles": [   // 2130 - 2330
-      { "at": 110, "kind": "plate", "angle": 0, "width": 10, "height": 3 }
+    // A fork where the quick road is shut. The key is in the chamber, so the choice is made with the
+    // shot already taken or already missed - and the long way round is open either way.
+    { "length": 160, "section": "chamber", "obstacles": [           // 1880 - 2040
+      { "at": 70, "kind": "target", "angle": -90, "group": "rf" }
     ] },
-    { "length": 200, "turn": -85, "climb": 14, "obstacles": [       // 2330 - 2530
-      { "at": 100, "kind": "plate", "angle": 180, "width": 10, "height": 3 }
-    ] },
-    { "length": 200, "turn": 75, "climb": -16, "obstacles": [       // 2530 - 2730
-      { "at": 100, "kind": "plate", "angle": 90, "width": 10, "height": 3 }
+    { "length": 440, "turn": 85, "split": {                         // 2040 - 2480
+        "section": "branch",
+        "branches": [
+          { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
+          { "offsets": [[0, 8, 0], [150, 32, 0], [290, 32, 0], [440, 8, 0]], "section": "branch-tight" }
+        ]
+      },
+      "obstacles": [
+        { "at": 60,  "branch": 1, "lockedBy": "rf", "angle": 0, "width": 20, "height": 3 },
+        { "at": 230, "branch": 1, "angle": 90, "width": 6 },
+        { "at": 180, "branch": 0, "angle": 0, "count": 2, "spacing": 100, "angleStep": 120, "width": 7 }
+      ],
+      "pickups": [
+        { "at": 330, "branch": 1, "kind": "shield" }
+      ]
+    },
+    { "length": 140, "section": "tube" },                           // 2480 - 2620
+
+    // Keys behind plates. The line the plates leave is not the line either key is on, so the shots
+    // have to be taken from a place that is uncomfortable to hold.
+    { "length": 500, "section": "box", "speed": 160, "obstacles": [ // 2620 - 3120
+      { "at": 110, "kind": "plate", "angle": 60,  "width": 11, "height": 3 },
+      { "at": 170, "kind": "target", "angle": 180, "group": "r4" },
+      { "at": 240, "kind": "plate", "angle": -60, "width": 11, "height": 3 },
+      { "at": 300, "kind": "target", "angle": 0,   "group": "r4" },
+      { "at": 430, "lockedBy": "r4", "angle": 90, "width": 26, "height": 3 }
     ] },
 
-    // A straight to breathe, and to make the next twist feel darker by contrast.
-    { "length": 300, "section": "tube", "speed": 160, "pickups": [  // 2730 - 3030
-      { "at": 150, "kind": "ring-gun" }
-    ], "obstacles": [
-      { "at": 230, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+    // Keys on movers, sliding while the shot is lined up, and a pad that is only worth the detour if
+    // both land. Lead them.
+    { "length": 460, "section": "tube", "turn": 50, "obstacles": [  // 3120 - 3580
+      { "at": 120, "kind": "target", "sweep": 9,  "sweepTime": 3.0, "angle": 60,  "group": "r5" },
+      { "at": 210, "kind": "target", "sweep": 9,  "sweepTime": 2.6, "angle": -60, "group": "r5" }
+    ], "pickups": [
+      { "at": 380, "kind": "ring-gun", "lockedBy": "r5" }
     ] },
 
-    // A well in a twist. The sign ring stands 75 units back - which, on a bend this tight, is the
-    // only reason it is fair at all: the signs come round the corner before the well does.
-    { "length": 210, "turn": -80, "warps": [                        // 3030 - 3240
-      { "at": 150, "angle": 90 }
-    ] },
-    { "length": 210, "turn": 85, "climb": 12, "obstacles": [        // 3240 - 3450
-      { "at": 105, "sweep": 10, "sweepTime": 2.4, "width": 8, "angle": 0 }
-    ] },
-
-    // The box in the dark: flat floor and ceiling change how the wall reads, and here it cannot be
-    // read in advance at all.
-    { "length": 380, "section": "box", "speed": 170, "turn": -55, "obstacles": [   // 3450 - 3830
-      { "at": 90,  "angle": 0,   "width": 10 },
-      { "at": 190, "period": 2.0, "angle": 180, "width": 18, "height": 3 },
-      { "at": 300, "kind": "plate", "angle": 90, "width": 11, "height": 3 }
+    // Gates on the cycle with the key beyond them, and the door beyond that. Hurry or hold back; the
+    // gap that lets the shot through is the same gap that lets the ship through.
+    { "length": 500, "section": "narrow", "speed": 163, "obstacles": [ // 3580 - 4080
+      { "at": 110, "period": 2.4, "angle": 0,   "width": 20, "height": 3 },
+      { "at": 190, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
+      { "at": 290, "kind": "target", "angle": 90, "group": "r6" },
+      { "at": 430, "lockedBy": "r6", "angle": 0, "width": 22, "height": 3 }
     ] },
 
-    // Run for home: the tightest twist in the game, one thing per bend, nothing visible until it is.
-    { "length": 180, "section": "tube", "speed": 175, "turn": 85, "obstacles": [   // 3830 - 4010
-      { "at": 95, "angle": 0, "width": 9 }
-    ] },
-    { "length": 180, "turn": -90, "climb": 14, "obstacles": [       // 4010 - 4190
-      { "at": 95, "kind": "plate", "angle": 180, "width": 11, "height": 3 }
-    ] },
-    { "length": 180, "turn": 80, "climb": -16, "obstacles": [       // 4190 - 4370
-      { "at": 95, "period": 2.0, "angle": 90, "width": 18, "height": 3 }
+    { "length": 240, "section": "tube", "pickups": [                // 4080 - 4320
+      { "at": 120, "kind": "shield", "angle": 90 }
     ] },
 
-    // Handover to Long Odds: straighten and blend into its tube, then the first 276 units of its
-    // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
-    // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4370 - 4490
-    { "length": 200 },                                              // 4490 - 4690
-    { "length": 76, "turn": 7.6 }                                   // 4690 - 4766
+    // Run for home. A twist, and on each bend a key whose door is already round the corner: the shot
+    // is taken on faith and the wall arrives before there is time to regret it.
+    { "length": 220, "speed": 165, "turn": 75, "obstacles": [       // 4320 - 4540
+      { "at": 60,  "kind": "target", "angle": 90, "group": "r7" },
+      { "at": 170, "lockedBy": "r7", "angle": 0, "width": 22, "height": 3 }
+    ] },
+    { "length": 220, "turn": -80, "climb": 14, "obstacles": [       // 4540 - 4760
+      { "at": 60,  "kind": "target", "angle": -90, "group": "r8" },
+      { "at": 170, "lockedBy": "r8", "angle": 180, "width": 22, "height": 3 }
+    ] },
+    { "length": 220, "turn": 65, "climb": -12, "obstacles": [       // 4760 - 4980
+      { "at": 60,  "kind": "target", "angle": 180, "group": "r9" },
+      { "at": 170, "lockedBy": "r9", "angle": 90, "width": 22, "height": 3 }
+    ] },
+
+    // Handover to Iris: straighten and blend into its tube, then the first 276 units of its track, so
+    // the camera sees the same tube on both sides of the join. Nothing to hit out here; the level
+    // finishes 16 units into this copy, which is where the next level places the ship.
+    { "length": 120, "section": "tube" },                           // 4980 - 5100
+    { "length": 276 }                                               // 5100 - 5376
   ]
 }

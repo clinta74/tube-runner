@@ -5,6 +5,14 @@ public sealed class Level
 {
     public required string Name { get; init; }
 
+    /// <summary>
+    /// Stable identifier for this level, used as its key in <see cref="BestTimes"/>. It is the one
+    /// thing about a level that must never change: file names carry the running order and so move
+    /// whenever a level is inserted, and the display name is free to be reworded, but a time saved
+    /// against an id stays attached to the level that earned it.
+    /// </summary>
+    public required string Id { get; init; }
+
     /// <summary>File name of the level that follows this one, if any.</summary>
     public string? Next { get; init; }
 

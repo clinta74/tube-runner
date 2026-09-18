@@ -1,116 +1,155 @@
 {
-  "name": "Clockwork",
+  "name": "Neon Run",
+  "id": "neon-run",
   "next": "level_11.json",
-  "speed": 105,
+  "speed": 100,
   "segmentLength": 60,
 
-  // Block A opens here: full shields on the way in, then one new idea taught on its own.
-  // Timed gates - solid for half a cycle, gone for the other half. The throttle is the answer, which
-  // is why this is the first of the late mechanics: the player has had a speed control since level 3
-  // and has never once been asked to use it as timing.
   "theme": {
-    "darks": ["#1b2430", "#16202b", "#232b38"],
-    "lights": ["#7f96ad", "#6d8499", "#8d9bb2"],
-    "seamDark": "#0d1319",
-    "seamLight": "#9fe8ff",
-    "far": "#060a0e",
-    "ship": "#9fe8ff",
-    "block": "#c3d2e2",
-    "target": "#ff5a7a",
-    "breakable": "#7cc4ff",
-    "fadeStart": 35,
-    "fadeEnd": 340,
-    "glow": 0.25
+    "darks": ["#0c0620", "#041421", "#140418"],
+    "lights": ["#c02aa8", "#29b8cc", "#ccb029"],
+    "seamDark": "#000000",
+    "seamLight": "#ffffff",
+    "far": "#000000",
+    "ship": "#ffffff",
+    "block": "#b8c0e0",
+    "target": "#ff2050",
+    "breakable": "#7cff9a",
+    "fadeStart": 40,
+    "fadeEnd": 360,
+    "glow": 0.6
   },
 
   "sections": {
-    "tube": { "radius": 6 },
-    "oval": { "halfWidth": 9, "halfHeight": 4.5 },
-    "wide": { "radius": 7 }
+    "handover": { "radius": 6 },
+    "tube":     { "radius": 5.5 },
+    "oval":     { "halfWidth": 9, "halfHeight": 4 },
+    "box":      { "halfWidth": 9, "halfHeight": 4, "squareness": 1 },
+    "flat":     { "radius": 5.5, "opening": 1 },
+    "box-flat": { "halfWidth": 9, "halfHeight": 4, "squareness": 1, "opening": 1 },
+    "chamber": { "halfWidth": 14, "halfHeight": 6, "squareness": 0.6 },
+    "branch-tight": { "radius": 4 }
   },
 
+  // Obstacle "at" values are measured from the start of their piece.
+  // The distances in the comments are for `tube play --start`.
   "start": "tube",
   "track": [
-    // The refill that opens the block. Nothing else here: a new mechanic is about to be taught, and
-    // learning one on a last shield is how a run dies to unfairness rather than difficulty.
-    { "length": 320, "pickups": [                                   //    0 -  320
-      { "at": 290, "kind": "full-shields" }
+    { "length": 200 },                                              //    0 -  200
+    { "length": 150, "turn": -50, "obstacles": [                    //  200 -  350
+      { "at": 80, "angle": 0, "count": 4, "spacing": 50, "angleStep": 60 },
+      { "at": 120, "kind": "target", "angle": 180, "count": 3, "spacing": 50 }
+    ] },
+    { "length": 150, "turn": 50, "climb": -12, "pickups": [         //  350 -  500
+      { "at": 60, "kind": "shield" }
     ] },
 
-    // FREE LOOK. One gate, on a straight, with nothing else going on. It is a quarter of the way
-    // round the tube, so it can simply be flown around - the point is to watch it open and shut.
-    { "length": 160, "section": "wide", "obstacles": [              //  320 -  480
-      { "at": 130, "period": 2.4, "angle": 90, "width": 9, "height": 3 }
-    ] },
-
-    // Now one that cannot be dodged: it spans the floor. Slow into it or hurry - either reads.
-    { "length": 240, "section": "tube", "obstacles": [              //  480 -  720
-      { "at": 120, "period": 2.6, "angle": 0, "width": 20, "height": 3 }
-    ] },
-
-    // A pair in opposite phase: whichever is open is the way through. This is the shape the rest of
-    // the level builds on, and it is a steering problem as much as a timing one.
-    { "length": 300, "turn": 30, "obstacles": [                     //  720 - 1020
-      { "at": 110, "period": 2.6, "phase": 0,   "angle": 0,   "width": 20, "height": 3 },
-      { "at": 110, "period": 2.6, "phase": 0.5, "angle": 180, "width": 20, "height": 3 },
-      { "at": 230, "period": 2.6, "phase": 0.5, "angle": 0,   "width": 20, "height": 3 },
-      { "at": 230, "period": 2.6, "phase": 0,   "angle": 180, "width": 20, "height": 3 }
-    ] },
-
-    { "length": 200, "section": "oval", "speed": 115, "pickups": [  // 1020 - 1220
-      { "at": 90, "kind": "rapid-fire" }
+    // Flat: a gap, a jump to the ceiling, a zigzag up there, and a jump back.
+    { "length": 100, "section": "flat", "speed": 125 },             //  500 -  600
+    { "length": 500, "pickups": [                                   //  600 - 1100
+      { "at": 280, "kind": "shield", "surface": "ceiling", "x": -10 }
     ], "obstacles": [
-      { "at": 150, "kind": "target", "angle": 90 }
+      { "at": 50, "x": -8, "width": 14 },
+      { "at": 50, "x": 12, "width": 10 },
+      { "at": 120, "width": 80, "height": 2.5 },
+      { "at": 200, "surface": "ceiling", "x": 5, "width": 12, "count": 3, "spacing": 60, "xStep": -10 },
+      { "at": 220, "kind": "target", "surface": "ceiling", "x": -12, "count": 3, "spacing": 60, "xStep": 12 },
+      { "at": 420, "surface": "ceiling", "width": 80, "height": 2.5 },
+      { "at": 460, "kind": "target" }
+    ] },
+    { "length": 360, "section": "tube" },                           // 1100 - 1460
+
+    { "length": 100, "section": "oval", "turn": 20, "speed": 110, "pickups": [   // 1460 - 1560
+      { "at": 40, "kind": "rapid-fire" }
+    ] },
+    { "length": 250, "turn": -60, "obstacles": [                    // 1560 - 1810
+      { "at": 30, "angle": 60, "count": 4, "spacing": 55, "angleStep": -40 },
+      { "at": 80, "kind": "target", "angle": 180, "count": 3, "spacing": 55 }
+    ] },
+    { "length": 100, "section": "tube", "turn": 20, "pickups": [    // 1810 - 1910
+      { "at": 40, "kind": "ring-gun" }
+    ] },
+    { "length": 200, "turn": 30, "climb": 20, "obstacles": [        // 1910 - 2110
+      { "at": 30, "angle": 0, "count": 6, "spacing": 30, "angleStep": 60 }
     ] },
 
-    // Gates mixed with ordinary blocks, so reading which is which matters. The blocks are the ones
-    // that never move; arriving expecting a gate to open is the mistake this stretch sells.
-    { "length": 340, "section": "tube", "turn": -40, "obstacles": [ // 1220 - 1560
-      { "at": 60,  "angle": 90, "width": 8 },
-      { "at": 140, "period": 2.2, "angle": -90, "width": 16, "height": 3 },
-      { "at": 220, "angle": 180, "width": 8 },
-      { "at": 290, "period": 2.2, "phase": 0.5, "angle": 0, "width": 16, "height": 3 }
+    { "length": 100, "section": "box", "speed": 125, "pickups": [   // 2110 - 2210
+      { "at": 50, "kind": "shield" }
     ] },
-
-    // Breathe, and hand back what the last stretch probably cost.
-    { "length": 220, "pickups": [                                   // 1560 - 1780
-      { "at": 110, "kind": "shield", "angle": 180 }
+    { "length": 200, "turn": -40, "obstacles": [                    // 2210 - 2410
+      { "at": 30, "width": 6 },
+      { "at": 90, "x": -6, "width": 6 },
+      { "at": 90, "x": 6, "width": 6 },
+      { "at": 150, "kind": "target", "angle": 90 },
+      { "at": 150, "kind": "target", "angle": -90 }
     ] },
-
-    // A run of three in rhythm, all on the same cycle. Find the beat and they open like a door;
-    // fight it and every one of them is shut.
-    { "length": 420, "speed": 125, "turn": 35, "climb": 10, "obstacles": [   // 1780 - 2200
-      { "at": 80, "period": 2.8, "angle": 0, "width": 22, "height": 3, "count": 3, "spacing": 120 }
+    { "length": 100, "section": "box-flat", "speed": 145, "pickups": [   // 2410 - 2510
+      { "at": 50, "kind": "full-shields" }
     ] },
-
-    // The same rhythm, but staggered, so holding one speed no longer works.
-    { "length": 420, "turn": -45, "obstacles": [                    // 2200 - 2620
-      { "at": 70,  "period": 2.8, "phase": 0,    "angle": 0,   "width": 22, "height": 3 },
-      { "at": 190, "period": 2.8, "phase": 0.33, "angle": 120, "width": 22, "height": 3 },
-      { "at": 310, "period": 2.8, "phase": 0.66, "angle": 240, "width": 22, "height": 3 }
+    { "length": 400, "obstacles": [                                 // 2510 - 2910
+      { "at": 50, "x": -15, "width": 14, "count": 6, "spacing": 45, "xStep": 6 },
+      { "at": 330, "width": 80, "height": 2.5 },
+      { "at": 370, "kind": "target", "surface": "ceiling" }
     ] },
+    { "length": 360, "section": "tube" },                           // 2910 - 3270
 
-    { "length": 200, "section": "wide", "pickups": [                // 2620 - 2820
-      { "at": 100, "kind": "ring-gun" }
+    { "length": 250, "turn": 60, "pickups": [                       // 3270 - 3520
+      { "at": 20, "kind": "ring-gun" }
     ], "obstacles": [
-      { "at": 150, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }
+      { "at": 60, "kind": "target", "angle": 0, "count": 5, "spacing": 40, "angleStep": 72 }
     ] },
 
-    // Run for home: gates on a twist, where the bend hides the cycle until you are on it.
-    { "length": 180, "section": "tube", "turn": 65, "obstacles": [  // 2820 - 3000
-      { "at": 100, "period": 2.4, "angle": 0, "width": 20, "height": 3 }
+    // Widen out, fork left/right, merge, and narrow back down.
+    { "length": 100, "section": "chamber", "speed": 160, "pickups": [    // 3520 - 3620
+      { "at": 30, "kind": "shield-slot", "angle": 90 }
+    ], "obstacles": [
+      { "at": 60, "angle": 180 }
     ] },
-    { "length": 180, "turn": -70, "climb": 12, "obstacles": [       // 3000 - 3180
-      { "at": 90, "period": 2.4, "phase": 0.5, "angle": 180, "width": 20, "height": 3 }
-    ] },
-    { "length": 180, "turn": 60, "climb": -14, "obstacles": [       // 3180 - 3360
-      { "at": 90, "period": 2.4, "angle": 90, "width": 18, "height": 3 }
+    // This was a 400-unit dive with the branches forked over and under it - offsets in the same
+    // plane as the bend, which is the one direction that saves nothing, so the short way came out
+    // 0.8% shorter. It is a hard right now, with the fork across the turn. The piece is longer
+    // because a corner this tight at 160 u/s needs the room, and because the saving is a fraction
+    // of the span, a longer piece needs a harder bend to pay the same.
+    { "length": 550, "turn": 110, "split": {                        // 3620 - 4170
+        "section": "tube",
+        "branches": [
+          // The right branch runs round the inside: shorter and tighter, and full of blocks. The
+          // long way round is roomier, with targets to pick off.
+          { "offsets": [[0, 7.5, 0], [180, 40, 0], [370, 40, 0], [550, 7.5, 0]], "section": "branch-tight" },
+          { "offsets": [[0, -7.5, 0], [180, -40, 0], [370, -40, 0], [550, -7.5, 0]] }
+        ]
+      },
+      "pickups": [
+        // The short branch has the spiral to thread, so it keeps a shield.
+        { "at": 340, "branch": 0, "kind": "shield" }
+      ],
+      "obstacles": [
+        // A spiral of blocks the short way, targets the long way.
+        { "at": 150, "branch": 0, "angle": 0, "count": 5, "spacing": 55, "angleStep": 72 },
+        { "at": 470, "branch": 0, "angle": 90, "count": 2, "spacing": 40, "angleStep": 180 },
+        { "at": 180, "branch": 1, "kind": "target", "angle": 180, "count": 4, "spacing": 65 }
+      ]
+    },
+    { "length": 100, "section": "tube", "pickups": [                // 4170 - 4270
+      { "at": 50, "kind": "unstoppable" }
     ] },
 
-    // Handover to Metronome: straighten and blend into its tube, then the first 276 units of its
+    // Twisting finish, at full speed: the bends give you almost no warning.
+    { "length": 150, "turn": -80, "obstacles": [                    // 4270 - 4420
+      { "at": 90, "angle": 0, "count": 2, "spacing": 40, "angleStep": 120 }
+    ] },
+    { "length": 150, "turn": 80, "climb": -14, "obstacles": [       // 4420 - 4570
+      { "at": 70, "angle": 180 },
+      { "at": 115, "kind": "target", "angle": 0 }
+    ] },
+    { "length": 150, "turn": -70, "climb": 16, "obstacles": [       // 4570 - 4720
+      { "at": 80, "angle": 90, "count": 3, "angleStep": 60 }
+    ] },
+
+    // Handover to Clockwork: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 3360 - 3480
-    { "length": 276 }                                               // 3480 - 3756
+    { "length": 120, "section": "handover" },                       // 4720 - 4840
+    { "length": 276 }                                               // 4840 - 5116
   ]
 }

@@ -76,20 +76,25 @@ public static class LevelLoader
 
         // Things inside a piece are placed from its start; top-level ones from the track's start.
         var obstacles = ToObstacles(data.Obstacles, track, 0, "Obstacle");
+        obstacles.AddRange(ToApertures(data.Apertures, track, 0, "Aperture"));
         var pickups = ToPickups(data.Pickups, track, 0, "Pickup");
         var warps = ToWarps(data.Warps, track, 0, "Warp");
         var thrustZones = ToThrustZones(data.ThrustZones, track, 0, "Thrust zone");
         for (int i = 0; i < data.Track.Count; i++)
         {
             obstacles.AddRange(ToObstacles(data.Track[i].Obstacles, track, pieceStarts[i], $"Track piece {i}, obstacle"));
+            obstacles.AddRange(ToApertures(data.Track[i].Apertures, track, pieceStarts[i], $"Track piece {i}, aperture"));
             pickups.AddRange(ToPickups(data.Track[i].Pickups, track, pieceStarts[i], $"Track piece {i}, pickup"));
             warps.AddRange(ToWarps(data.Track[i].Warps, track, pieceStarts[i], $"Track piece {i}, warp"));
             thrustZones.AddRange(ToThrustZones(data.Track[i].ThrustZones, track, pieceStarts[i], $"Track piece {i}, thrust zone"));
         }
 
+        RequireKeysWork(obstacles, pickups);
+
         return new Level
         {
             Name = data.Name,
+            Id = Identifier(data),
             Next = data.Next,
             Speed = Positive(data.Speed, "speed"),
             SegmentLength = Positive(data.SegmentLength, "segmentLength"),
@@ -100,6 +105,65 @@ public static class LevelLoader
             Warps = warps,
             ThrustZones = thrustZones,
         };
+    }
+
+    /// <summary>
+    /// Checks that every 'lockedBy' names a group something is in, and that the whole of that group
+    /// stands before the thing it opens. Both mistakes load and play, and both look exactly like the
+    /// player having missed a shot: a group that does not exist is a door that never opens or a pad
+    /// that never lights, and a key further down the track than its door is one that cannot be shot
+    /// in time however well it is flown.
+    /// </summary>
+    private static void RequireKeysWork(List<Obstacle> obstacles, List<Pickup> pickups)
+    {
+        var last = new Dictionary<string, double>();
+        foreach (var o in obstacles)
+        {
+            if (o.Group is null) continue;
+            last[o.Group] = Math.Max(last.GetValueOrDefault(o.Group, double.MinValue), o.S);
+        }
+
+        void Check(string what, double s, string group)
+        {
+            if (!last.TryGetValue(group, out double key))
+            {
+                throw new LevelFormatException($"{what} at {s:0}: 'lockedBy' names the group '{group}', which nothing is in.");
+            }
+            if (key >= s)
+            {
+                throw new LevelFormatException(
+                    $"{what} at {s:0} is locked by '{group}', whose last key is at {key:0} - behind it. "
+                    + "A key has to be shot before the thing it opens is reached.");
+            }
+        }
+
+        foreach (var o in obstacles)
+        {
+            if (o.LockedBy is not null) Check("Obstacle", o.S, o.LockedBy);
+        }
+        foreach (var p in pickups)
+        {
+            if (p.LockedBy is not null) Check("Pickup", p.S, p.LockedBy);
+        }
+    }
+
+    /// <summary>
+    /// A level's <see cref="Level.Id"/>: what the file declares, or its name folded down to one if
+    /// it declares none. The fallback is there so a bench or scratch level needs no ceremony;
+    /// anything whose times are worth keeping should say its id out loud, because a name reworded
+    /// later would otherwise take the best times with it.
+    /// </summary>
+    private static string Identifier(LevelData data)
+    {
+        if (!string.IsNullOrWhiteSpace(data.Id)) return data.Id.Trim();
+
+        var id = new System.Text.StringBuilder();
+        foreach (char c in data.Name.ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(c)) id.Append(c);
+            else if (id.Length > 0 && id[^1] != '-') id.Append('-');
+        }
+        return id.ToString().Trim('-') is { Length: > 0 } name ? name : "untitled";
     }
 
     private static List<IReadOnlyList<OffsetKey>> ToBranches(SplitData split, int piece)
@@ -190,6 +254,78 @@ public static class LevelLoader
         return obstacles;
     }
 
+    /// <summary>
+    /// Expands each aperture into the blades that make it up. A blade is an ordinary locked
+    /// obstacle covering its share of the way around the tube, so nothing about the collision, the
+    /// shooting or unstoppable needs to know apertures exist; only the view does, and it finds them
+    /// by the ring name stamped on every blade.
+    /// </summary>
+    private static List<Obstacle> ToApertures(List<ApertureData> list, Track track, double offset, string label)
+    {
+        var blades = new List<Obstacle>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            var a = list[i];
+            string where = $"{label} {i}";
+            double s = offset + a.At;
+            if (s < 0 || s > track.Length)
+            {
+                throw new LevelFormatException($"{where}: 'at' {s:0} is off the track (0 to {track.Length:0}).");
+            }
+            // Three blades is the fewest that reads as a ring turning rather than as a door; past a
+            // dozen each one is thinner than the ship and the whole thing is a wall with a texture.
+            if (a.Blades is < 3 or > 12) throw new LevelFormatException($"{where}: 'blades' must be between 3 and 12.");
+            if (a.Open < 0 || a.Open >= a.Blades)
+            {
+                throw new LevelFormatException($"{where}: 'open' is how many blades are left out and must be between 0 and {a.Blades - 1}.");
+            }
+            if (a.Keys.Length == 0) throw new LevelFormatException($"{where}: 'keys' must name at least one target group.");
+            if (a.Keys.Length > a.Blades - a.Open)
+            {
+                throw new LevelFormatException($"{where}: {a.Keys.Length} keys for {a.Blades - a.Open} blades - some key would open nothing.");
+            }
+
+            var split = track.SplitAt(s);
+            int branch = a.Branch ?? -1;
+            if (split is not null && (branch < 0 || branch >= split.BranchCount))
+            {
+                throw new LevelFormatException($"{where}: at {s:0} the track is split; set 'branch' (0 to {split.BranchCount - 1}).");
+            }
+            if (split is null && branch >= 0) throw new LevelFormatException($"{where}: 'branch' only applies inside a split.");
+
+            var shape = new ProfileShape(track.SectionAt(s, branch));
+            if (!shape.IsClosed)
+            {
+                throw new LevelFormatException($"{where}: an aperture needs a closed tube to ring; flat sections have no way round.");
+            }
+
+            float step = shape.Perimeter / a.Blades;
+            for (int b = a.Open; b < a.Blades; b++)
+            {
+                // Blade 0 is centred on the floor, and they run round to the right from there.
+                float along = (b + 0.5f) * step + a.Angle / 360f * shape.Perimeter;
+                var (surface, x) = shape.Wrap(Surface.Floor, along);
+                blades.Add(new Obstacle
+                {
+                    Kind = ObstacleKind.Block,
+                    S = s,
+                    Branch = branch,
+                    Surface = surface,
+                    X = x,
+                    Width = step,
+                    Length = a.Length,
+                    Height = a.Height,
+                    Hits = a.Hits,
+                    LockedBy = a.Keys[(b - a.Open) % a.Keys.Length],
+                    Aperture = $"{label.ToLowerInvariant().Replace(' ', '-')}-{i}",
+                    Blade = b,
+                    BladeCount = a.Blades,
+                });
+            }
+        }
+        return blades;
+    }
+
     private static List<Pickup> ToPickups(List<PickupData> list, Track track, double offset, string label)
     {
         var pickups = new List<Pickup>();
@@ -211,7 +347,10 @@ public static class LevelLoader
 
             foreach (var (s, branch, surface, x) in Place(p, track, offset, where))
             {
-                pickups.Add(new Pickup { Kind = kind, S = s, Branch = branch, Surface = surface, X = x });
+                pickups.Add(new Pickup
+                {
+                    Kind = kind, S = s, Branch = branch, Surface = surface, X = x, LockedBy = p.LockedBy,
+                });
             }
         }
         return pickups;
@@ -394,6 +533,7 @@ public static class LevelLoader
     private sealed class LevelData
     {
         public string Name { get; set; } = "Untitled";
+        public string? Id { get; set; }
         public string? Next { get; set; }
         public float Speed { get; set; } = 80f;
         public float SegmentLength { get; set; } = 60f;
@@ -402,6 +542,7 @@ public static class LevelLoader
         public string Start { get; set; } = "";
         public List<PieceData> Track { get; set; } = new();
         public List<ObstacleData> Obstacles { get; set; } = new();
+        public List<ApertureData> Apertures { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
         public List<WarpData> Warps { get; set; } = new();
         public List<ThrustZoneData> ThrustZones { get; set; } = new();
@@ -425,9 +566,23 @@ public static class LevelLoader
         public float? Speed { get; set; }
         public SplitData? Split { get; set; }
         public List<ObstacleData> Obstacles { get; set; } = new();
+        public List<ApertureData> Apertures { get; set; } = new();
         public List<PickupData> Pickups { get; set; } = new();
         public List<WarpData> Warps { get; set; } = new();
         public List<ThrustZoneData> ThrustZones { get; set; } = new();
+    }
+
+    private sealed class ApertureData
+    {
+        public double At { get; set; }
+        public int? Branch { get; set; }
+        public int Blades { get; set; } = 6;
+        public string[] Keys { get; set; } = [];
+        public int Open { get; set; }
+        public float Angle { get; set; }
+        public float Length { get; set; } = 2.5f;
+        public float Height { get; set; } = 2.5f;
+        public int Hits { get; set; }
     }
 
     // No numbers of its own: each kind makes a fixed cut. A level still carrying 'min' or 'max' fails
@@ -495,6 +650,7 @@ public static class LevelLoader
     private sealed class PickupData : PlacementData
     {
         public string Kind { get; set; } = "";
+        public string? LockedBy { get; set; }
     }
 
     private sealed class ThemeData
