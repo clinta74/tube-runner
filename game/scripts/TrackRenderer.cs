@@ -212,6 +212,12 @@ public partial class TrackRenderer : Node3D
         // point and the cone it makes is the core arriving, which is what it looks like anyway.
         bool ring = SectionOf(from, split, branch).IsAnnulus || SectionOf(to, split, branch).IsAnnulus;
 
+        // How big a ring's core is against the wall around it, taken once for the span so the count
+        // of checker cells is constant across a chunk and steps only at a seam. The shader counts
+        // cells around the section rather than by size, so on a core they would otherwise be finer
+        // than a pixel and average into flat grey - which is what a core blending in looked like.
+        float coreScale = Math.Max(SectionOf((from + to) * 0.5, split, branch).Core, 0.04f);
+
         foreach (var surface in Surfaces)
         {
             for (int r = 0; r <= rings; r++)
@@ -239,7 +245,7 @@ public partial class TrackRenderer : Node3D
                     // the way round by that is how the checker went to NaN and tore into a starburst.
                     float around = shape.PerimeterOf(surface);
                     st.SetUV(new Vector2(around > 0.01f ? 0.75f + loop / around : 0.75f, (float)(s - s0)));
-                    st.SetUV2(new Vector2(well, 0f));
+                    st.SetUV2(new Vector2(well, ring && surface == Surface.Ceiling ? coreScale : 1f));
                     st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
                 }
             }

@@ -59,6 +59,14 @@ public readonly record struct CrossSection(
     /// <summary>The least room a ring may leave: enough for the ship and its jump.</summary>
     public const float MinRingHeight = 3f;
 
+    /// <summary>
+    /// The smallest a core is ever drawn at. A core has to arrive from nothing when a section blends
+    /// into a ring, and a cylinder tapering to a true point is a needle down the middle of the bore
+    /// long before it is anything a player can read. It starts blunt instead, at this radius, and
+    /// widens from there.
+    /// </summary>
+    public const float MinCoreRadius = 1f;
+
     /// <summary>This section with a ring of <paramref name="height"/> cut out of the middle of it.</summary>
     public CrossSection WithRing(float height) => this with { Core = 1f - height / Narrow };
 
@@ -78,10 +86,19 @@ public readonly record struct CrossSection(
     /// <summary>How far the flat floor and ceiling have spread toward the horizon.</summary>
     public float Spread => MathUtil.SmoothStep(Opening * 2f - 1f);
 
-    public static CrossSection Lerp(CrossSection a, CrossSection b, float t) => new(
-        a.HalfWidth + (b.HalfWidth - a.HalfWidth) * t,
-        a.HalfHeight + (b.HalfHeight - a.HalfHeight) * t,
-        a.Squareness + (b.Squareness - a.Squareness) * t,
-        a.Opening + (b.Opening - a.Opening) * t,
-        a.Core + (b.Core - a.Core) * t);
+    public static CrossSection Lerp(CrossSection a, CrossSection b, float t)
+    {
+        var blend = new CrossSection(
+            a.HalfWidth + (b.HalfWidth - a.HalfWidth) * t,
+            a.HalfHeight + (b.HalfHeight - a.HalfHeight) * t,
+            a.Squareness + (b.Squareness - a.Squareness) * t,
+            a.Opening + (b.Opening - a.Opening) * t,
+            a.Core + (b.Core - a.Core) * t);
+
+        // A core that exists at all exists at a size worth drawing: blending it up from zero gives a
+        // needle, so it begins blunt at MinCoreRadius and widens. Zero still means no core at all,
+        // which is what keeps the ring itself arriving at one definite place.
+        if (blend.Core <= 0f) return blend;
+        return blend with { Core = MathF.Max(blend.Core, MinCoreRadius / blend.Narrow) };
+    }
 }

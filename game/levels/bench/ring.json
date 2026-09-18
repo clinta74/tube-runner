@@ -22,7 +22,7 @@
     "target": "#ffd23a",
     "breakable": "#7cffb0",
     "fadeStart": 60,
-    "fadeEnd": 520,
+    "fadeEnd": 400,
     "glow": 0.35
   },
 
