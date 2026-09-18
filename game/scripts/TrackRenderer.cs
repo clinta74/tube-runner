@@ -103,7 +103,10 @@ public partial class TrackRenderer : Node3D
         for (double s = CoreScanStep; s <= track.Length; s += CoreScanStep)
         {
             bool has = track.SectionAt(s).IsAnnulus;
-            if (has != had) _coreEnds.Add(s - (has ? CoreScanStep : 0));
+            // The S recorded has to be one where the core is actually there: a cap is built from the
+            // core's own wall, and a section without one has no wall to build from. So the first
+            // step inside the run at its start, and the last step inside it at its end.
+            if (has != had) _coreEnds.Add(has ? s : s - CoreScanStep);
             had = has;
         }
 
