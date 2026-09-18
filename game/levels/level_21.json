@@ -57,20 +57,21 @@
     ] },
 
     // A door with two keys: both have to go, and they sit on opposite walls, so opening it costs
-    // real travel around the tube as well as two shots.
-    { "length": 440, "turn": 40, "obstacles": [                     // 1100 - 1540
+    // real travel around the tube as well as two shots. Half a lap of a tube is a 0.9 second swing,
+    // which is 180 units of track at this speed - see the spacing rule in level-format.md.
+    { "length": 520, "turn": 40, "obstacles": [                     // 1100 - 1620
       { "at": 110, "kind": "target", "angle": 90,  "group": "k4" },
-      { "at": 210, "kind": "target", "angle": -90, "group": "k4" },
-      { "at": 370, "lockedBy": "k4", "angle": 0, "width": 24, "height": 3 }
+      { "at": 290, "kind": "target", "angle": -90, "group": "k4" },
+      { "at": 450, "lockedBy": "k4", "angle": 0, "width": 24, "height": 3 }
     ] },
 
-    { "length": 260, "section": "oval", "speed": 150, "pickups": [  // 1540 - 1800
+    { "length": 260, "section": "oval", "speed": 150, "pickups": [  // 1620 - 1880
       { "at": 130, "kind": "shield", "angle": 180 }
     ] },
 
     // Keys behind plates: the shot has to be taken from a line the plates allow. The door is wide
     // enough that missing the window means stopping hard or paying for it.
-    { "length": 460, "section": "tube", "obstacles": [              // 1800 - 2260
+    { "length": 460, "section": "tube", "obstacles": [              // 1880 - 2340
       { "at": 120, "kind": "plate", "angle": 45,  "width": 11, "height": 3 },
       { "at": 180, "kind": "target", "angle": 180, "group": "k5" },
       { "at": 250, "kind": "plate", "angle": -45, "width": 11, "height": 3 },
@@ -79,21 +80,21 @@
 
     // A key on a mover: it slides while the shot is lined up, so the aim has to lead it - and the
     // door is close enough behind that a missed first shot is felt.
-    { "length": 440, "speed": 155, "turn": -45, "obstacles": [      // 2260 - 2700
+    { "length": 440, "speed": 155, "turn": -45, "obstacles": [      // 2340 - 2780
       { "at": 130, "kind": "target", "sweep": 9, "sweepTime": 3.2, "angle": 0, "group": "k6" },
       { "at": 350, "lockedBy": "k6", "angle": 90, "width": 24, "height": 3 }
     ] },
 
-    { "length": 240, "section": "wide", "pickups": [                // 2700 - 2940
+    { "length": 240, "section": "wide", "pickups": [                // 2780 - 3020
       { "at": 120, "kind": "ring-gun" }
     ] },
 
     // A fork whose short road is locked: the key stands in the chamber before it, so the branch has
     // to be paid for with a shot taken before the fork is even reached.
-    { "length": 160, "section": "chamber", "speed": 160, "obstacles": [   // 2940 - 3100
+    { "length": 160, "section": "chamber", "speed": 160, "obstacles": [ // 3020 - 3180
       { "at": 70, "kind": "target", "angle": 90, "group": "kf" }
     ] },
-    { "length": 440, "turn": 85, "split": {                         // 3100 - 3540
+    { "length": 440, "turn": 85, "split": {                         // 3180 - 3620
         "section": "branch",
         "branches": [
           { "offsets": [[0, -8, 0], [150, -32, 0], [290, -32, 0], [440, -8, 0]] },
@@ -105,27 +106,29 @@
         { "at": 120, "branch": 1, "lockedBy": "kf", "angle": 0, "width": 20, "height": 3 }
       ]
     },
-    { "length": 140, "section": "tube" },                           // 3540 - 3680
+    { "length": 140, "section": "tube" },                           // 3620 - 3760
 
     // A key that is part of an ordered group: the ring gun cannot touch it, and it will not break
     // until its turn. Two mechanics stacked, and the door behind them does not care.
-    { "length": 480, "section": "box", "speed": 160, "obstacles": [ // 3680 - 4160
+    // A quarter lap rather than a half here, because a boxy section is the longest way round in the
+    // game: crossing this one takes 1.25 seconds, which no piece of a reasonable length can pay for.
+    { "length": 520, "section": "box", "speed": 160, "obstacles": [ // 3760 - 4280
       { "at": 110, "kind": "target", "angle": 90,  "group": "k7", "order": 0 },
-      { "at": 200, "kind": "target", "angle": -90, "group": "k7", "order": 1 },
-      { "at": 400, "lockedBy": "k7", "angle": 0, "width": 26, "height": 3 }
+      { "at": 260, "kind": "target", "angle": 180, "group": "k7", "order": 1 },
+      { "at": 440, "lockedBy": "k7", "angle": 0, "width": 26, "height": 3 }
     ] },
 
-    { "length": 240, "section": "tube", "pickups": [                // 4160 - 4400
+    { "length": 240, "section": "tube", "pickups": [                // 4280 - 4520
       { "at": 120, "kind": "shield", "angle": 90 }
     ] },
 
     // Run for home: a key before each bend of a twist, its door round the corner out of sight. The
     // shot has to be taken on faith, before the thing it opens can be seen at all.
-    { "length": 220, "speed": 165, "turn": 70, "obstacles": [       // 4400 - 4620
+    { "length": 220, "speed": 165, "turn": 70, "obstacles": [       // 4520 - 4740
       { "at": 70,  "kind": "target", "angle": 0, "group": "k8" },
       { "at": 180, "lockedBy": "k8", "angle": 0, "width": 22, "height": 3 }
     ] },
-    { "length": 220, "turn": -75, "climb": 14, "obstacles": [       // 4620 - 4840
+    { "length": 220, "turn": -75, "climb": 14, "obstacles": [       // 4740 - 4960
       { "at": 70,  "kind": "target", "angle": 180, "group": "k9" },
       { "at": 180, "lockedBy": "k9", "angle": 180, "width": 22, "height": 3 }
     ] },
@@ -133,8 +136,8 @@
     // Handover to Attrition: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4840 - 4960
-    { "length": 180 },                                              // 4960 - 5140
-    { "length": 96, "turn": 9.142857 }                              // 5140 - 5236
+    { "length": 120, "section": "tube" },                           // 4960 - 5080
+    { "length": 180 },                                              // 5080 - 5260
+    { "length": 96, "turn": 9.142857 }                              // 5260 - 5356
   ]
 }
