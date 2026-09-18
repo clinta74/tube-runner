@@ -24,6 +24,17 @@ public partial class TrackRenderer : Node3D
     // Wing vertices as fractions of the wing length; they collapse onto the edge when there's no wing.
     private static readonly float[] WingSteps = { 0.02f, 0.1f, 0.35f, 1f };
     private static readonly int StripVertices = SurfaceSegments + 1 + 2 * WingSteps.Length;
+
+    // A ring's wall closes on itself, so one strip covers the whole way round instead of half of it.
+    // Giving it the count a half-tube strip uses would draw it at half the angular resolution, and a
+    // wide bore drawn coarsely does not look coarse - it aliases, because the checker is interpolated
+    // across facets far bigger than the cells on them.
+    private static readonly int RingStripVertices = 2 * SurfaceSegments + 1;
+
+    private const int RingCapSegments = 48;
+
+    // Fine enough that no piece is stepped over; a core's ends sit on piece boundaries.
+    private const double CoreScanStep = 1.0;
     private static readonly Surface[] Surfaces = { Surface.Floor, Surface.Ceiling };
 
     private readonly Dictionary<long, Placed> _chunks = new();
@@ -32,7 +43,11 @@ public partial class TrackRenderer : Node3D
     private readonly List<long> _staleChunks = new();
     private readonly List<int> _staleCaps = new();
     private readonly ProfileShapeCache _shapes = new();
-    private readonly float[] _xs = new float[StripVertices];
+    private readonly float[] _xs = new float[Math.Max(StripVertices, RingStripVertices)];
+
+    // Where a core starts and where it stops, so each end can be closed with a flat cap. A core does
+    // not taper in: it is there or it is not, and an open pipe end would be a hole to see down.
+    private readonly List<double> _coreEnds = new();
     private readonly List<WarpCut> _warpCuts = new();
     private Track _track = null!;
     private Material _material = null!;
@@ -78,6 +93,19 @@ public partial class TrackRenderer : Node3D
         // Build out to where the style stops showing anything: the solid fade reaches far_color at
         // FadeEnd, while the wire style only dims to a quarter by twice that.
         _viewAhead = theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead;
+
+        // Where a core begins and where it ends. A core does not blend in: it takes the whole of the
+        // piece whose section carries it, so both ends fall on a piece boundary and each is closed
+        // off with a flat cap. Found by walking rather than by reading the pieces, so a core that
+        // spans several of them is one run with two ends rather than a cap at every join.
+        _coreEnds.Clear();
+        bool had = track.SectionAt(0).IsAnnulus;
+        for (double s = CoreScanStep; s <= track.Length; s += CoreScanStep)
+        {
+            bool has = track.SectionAt(s).IsAnnulus;
+            if (has != had) _coreEnds.Add(s - (has ? CoreScanStep : 0));
+            had = has;
+        }
 
         // Each mouth is measured once into distance along the track and distance around the tube,
         // so the cut works the same on either surface and across the seam between them.
@@ -212,12 +240,6 @@ public partial class TrackRenderer : Node3D
         // point and the cone it makes is the core arriving, which is what it looks like anyway.
         bool ring = SectionOf(from, split, branch).IsAnnulus || SectionOf(to, split, branch).IsAnnulus;
 
-        // How big a ring's core is against the wall around it, taken once for the span so the count
-        // of checker cells is constant across a chunk and steps only at a seam. The shader counts
-        // cells around the section rather than by size, so on a core they would otherwise be finer
-        // than a pixel and average into flat grey - which is what a core blending in looked like.
-        float coreScale = Math.Max(SectionOf((from + to) * 0.5, split, branch).Core, 0.04f);
-
         foreach (var surface in Surfaces)
         {
             for (int r = 0; r <= rings; r++)
@@ -226,9 +248,10 @@ public partial class TrackRenderer : Node3D
                 // Use the split directly so the branch's last ring, at the merge, stays on the branch.
                 var frame = split is null ? _track.FrameAt(s) : split.BranchFrame(_track, s, branch);
                 var shape = _shapes.Get(split is null ? _track.SectionAt(s) : split.Section(branch));
-                FillStrip(shape, surface, ring);
-                foreach (float x in _xs)
+                int across = FillStrip(shape, surface, ring);
+                for (int i = 0; i < across; i++)
                 {
+                    float x = _xs[i];
                     // The wall itself is drawn down into any well here, so the tube extrudes into it
                     // as one surface: no separate funnel, and no seam to mismatch at the lip. How far
                     // in each point lies rides along in UV2, and the shader takes the inside to black
@@ -245,15 +268,26 @@ public partial class TrackRenderer : Node3D
                     // the way round by that is how the checker went to NaN and tore into a starburst.
                     float around = shape.PerimeterOf(surface);
                     st.SetUV(new Vector2(around > 0.01f ? 0.75f + loop / around : 0.75f, (float)(s - s0)));
-                    st.SetUV2(new Vector2(well, ring && surface == Surface.Ceiling ? coreScale : 1f));
+                    st.SetUV2(new Vector2(well, 0f));
                     st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
                 }
             }
             // Cut against the section in the middle of the span; it barely changes across a chunk.
             var midShape = _shapes.Get(split is null ? _track.SectionAt((from + to) * 0.5) : split.Section(branch));
-            FillStrip(midShape, surface, ring);
-            AddGridIndices(st, start, rings, StripVertices, from, to, surface, branch, midShape);
-            start += (rings + 1) * StripVertices;
+            int stride = FillStrip(midShape, surface, ring);
+            AddGridIndices(st, start, rings, stride, from, to, surface, branch, midShape);
+            start += (rings + 1) * stride;
+
+            // A core's ends are closed off, so what arrives is a cylinder with a flat face rather
+            // than a pipe open to look down. After the strip's own indices, not before: the cursor
+            // this moves is the one those indices are counted from.
+            if (surface == Surface.Ceiling && ring)
+            {
+                foreach (double end in _coreEnds)
+                {
+                    if (end > from && end <= to) start = AddCoreCap(st, start, end, split, branch, s0, origin);
+                }
+            }
         }
         return start;
     }
@@ -356,20 +390,24 @@ public partial class TrackRenderer : Node3D
         return new Placed(node, origin);
     }
 
-    // Surface X positions across one strip: left wing, the surface itself, right wing.
-    // <paramref name="ring"/> is the span's own layout, not this section's: see AddTube.
-    private void FillStrip(ProfileShape shape, Surface surface, bool ring)
+    /// <summary>
+    /// Surface X positions across one strip - left wing, the surface itself, right wing - and how
+    /// many of them there are. <paramref name="ring"/> is the span's own layout, not this section's:
+    /// see AddTube.
+    /// </summary>
+    private int FillStrip(ProfileShape shape, Surface surface, bool ring)
     {
         // A wall of a ring closes on itself rather than meeting the other one, so its strip is the
-        // whole way round it and has no wings: the same vertices, spread over four times the arc.
+        // whole way round it and has no wings - and takes twice the vertices to keep the same
+        // spacing around the wall as a tube's two strips give between them.
         if (ring)
         {
             float half = shape.PerimeterOf(surface) * 0.5f;
-            for (int i = 0; i < StripVertices; i++)
+            for (int i = 0; i < RingStripVertices; i++)
             {
-                _xs[i] = -half + 2f * half * i / (StripVertices - 1);
+                _xs[i] = -half + 2f * half * i / (RingStripVertices - 1);
             }
-            return;
+            return RingStripVertices;
         }
 
         float q = shape.Quarter, w = shape.WingLength;
@@ -384,6 +422,7 @@ public partial class TrackRenderer : Node3D
         {
             _xs[n + i] = -q + 2f * q * i / SurfaceSegments;
         }
+        return StripVertices;
     }
 
     private void AddGridIndices(SurfaceTool st, int start, int rings, int stride,
@@ -412,6 +451,50 @@ public partial class TrackRenderer : Node3D
                 st.AddIndex(i + stride + 1);
             }
         }
+    }
+
+    /// <summary>
+    /// The flat face closing one end of a core: a fan from the centreline out to the core's wall.
+    /// Takes the wall's own material and shading, so it reads as the end of the thing rather than as
+    /// a lid put on it.
+    /// </summary>
+    private int AddCoreCap(SurfaceTool st, int start, double at, TrackSplit? split, int branch, double s0, Vector3d origin)
+    {
+        const int segments = RingCapSegments;
+        var frame = split is null ? _track.FrameAt(at) : split.BranchFrame(_track, at, branch);
+        var shape = _shapes.Get(SectionOf(at, split, branch));
+        float around = shape.PerimeterOf(Surface.Ceiling);
+        if (around <= 0.01f) return start;
+
+        // The wall's seam is drawn wherever a point sits near either end of a segment, which means
+        // the distance written here has to stay inside one - a face is flat across the track, so
+        // every point on it shares whatever distance it is given, and one outside the segment came
+        // out as a single blown white disc. It is given a distance mid-segment instead, moved a
+        // little between the middle of the face and its rim so the checker has something to cut.
+        // One distance for the whole face, not one per ring of it. The wall widens its seam test by
+        // the screen derivative of this number, and a face seen almost edge-on has a derivative big
+        // enough to swallow the test whole - which drew the disc as one blown seam.
+        float middle = _chunkLength * 0.45f;
+        float rim = middle;
+
+        st.SetUV(new Vector2(0.75f, middle));
+        st.SetUV2(Vector2.Zero);
+        st.AddVertex(frame.Position.RelativeTo(origin).ToGodot());
+        for (int i = 0; i <= segments; i++)
+        {
+            var (surface, x) = shape.Wrap(Surface.Ceiling, around * i / segments);
+            var p = shape.PointAt(surface, x);
+            st.SetUV(new Vector2(0.75f + (float)i / segments, rim));
+            st.SetUV2(Vector2.Zero);
+            st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
+        }
+        for (int i = 0; i < segments; i++)
+        {
+            st.AddIndex(start);
+            st.AddIndex(start + 1 + i);
+            st.AddIndex(start + 2 + i);
+        }
+        return start + segments + 2;
     }
 
     private CrossSection SectionOf(double s, TrackSplit? split, int branch) =>

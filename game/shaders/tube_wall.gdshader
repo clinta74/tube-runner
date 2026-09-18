@@ -3,8 +3,6 @@
 // Each mesh chunk is one segment (see TrackRenderer.cs).
 // UV.x = distance around the section / perimeter (continues past 0..1 onto open planes),
 // UV.y = distance into the segment (world units).
-// UV2.x = how far into a warp well a point lies; UV2.y = this wall's size against the section's own,
-// which is 1 everywhere except the core of a ring.
 shader_type spatial;
 render_mode unshaded, cull_disabled;
 
@@ -77,8 +75,7 @@ void fragment() {
 	// what is behind it. `wire` is a uniform, so this branch is uniform and the derivatives inside it
 	// are well defined.
 	if (wire) {
-		float rails = max(4.0, floor(WIRE_RAILS * max(UV2.y, 0.04)));
-		float mask = max(wire_line(local / WIRE_RINGS), wire_line(UV.x * rails));
+		float mask = max(wire_line(local / WIRE_RINGS), wire_line(UV.x * WIRE_RAILS));
 		if (mask < 0.04) discard;
 
 		vec3 lit = to_linear(seam_light) * (1.0 + glow);
@@ -92,11 +89,7 @@ void fragment() {
 		ALBEDO = lit * mask * dim;
 	} else {
 
-	// Cells are counted around the section, so a smaller wall has to take fewer of them or they
-	// come out finer than a pixel and the box filter averages them into a flat grey slab. Kept even,
-	// so the pattern still meets itself where the wall closes.
-	float around = max(4.0, 2.0 * floor(float(AROUND[pick(seg, 1.0, 4)]) * max(UV2.y, 0.04) * 0.5 + 0.5));
-	float x = UV.x * around + local * TWIST[pick(seg, 2.0, 4)];
+	float x = UV.x * AROUND[pick(seg, 1.0, 4)] + local * TWIST[pick(seg, 2.0, 4)];
 	float y = local / ALONG[pick(seg, 3.0, 4)];
 	float t = checker(vec2(x, y), softness);
 	vec3 dark = to_linear(darks[pick(seg, 4.0, dark_count)]);

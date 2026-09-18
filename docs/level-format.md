@@ -103,11 +103,15 @@ the wall arcs overhead. Below about 12 it looks like a tube with something stuck
 **The core blocks the view**, which is most of what it is for: what is on the far side of the ring is
 hidden until you come round to it, so a wide bore stops being an easy one.
 
-**A core arrives blunt.** It has to come from nothing when a section blends into a ring, and a
-cylinder tapering to a true point is a needle down the middle of the bore long before it is anything
-a player can read. So a core that exists at all is at least 1 unit across: it starts with a flat end
-and widens from there. Keep the blend short — 150 to 200 units — so the widening is something that
-happens rather than something that goes on.
+**A core arrives whole.** Every other measurement eases from one section into the next across a
+piece; a core does not. It takes the whole of the first piece whose section carries one, from that
+piece's first unit, and stops at the first unit of the next piece without one — so its two ends sit
+on piece boundaries, and each is closed off with a flat cap.
+
+That is deliberate. A core is not a shape the bore eases into, it is a thing standing inside the
+bore, and easing one in means growing it from nothing: a needle down the middle for as long as the
+blend lasts, whatever is done to its tip. Placing it instead means you choose where it starts and
+where it stops, to the unit. The bore is still free to widen or turn across the same piece.
 
 **Bring the player off the core before closing a ring.** A core that grows in is seamless — the
 upper half of the wall simply becomes part of the outer wall, which is one surface all the way round
