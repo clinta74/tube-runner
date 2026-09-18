@@ -168,6 +168,7 @@ public partial class Main : Node3D
             if (arg == "--menu") _debugMenu = true;
             if (arg.StartsWith("--shot=")) _shotPath = arg["--shot=".Length..];
             if (arg == "--ceiling") _startCeiling = true;
+            if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
             if (arg == "--settings") _debugSettings = true;
         }
 
@@ -239,6 +240,11 @@ public partial class Main : Node3D
     /// </summary>
     private string? _shotPath;
     private int _shotFrames = 45;
+
+    /// <summary>Where along the track to take the shot, rather than after a fixed count of frames.
+    /// Frames take longer while chunks are being built, so a count lands somewhere different every
+    /// run - no use at all for looking at one particular join twice.</summary>
+    private double? _shotAt;
 
     /// <summary>Start the run on the ceiling rather than the floor, for looking at the far surface
     /// of a flat section or the core of a ring without anyone having to fly there and jump.</summary>
@@ -324,7 +330,8 @@ public partial class Main : Node3D
         // --shot: fly on for a moment so the track and its obstacles have streamed in, then save
         // what is on screen and stop. The image is the frame already drawn, which is why this can
         // read the viewport straight out rather than waiting on the renderer.
-        if (_shotPath is not null && --_shotFrames <= 0)
+        bool shotDue = _shotAt is double at ? _session.Ship.Position.S >= at : --_shotFrames <= 0;
+        if (_shotPath is not null && shotDue)
         {
             var image = GetViewport().GetTexture().GetImage();
             image.SavePng(_shotPath);

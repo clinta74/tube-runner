@@ -202,6 +202,16 @@ public partial class TrackRenderer : Node3D
     private int AddTube(SurfaceTool st, int start, double from, double to, TrackSplit? split, int branch, double s0, Vector3d origin)
     {
         int rings = Math.Max(2, (int)Math.Ceiling((to - from) / _chunkLength * RingsPerChunk));
+
+        // Whether this span is drawn as a ring is decided once, for the whole span, rather than ring
+        // by ring. The two layouts describe the same wall in different halves - a hollow tube splits
+        // it between the floor and ceiling strips, a ring gives the whole of it to the floor and
+        // hands the ceiling the core instead - so a strip that changed its mind part way along would
+        // stitch the upper half of the wall to the core and sheet the bore across. A span that is a
+        // ring anywhere is a ring throughout; where the core has no size yet the strip closes to a
+        // point and the cone it makes is the core arriving, which is what it looks like anyway.
+        bool ring = SectionOf(from, split, branch).IsAnnulus || SectionOf(to, split, branch).IsAnnulus;
+
         foreach (var surface in Surfaces)
         {
             for (int r = 0; r <= rings; r++)
@@ -210,7 +220,7 @@ public partial class TrackRenderer : Node3D
                 // Use the split directly so the branch's last ring, at the merge, stays on the branch.
                 var frame = split is null ? _track.FrameAt(s) : split.BranchFrame(_track, s, branch);
                 var shape = _shapes.Get(split is null ? _track.SectionAt(s) : split.Section(branch));
-                FillStrip(shape, surface);
+                FillStrip(shape, surface, ring);
                 foreach (float x in _xs)
                 {
                     // The wall itself is drawn down into any well here, so the tube extrudes into it
@@ -225,14 +235,17 @@ public partial class TrackRenderer : Node3D
                         well = WellDepth(s, loop, branch, out float sink);
                         if (well > 0f) p -= shape.NormalAt(surface, x) * sink;
                     }
-                    st.SetUV(new Vector2(0.75f + loop / shape.PerimeterOf(surface), (float)(s - s0)));
+                    // A core blending in from nothing has a ring of no size at its tip, and dividing
+                    // the way round by that is how the checker went to NaN and tore into a starburst.
+                    float around = shape.PerimeterOf(surface);
+                    st.SetUV(new Vector2(around > 0.01f ? 0.75f + loop / around : 0.75f, (float)(s - s0)));
                     st.SetUV2(new Vector2(well, 0f));
                     st.AddVertex(frame.PointOnSection(p).RelativeTo(origin).ToGodot());
                 }
             }
             // Cut against the section in the middle of the span; it barely changes across a chunk.
             var midShape = _shapes.Get(split is null ? _track.SectionAt((from + to) * 0.5) : split.Section(branch));
-            FillStrip(midShape, surface);
+            FillStrip(midShape, surface, ring);
             AddGridIndices(st, start, rings, StripVertices, from, to, surface, branch, midShape);
             start += (rings + 1) * StripVertices;
         }
@@ -338,11 +351,12 @@ public partial class TrackRenderer : Node3D
     }
 
     // Surface X positions across one strip: left wing, the surface itself, right wing.
-    private void FillStrip(ProfileShape shape, Surface surface)
+    // <paramref name="ring"/> is the span's own layout, not this section's: see AddTube.
+    private void FillStrip(ProfileShape shape, Surface surface, bool ring)
     {
         // A wall of a ring closes on itself rather than meeting the other one, so its strip is the
         // whole way round it and has no wings: the same vertices, spread over four times the arc.
-        if (shape.IsAnnulus)
+        if (ring)
         {
             float half = shape.PerimeterOf(surface) * 0.5f;
             for (int i = 0; i < StripVertices; i++)
@@ -393,6 +407,9 @@ public partial class TrackRenderer : Node3D
             }
         }
     }
+
+    private CrossSection SectionOf(double s, TrackSplit? split, int branch) =>
+        split is null ? _track.SectionAt(s) : split.Section(branch);
 
     private static bool InRange(double s, double from, double to) => s >= from && s <= to;
 
