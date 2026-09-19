@@ -136,11 +136,13 @@
       { "at": 500, "kind": "shield-slot", "angle": 30, "lockedBy": "lk1" }
     ] },
 
-    // A limit right where the level most invites a push for the end.
+    // A limit right where the level most invites a push for the end. A solid block rather than a
+    // plate: the ram from the ring before is still running through here, and a plate met under a
+    // running ram reads as a bug rather than as the rule. Shutter is where that lesson lives.
     { "length": 400, "section": "narrow", "turn": 60, "thrustZones": [ // 4540 - 4940
       { "at": 200, "length": 400 }
     ], "obstacles": [
-      { "at": 130, "kind": "plate", "angle": 90, "width": 9, "height": 3 },
+      { "at": 130, "angle": 90, "width": 9, "height": 3 },
       { "at": 290, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 }
     ] },
 
