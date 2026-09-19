@@ -345,6 +345,24 @@ public sealed class GameSession
         }
     }
 
+    /// <summary>
+    /// How far across the surface the ship is from a thing on <paramref name="surface"/> at
+    /// <paramref name="x"/>. Riding a surface, that is the distance along the walls - which between
+    /// the two planes of a flat section, or the two walls of a ring, is infinite. Mid-jump the ship
+    /// is between the two, over the same place on each, and is measured on the thing's own wall. On
+    /// a ring the walls are different sizes, so the raw X it took off with means a different place
+    /// round the core than round the bore; compared straight, it hit blocks it was nowhere near
+    /// and missed the one it was about to land on.
+    /// </summary>
+    private float LateralTo(ProfileShape shape, Surface surface, float x)
+    {
+        var pos = Ship.Position;
+        if (!Ship.IsJumping) return TrackSpace.SurfaceDistance(shape, pos.Surface, pos.X, surface, x);
+
+        float shipX = surface == pos.Surface ? pos.X : shape.Across(pos.Surface, pos.X);
+        return TrackSpace.SurfaceDistance(shape, surface, shipX, surface, x);
+    }
+
     private void CheckShipHits(double from, double to)
     {
         var pos = Ship.Position;
@@ -354,12 +372,9 @@ public sealed class GameSession
             double reach = o.Length / 2f + _settings.ShipHalfLength;
             if (to < o.S - reach || from > o.S + reach) continue;
 
-            // Mid-jump the ship is between the surfaces at the same X; otherwise it's on one. A mover
-            // is wherever its sweep has carried it by now, not where it was authored.
+            // A mover is wherever its sweep has carried it by now, not where it was authored.
             float x = o.XAt(Elapsed);
-            float lateral = Ship.IsJumping
-                ? MathF.Abs(pos.X - x)
-                : TrackSpace.SurfaceDistance(ShapeAt(o.S, o.Branch), pos.Surface, pos.X, o.Surface, x);
+            float lateral = LateralTo(ShapeAt(o.S, o.Branch), o.Surface, x);
             if (lateral >= o.Width / 2f + _settings.ShipHalfWidth || Ship.HeightAbove(o.Surface) >= o.Height) continue;
 
             // Unstoppable: smash straight through and score it, with no shield lost. A plate is the
@@ -488,9 +503,7 @@ public sealed class GameSession
             // behind rather than arming it, which is what makes the key worth the detour.
             if (!IsLive(p)) continue;
 
-            float lateral = Ship.IsJumping
-                ? MathF.Abs(pos.X - p.X)
-                : TrackSpace.SurfaceDistance(ShapeAt(p.S, p.Branch), pos.Surface, pos.X, p.Surface, p.X);
+            float lateral = LateralTo(ShapeAt(p.S, p.Branch), p.Surface, p.X);
             // Pickups are set into the surface, so the ship has to be riding it (or just leaving it).
             if (lateral >= _settings.PickupRadius + _settings.ShipHalfWidth || Ship.HeightAbove(p.Surface) > 1f) continue;
 
@@ -513,9 +526,7 @@ public sealed class GameSession
             if (to < w.S - reach || from > w.S + reach) continue;
 
             var shape = ShapeAt(w.S, w.Branch);
-            float lateral = Ship.IsJumping
-                ? MathF.Abs(pos.X - w.X)
-                : TrackSpace.SurfaceDistance(shape, pos.Surface, pos.X, w.Surface, w.X);
+            float lateral = LateralTo(shape, w.Surface, w.X);
             if (lateral >= w.WidthOn(shape) / 2f + _settings.ShipHalfWidth) continue;
 
             w.Used = true;

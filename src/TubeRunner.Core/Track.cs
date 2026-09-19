@@ -223,6 +223,17 @@ public sealed class Track
         return i >= 0 && s < Length && IsRejoining(_pieces[i]);
     }
 
+    /// <summary>
+    /// Whether <paramref name="s"/> is in a funnel, either way: a tube opening into flat planes or
+    /// planes closing back into one. Both run through a stage where the section is closed and
+    /// hundreds of units wide, which is not a tube the ship should be measured round.
+    /// </summary>
+    public bool IsFunnel(double s)
+    {
+        int i = FindPiece(s);
+        return i >= 0 && s < Length && (IsRejoining(_pieces[i]) || IsOpening(_pieces[i]));
+    }
+
     private static bool IsRejoining(PlacedPiece p) => !p.StartSection.IsClosed && p.Piece.EndSection.IsClosed;
 
     private static bool IsOpening(PlacedPiece p) => p.StartSection.IsClosed && !p.Piece.EndSection.IsClosed;

@@ -238,6 +238,59 @@ public class AnnulusTests
         Assert.Equal(3, jumper.Shields);
     }
 
+    // Mid-jump the ship is over the same place on both walls, and the walls are different sizes.
+    // Measuring it against a block by raw X - the number it took off with, on the wall it left -
+    // hit blocks it was nowhere near and missed the one it was landing on.
+    [Fact]
+    public void MidJump_ABlockIsMetWhereTheShipWillLand_NotAtTheXItLeftWith()
+    {
+        var track = new Track(Ring, startSpeed: 60f);
+        track.Append(new TrackPiece(1200f, Ring));
+        var shape = new ProfileShape(Ring);
+        float core = shape.PerimeterOf(Surface.Ceiling), outer = shape.PerimeterOf(Surface.Floor);
+        // A block on the outer wall where a jump off the core comes down: at the same raw X the
+        // ship rides the core at, or at the same place round the section.
+        Obstacle At(float x) => new() { Kind = ObstacleKind.Block, S = 27, Surface = Surface.Floor, X = x, Width = 3f, Height = 2f };
+        var settings = new SessionSettings(new ShipSettings(SteerSpeed: 22f));
+
+        // A quarter of the way round the core, jumping down at once.
+        var raw = new GameSession(track, [At(core / 4f)], settings, new TrackPosition(0, Surface.Ceiling, core / 4f));
+        raw.Step(1f / 60f, new ShipInput(Jump: true));
+        for (int i = 0; i < 600 && raw.Ship.Position.S < 60; i++) raw.Step(1f / 60f, default);
+        Assert.Equal(3, raw.Shields);
+        Assert.Equal(Surface.Floor, raw.Ship.Position.Surface);
+
+        var place = new GameSession(track, [At(outer / 4f)], settings, new TrackPosition(0, Surface.Ceiling, core / 4f));
+        place.Step(1f / 60f, new ShipInput(Jump: true));
+        for (int i = 0; i < 600 && place.Ship.Position.S < 60; i++) place.Step(1f / 60f, default);
+        Assert.Equal(2, place.Shields);
+    }
+
+    // A ring that widens - bore and core together, the room between them the same - is a cone
+    // each wall rides. X is a distance round the wall, and a ship that kept its distance rather
+    // than its place would slide round the flaring wall toward the bottom, and the bore would seem
+    // to roll under it.
+    [Fact]
+    public void AShipKeepsItsPlaceRoundTheSection_AsTheBoreWidens()
+    {
+        var wider = new CrossSection(24f, 24f, Core: 0.75f);
+        var track = new Track(Ring, startSpeed: 60f);
+        track.Append(new TrackPiece(300f, wider));
+        track.Append(new TrackPiece(300f, wider));
+        var narrow = new ProfileShape(Ring);
+        var wide = new ProfileShape(wider);
+
+        foreach (var surface in new[] { Surface.Floor, Surface.Ceiling })
+        {
+            float start = narrow.PerimeterOf(surface) / 3f;
+            var ship = new ShipSim(new ShipSettings(SteerSpeed: 10f), track, new TrackPosition(0, surface, start));
+            while (ship.Position.S < 450) ship.Step(1f / 60f, steer: 0f);
+
+            Assert.Equal(surface, ship.Position.Surface);
+            Assert.Equal(wide.PerimeterOf(surface) / 3f, ship.Position.X, 1);
+        }
+    }
+
     [Theory]
     [InlineData("""{ "at": 300, "kind": "target", "full": true }""", "blocks and plates")]
     [InlineData("""{ "at": 300, "full": true, "period": 2 }""", "gate or a mover")]

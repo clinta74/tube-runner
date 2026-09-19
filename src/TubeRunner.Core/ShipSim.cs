@@ -111,6 +111,11 @@ public sealed class ShipSim
         {
             (surface, landed) = CoreArrivedOrLeft(before, landed);
         }
+        // A fork or a merge has already put the ship at the nearest point on its new wall.
+        else if (before.IsClosed && Shape.IsClosed && moved.Branch == Position.Branch && !_track.IsFunnel(s))
+        {
+            landed = KeepPlace(before, Shape, surface, landed);
+        }
 
         if (IsJumping)
         {
@@ -146,6 +151,22 @@ public sealed class ShipSim
         }
 
         Position = new TrackPosition(s, surface, x, moved.Branch);
+    }
+
+    /// <summary>
+    /// The same place round the section on a wall that has changed size since the last step. X is
+    /// a distance round the wall, and a wall that widens under the ship - a bore opening out, a
+    /// core tapering - would otherwise carry the ship round itself: the same X is a smaller share
+    /// of a bigger wall, so a ship a third of the way round a tube slid toward the bottom as the
+    /// tube opened, and the whole bore seemed to roll. It rides the flaring wall instead, keeping
+    /// its place the way it does through a jump (see <see cref="ProfileShape.Across"/>). A tube
+    /// unrolling into planes is the one widening this must leave alone: it goes out to the horizon
+    /// first, and there the distance from the middle is what has to hold.
+    /// </summary>
+    private static float KeepPlace(ProfileShape before, ProfileShape now, Surface surface, float x)
+    {
+        float was = before.PerimeterOf(surface);
+        return was > 0f ? x * now.PerimeterOf(surface) / was : x;
     }
 
     /// <summary>

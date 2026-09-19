@@ -147,6 +147,30 @@ public class ShipSimTests
         Assert.Equal(1.3f, sim.Throttle, precision: 4);
     }
 
+    // A tube that widens is a cone the ship rides: it keeps its place round the wall, not its
+    // distance from the bottom of it. Opening into flat planes is the exception, because that
+    // widening goes out to the horizon before the planes part, and a ship two units right of the
+    // middle has to still be two units right of it when they do.
+    [Fact]
+    public void AWideningTube_KeepsTheShipAtItsPlaceRoundTheWall_ButAFunnelKeepsItsDistance()
+    {
+        var wider = CrossSection.Circle(8f);
+        var cone = new Track(Circle, startSpeed: 50f);
+        cone.Append(new TrackPiece(300f, wider));
+        cone.Append(new TrackPiece(100f, wider));
+        float third = new ProfileShape(Circle).Quarter / 3f;
+        var ship = new ShipSim(Settings, cone, new TrackPosition(0, Surface.Floor, third));
+        while (ship.Position.S < 350) ship.Step(1f / 60f, steer: 0f);
+        Assert.Equal(new ProfileShape(wider).Quarter / 3f, ship.Position.X, 2);
+
+        var funnel = new Track(Circle, startSpeed: 50f);
+        funnel.Append(new TrackPiece(300f, Open));
+        funnel.Append(new TrackPiece(100f, Open));
+        ship = new ShipSim(Settings, funnel, new TrackPosition(0, Surface.Floor, 2f));
+        while (ship.Position.S < 350) ship.Step(1f / 60f, steer: 0f);
+        Assert.Equal(2f, ship.Position.X, 2);
+    }
+
     private static ShipSim Sim(CrossSection section, Surface surface = Surface.Floor, float x = 0f)
     {
         var track = new Track(section, startSpeed: 50f);
