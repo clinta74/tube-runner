@@ -466,6 +466,12 @@ hanging overhead, each wall closes on itself, and the jump is the only way betwe
 - **The ship keeps its place round a changing wall**, in rings and tubes alike, except through the
   funnel into a flat section.
 
+**Agility** came out of the ring: the steering rate is a distance per second whatever the wall,
+and the outer wall of a 40 bore is 250 round, so a block on the far side is simply out of reach.
+The pickup multiplies the rate by 1.6 for 10 s and carries between levels like the others. It is
+also handed out before the fast finishes of 29, 30 and 31, and left out of the finale, which gives
+nothing on purpose.
+
 Still open: a hairline seam down the top of a ring's wall where the strip closes on itself; the far
 end's checker aliases in the widest bores; collars cannot be gates or movers; the jump is a fixed
 0.55 s whatever the gap; and splits, apertures and warps are refused in a ring.

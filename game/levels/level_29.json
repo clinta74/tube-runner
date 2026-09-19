@@ -115,7 +115,10 @@
       { "at": 330, "angle": 0, "width": 7 }
     ] },
 
+    // Agility before the run for home: the twist is one well per bend at 175, and getting the
+    // whole ship round a third of the tube in the time a bend gives is the whole of it.
     { "length": 240, "section": "tube", "pickups": [                // 3480 - 3720
+      { "at": 60, "kind": "agility" },
       { "at": 120, "kind": "ring-gun" }
     ], "obstacles": [
       { "at": 180, "kind": "target", "angle": 0, "count": 4, "angleStep": 90 }

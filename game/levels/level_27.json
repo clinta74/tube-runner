@@ -117,12 +117,15 @@
 
     // Divided three ways, and the bend after it is hard right - so only the right-hand pair of
     // blades is worth a shot, and opening the other two costs the shots and still ends at a wall.
+    // Unstoppable after the last key, for whoever missed the pair that mattered.
     { "length": 760, "section": "wide", "speed": 166, "obstacles": [ // 3480 - 4240
       { "at": 90,  "kind": "target", "angle": 30,   "group": "s5" },
       { "at": 270, "kind": "target", "angle": 150,  "group": "s6" },
       { "at": 450, "kind": "target", "angle": -90,  "group": "s7" }
     ], "apertures": [
       { "at": 620, "blades": 6, "angle": 30, "keys": ["s5", "s6", "s7"] }
+    ], "pickups": [
+      { "at": 510, "kind": "unstoppable", "angle": 0 }
     ] },
     { "length": 220, "section": "tube", "turn": 70 },               // 4240 - 4460
 

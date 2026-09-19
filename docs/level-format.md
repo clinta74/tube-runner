@@ -360,6 +360,7 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 | `rapid-fire` | Fires about three times as fast for 8 seconds. |
 | `ring-gun` | 3 ring-gun shots. Each sweeps the whole tube, breaking every target and breakable block it passes; solid blocks survive. |
 | `unstoppable` | For 6 seconds the ship smashes through anything it touches — solid blocks included — scoring each one and losing no shields. |
+| `agility` | Steers 1.6× faster for 10 seconds. The steering rate is a distance across the wall per second whatever the section, so this is the answer to a wall that is simply too big to get across in time: a ring's, or a fast level's. |
 
 ```json
 { "length": 250, "pickups": [

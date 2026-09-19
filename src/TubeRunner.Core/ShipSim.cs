@@ -64,6 +64,9 @@ public sealed class ShipSim
     /// <summary>Multiplier on forward speed, e.g. slowed after a hit.</summary>
     public float SpeedScale { get; set; } = 1f;
 
+    /// <summary>Multiplier on steering speed; an agility pickup raises it for a while.</summary>
+    public float SteerScale { get; set; } = 1f;
+
     /// <summary>
     /// Lowest throttle the player may hold right now. Normally the ship's own floor; a thrust zone
     /// can raise it, which forces speed on them rather than taking it away.
@@ -135,7 +138,7 @@ public sealed class ShipSim
         // The ship's right is +X on the floor and -X on the ceiling, where it rides upside down.
         // Past the middle of a jump it has rolled over, so it steers as if on the destination.
         var facing = IsJumping && JumpProgress >= 0.5f ? Opposite(surface) : surface;
-        float x = landed + steer * _settings.SteerSpeed * dt * (facing == Surface.Floor ? 1f : -1f);
+        float x = landed + steer * _settings.SteerSpeed * SteerScale * dt * (facing == Surface.Floor ? 1f : -1f);
 
         // Through the funnel where flat planes close back into a tube, the ship stays on its
         // surface and is eased toward the center instead of sliding up the narrowing walls.

@@ -23,6 +23,14 @@ public enum PickupKind
 
     /// <summary>Smash through anything for a while, without losing a shield.</summary>
     Unstoppable,
+
+    /// <summary>
+    /// Steers faster for a while. The ship's steering rate is a distance across the surface per
+    /// second, whatever the section, so the wider the wall the longer everything on it takes to
+    /// reach - which is what makes this worth having in a ring, and at speed, where the blocks come
+    /// faster than the ship can get out of their way.
+    /// </summary>
+    Agility,
 }
 
 /// <summary>A power-up set into a track surface. Flying over it collects it.</summary>

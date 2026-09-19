@@ -116,9 +116,11 @@
       { "at": 380, "angle": 270, "width": 10 }
     ] },
 
-    // A ring divided three ways, and the level's last prize behind it. Nothing here is given: each
-    // key clears a quarter of the way round, and the extra shield sits on the side only the first of
-    // them opens, so taking it means picking a shot and then living on that side of the tube.
+    // A ring divided three ways, and the level's last prize behind it. Each key clears a quarter of
+    // the way round, and the extra shield sits on the side only the first of them opens, so taking
+    // it means picking a shot and then living on that side of the tube. The one thing given is the
+    // unstoppable after the keys, which gets a run with no shots left through the ring - and not to
+    // the prize, which stays behind its own key.
     { "length": 560, "section": "oval", "obstacles": [              // 3980 - 4540
       { "at": 80,  "kind": "target", "angle": 30,   "group": "lk1" },
       { "at": 160, "kind": "target", "angle": 150,  "group": "lk2" },
@@ -126,6 +128,7 @@
     ], "apertures": [
       { "at": 400, "blades": 6, "angle": 30, "keys": ["lk1", "lk2", "lk3"] }
     ], "pickups": [
+      { "at": 300, "kind": "unstoppable", "angle": 0 },
       { "at": 500, "kind": "shield-slot", "angle": 30, "lockedBy": "lk1" }
     ] },
 
@@ -137,7 +140,9 @@
       { "at": 290, "sweep": 7, "sweepTime": 2.6, "width": 6, "angle": 0 }
     ] },
 
+    // Agility with the ring gun, for the wells and the twist at 175 and 180 that follow.
     { "length": 240, "section": "tube", "speed": 170, "pickups": [  // 4940 - 5180
+      { "at": 60, "kind": "agility" },
       { "at": 120, "kind": "ring-gun" }
     ], "obstacles": [
       { "at": 180, "kind": "target", "angle": 0, "count": 5, "angleStep": 72 }

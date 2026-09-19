@@ -124,6 +124,10 @@
       { "at": 90,  "angle": 0,   "width": 10 },
       { "at": 190, "period": 2.0, "angle": 180, "width": 18, "height": 3 },
       { "at": 300, "kind": "plate", "angle": 90, "width": 11, "height": 3 }
+    ], "pickups": [
+      // Agility for the twist: nothing in it is seen until the bend opens, so the dodge has to
+      // be quick rather than early.
+      { "at": 350, "kind": "agility", "angle": 0 }
     ] },
 
     // Run for home: the tightest twist in the game, one thing per bend, nothing visible until it is.

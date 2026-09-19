@@ -99,7 +99,8 @@
 
     // Wider: the bore goes to thirty and the core grows to keep the room at twelve. The walls are
     // flatter under the ship and the core is a big thing, close overhead. Targets round it, to see
-    // how little of it is on screen at once, and the ring gun in fours: one wherever the player is.
+    // how little of it is on screen at once. Agility and the ring gun in fours: one wherever the
+    // player is, and the agility is what makes a target on the far side of the core reachable.
     { "length": 220, "section": "wide-ring", "speed": 110 },        // 2450 - 2670
     { "length": 560, "obstacles": [                                 // 2670 - 3230
       { "at": 100, "kind": "target", "surface": "ceiling", "angle": 0 },
@@ -108,15 +109,18 @@
       { "at": 370, "kind": "target", "surface": "ceiling", "angle": -90 },
       { "at": 470, "full": true, "height": 3 }
     ], "pickups": [
+      { "at": 20, "kind": "agility", "angle": 0, "count": 4, "angleStep": 90 },
       { "at": 60, "kind": "ring-gun", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
     // Wider still: forty, with the core at twenty-eight, so both walls are all but flat and the
     // far side of either is a long way off. Collars alternating wall and core - the jump rhythm
     // from Over and Under, wrapped round a cylinder - with shields in fours between them. Speed up
-    // for it.
+    // for it, and agility on the way in, since a wall this size is a long way to get across.
     { "length": 240, "section": "big-ring", "speed": 118, "obstacles": [ // 3230 - 3470
       { "at": 180, "surface": "ceiling", "full": true, "height": 3 }
+    ], "pickups": [
+      { "at": 60, "kind": "agility", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
     { "length": 640, "obstacles": [                                 // 3470 - 4110
       { "at": 100, "full": true, "height": 3 },

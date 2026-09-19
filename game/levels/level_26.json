@@ -86,13 +86,16 @@
 
     // Divided. Three keys over six blades open opposite pairs, so each shot clears a quarter of the
     // way round and the ring is a different wall depending on which ones landed. The bend after it
-    // is to the right, so the right-hand pair is the one worth having.
+    // is to the right, so the right-hand pair is the one worth having. Unstoppable after the last
+    // key, as the answer to whichever shots missed: blades break under it like anything else.
     { "length": 740, "section": "wide", "obstacles": [              // 2300 - 3040
       { "at": 90,  "kind": "target", "angle": 45,   "group": "i5" },
       { "at": 260, "kind": "target", "angle": 165,  "group": "i6" },
       { "at": 430, "kind": "target", "angle": -75,  "group": "i7" }
     ], "apertures": [
       { "at": 610, "blades": 6, "angle": 30, "keys": ["i5", "i6", "i7"] }
+    ], "pickups": [
+      { "at": 490, "kind": "unstoppable", "angle": 0 }
     ] },
 
     // A fork with a ring in each mouth, and one key each. Three things have to be true or the idea

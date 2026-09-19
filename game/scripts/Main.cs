@@ -576,6 +576,9 @@ public partial class Main : Node3D
                 case SessionEvent.UnstoppableStarted:
                     _hud.Callout("UNSTOPPABLE");
                     break;
+                case SessionEvent.AgilityStarted:
+                    _hud.Callout("AGILITY");
+                    break;
                 case SessionEvent.Finished:
                     _levelDone = true;
                     break;

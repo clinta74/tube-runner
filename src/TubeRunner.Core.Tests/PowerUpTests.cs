@@ -164,6 +164,27 @@ public class PowerUpTests
     }
 
     [Fact]
+    public void Agility_SteersFaster_ThenWearsOff()
+    {
+        var normal = Session([], []);
+        var agile = Session([], [Power(PickupKind.Agility, 1)], Settings with { AgilityTime = 1f });
+
+        // Steer right the whole way. Over a short stretch the quicker ship gets further round.
+        Run(normal, 0.4f, new ShipInput(Steer: 1f));
+        Run(agile, 0.4f, new ShipInput(Steer: 1f));
+        Assert.True(agile.AgilityLeft > 0f);
+        Assert.True(agile.Ship.Position.X > normal.Ship.Position.X * 1.4f,
+            $"{agile.Ship.Position.X} agile vs {normal.Ship.Position.X} normal");
+
+        // Once it has run out the two steer at the same rate again.
+        Run(agile, 1f);
+        Assert.Equal(0f, agile.AgilityLeft);
+        float before = agile.Ship.Position.X;
+        Run(agile, 0.1f, new ShipInput(Steer: -1f));
+        Assert.Equal(Settings.Ship.SteerSpeed * 0.1f, before - agile.Ship.Position.X, 2);
+    }
+
+    [Fact]
     public void Unstoppable_WearsOff()
     {
         var game = Session([Block(40), Block(200)], [Power(PickupKind.Unstoppable, 10)],
@@ -187,7 +208,7 @@ public class PowerUpTests
     [Fact]
     public void Carry_KeepsShieldsPowerUpsAndScoreBetweenLevels()
     {
-        var first = Session([], [Power(PickupKind.RingGun, 20), Power(PickupKind.ShieldSlot, 40)]);
+        var first = Session([], [Power(PickupKind.RingGun, 20), Power(PickupKind.ShieldSlot, 40), Power(PickupKind.Agility, 60)]);
         Run(first, 2f);
         var carried = first.Carry;
 
@@ -200,6 +221,8 @@ public class PowerUpTests
         Assert.Equal(4, second.TotalShields);
         Assert.Equal(carried.RingCharges, second.RingCharges);
         Assert.Equal(3, second.RingCharges);
+        Assert.True(carried.AgilityLeft > 0f);
+        Assert.Equal(carried.AgilityLeft, second.AgilityLeft);
         Assert.True(second.Score >= carried.Score);
     }
 

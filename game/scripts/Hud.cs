@@ -323,6 +323,7 @@ public partial class Hud : CanvasLayer
         var status = new List<string>(4);
         if (session.RamLeft > 0f) status.Add($"UNSTOPPABLE  {session.RamLeft:0.0}s");
         if (session.RapidFireLeft > 0f) status.Add($"RAPID FIRE  {session.RapidFireLeft:0.0}s");
+        if (session.AgilityLeft > 0f) status.Add($"AGILITY  {session.AgilityLeft:0.0}s");
         if (session.RingCharges > 0) status.Add($"RING GUN  x{session.RingCharges}");
         status.Add($"{session.Ship.ForwardSpeed:0} u/s");
         _speed.Text = string.Join("\n", status);

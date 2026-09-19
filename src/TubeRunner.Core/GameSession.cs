@@ -30,6 +30,7 @@ public enum SessionEvent
     ShieldSlotAdded,
     RapidFireStarted,
     RingGunCharged,
+    AgilityStarted,
     UnstoppableStarted,
 
     /// <summary>Unstoppable has <see cref="GameSession.RamWarning"/> seconds left.</summary>
@@ -48,7 +49,8 @@ public sealed record RunState(
     float RamLeft,
     float Throttle,
     int Score,
-    float Momentum = 0f);
+    float Momentum = 0f,
+    float AgilityLeft = 0f);
 
 /// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
 /// <param name="Special">Fire the ring gun, if it has charges.</param>
@@ -85,6 +87,11 @@ public readonly record struct ShipInput(
 /// </param>
 /// <param name="RingChargesPerPickup">Ring gun shots each ring-gun pickup gives.</param>
 /// <param name="RamTime">Seconds an unstoppable pickup lasts.</param>
+/// <param name="AgilityTime">Seconds an agility pickup lasts.</param>
+/// <param name="AgilityFactor">
+/// Steering speed multiplier while agility runs. Enough to feel at once, not so much that the ship
+/// overshoots what it was already able to reach.
+/// </param>
 /// <param name="RingRange">Distance a ring shot sweeps before it fades.</param>
 /// <param name="RingReach">On open planes, how far to either side a ring shot reaches.</param>
 /// <param name="PickupRadius">How close the ship has to pass to a pickup to collect it.</param>
@@ -121,6 +128,8 @@ public sealed record SessionSettings(
     float RapidFireFactor = 0.35f,
     int RingChargesPerPickup = 3,
     float RamTime = 6f,
+    float AgilityTime = 10f,
+    float AgilityFactor = 1.6f,
     float RingRange = 250f,
     float RingReach = 45f,
     float PickupRadius = 1.5f,
@@ -216,6 +225,7 @@ public sealed class GameSession
             RapidFireLeft = carry.RapidFireLeft;
             RingCharges = carry.RingCharges;
             RamLeft = carry.RamLeft;
+            AgilityLeft = carry.AgilityLeft;
             Ship.Throttle = carry.Throttle;
             Momentum = carry.Momentum;
             _carriedScore = carry.Score;
@@ -263,6 +273,9 @@ public sealed class GameSession
     /// <summary>Seconds left of smashing through anything the ship touches.</summary>
     public float RamLeft { get; private set; }
 
+    /// <summary>Seconds left of faster steering.</summary>
+    public float AgilityLeft { get; private set; }
+
     /// <summary>
     /// How well the run is going, from 0 to 1: it climbs steadily while the ship flies without being
     /// hit and a hit knocks a chunk off it. The music builds from it. It carries between levels, since
@@ -288,7 +301,7 @@ public sealed class GameSession
     public int Score => _carriedScore + _bonus + (int)(Ship.Position.S / 10.0);
 
     /// <summary>State to carry into the next level of the run.</summary>
-    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score, Momentum);
+    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score, Momentum, AgilityLeft);
 
     public void Step(float dt, ShipInput input)
     {
@@ -297,6 +310,8 @@ public sealed class GameSession
 
         Elapsed += dt;
         RapidFireLeft = Math.Max(0f, RapidFireLeft - dt);
+        AgilityLeft = Math.Max(0f, AgilityLeft - dt);
+        Ship.SteerScale = AgilityLeft > 0f ? _settings.AgilityFactor : 1f;
         float ramBefore = RamLeft;
         RamLeft = Math.Max(0f, RamLeft - dt);
         if (ramBefore > RamWarning && RamLeft <= RamWarning) _events.Add(SessionEvent.UnstoppableEnding);
@@ -588,6 +603,10 @@ public sealed class GameSession
             case PickupKind.Unstoppable:
                 RamLeft = _settings.RamTime;
                 _events.Add(SessionEvent.UnstoppableStarted);
+                break;
+            case PickupKind.Agility:
+                AgilityLeft = _settings.AgilityTime;
+                _events.Add(SessionEvent.AgilityStarted);
                 break;
         }
     }

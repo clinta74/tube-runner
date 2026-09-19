@@ -232,7 +232,8 @@ line or down the meaner branch, so they cost something to take.
 | Extra shield | 2, on the ceiling | going off-line to reach it; it is spent first and never refilled |
 | Rapid fire | 2, before tough blocks | 2, 4-hit blocks |
 | Ring gun | 2, before a ring of targets | 2, second ring at an offset angle |
-| Unstoppable | 6, before the breakable rows | 7 at the box, 11 before the twisting finish; 27, against a ring no shot opens |
+| Unstoppable | 6, before the breakable rows | 7 at the box, 11 before the twisting finish; 26, 27 and 31 after a three-key ring's keys, as the answer to the ones that were missed; 27, against a ring no shot opens |
+| Agility | 10, in fours round the wide rings, where a wall is too big to get across | 29, 30 and 31 before their runs for home, where the blocks come faster than the ship can leave |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
 | Rings, and the jump between their walls | 10, a wide bore with a core overhead and a shield on it | 10, collars that force the jump both ways, then the biggest bore at speed |

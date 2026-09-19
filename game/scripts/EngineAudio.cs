@@ -98,6 +98,7 @@ public partial class EngineAudio : AudioStreamPlayer
             case SessionEvent.ShieldSlotAdded:
             case SessionEvent.RapidFireStarted:
             case SessionEvent.RingGunCharged:
+            case SessionEvent.AgilityStarted:
             case SessionEvent.UnstoppableStarted:
                 // A quick rising arpeggio for any power-up.
                 foreach (float f in new[] { 660f, 880f, 1320f }) _voices.Add(Voice.Tone(f, f * 1.05f, 0.18f, 0.12f));

@@ -28,6 +28,7 @@ public partial class ObstacleRenderer : Node3D
         [PickupKind.RapidFire] = (new Color(1f, 0.5f, 0.15f), "RAPID"),
         [PickupKind.RingGun] = (new Color(1f, 0.3f, 1f), "RING"),
         [PickupKind.Unstoppable] = (new Color(1f, 0.2f, 0.2f), "RAM"),
+        [PickupKind.Agility] = (new Color(0.62f, 0.5f, 1f), "AGILE"),
     };
 
     // Warning signs stand in one ring around the tube, this far back from a warp well.
