@@ -445,6 +445,31 @@ Still open:
 - **No sound of its own.** A ring opening is the one piece of machinery in the game with no noise;
   `EngineAudio` has the voices for it.
 
+### Rings: a cylinder down the middle of the bore
+
+A section with a `ringHeight` has a core: the outer wall is the floor, the core is the ceiling
+hanging overhead, each wall closes on itself, and the jump is the only way between them. Sleeve
+(level 10) is the first use. The decisions that shaped it:
+
+- **Levels say how much room the ring leaves, not how big the core is.** The core is what is left,
+  and a taller ring is bought by widening the bore, up to 70% of its narrow half-size.
+- **Keep the room at 12, the flat section's gap.** A first pass made the last ring tighter (5 of
+  room) for tension; from inside, a collar on the wall and one on the core looked the same band and
+  the jump had no slack either end. Tension comes from a bigger bore with a bigger core instead.
+- **A core arrives whole and stops whole**, at piece boundaries, with a flat face in the fork-wall
+  material. Blending one in from nothing was a needle down the bore, whatever was done to its tip.
+  Between two rings it does blend, so a change of room is a taper.
+- **A full block is a collar**, `"full": true`, as wide as its wall; on the core it is the way to
+  bring a player down before the core stops.
+- **Mid-jump, a thing is met on its own wall.** The ship's X is converted across with the perimeter
+  ratio before it is compared; the raw X had hit blocks it was nowhere near.
+- **The ship keeps its place round a changing wall**, in rings and tubes alike, except through the
+  funnel into a flat section.
+
+Still open: a hairline seam down the top of a ring's wall where the strip closes on itself; the far
+end's checker aliases in the widest bores; collars cannot be gates or movers; the jump is a fixed
+0.55 s whatever the gap; and splits, apertures and warps are refused in a ring.
+
 ## Standing constraints
 
 Any of this has to keep three guards passing, all of which exist because something shipped wrong:

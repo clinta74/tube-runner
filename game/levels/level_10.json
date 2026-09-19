@@ -14,8 +14,12 @@
   // wall, which is the ring's version of a flat section's full-width wall and the thing that makes
   // the jump compulsory rather than optional. Collars come in pairs, outer wall then core, so the
   // rhythm is up-and-down rather than a single dodge.
-  // The bore widens partway through, to show the walls going flatter and the room overhead growing
-  // with the bore, and tightens later into a sleeve with almost no room at all.
+  // Every ring here leaves the same twelve units between its walls that a flat section leaves
+  // between its floor and ceiling, so a jump and a collar mean here what they meant there. What
+  // changes is the bore: it goes from twenty to thirty to forty, and the core grows with it to keep
+  // the room the same, so the walls flatten under the ship and the core turns from a pipe overhead
+  // into a wall of its own. In the biggest bore, power-ups come in fours round the ring, one for
+  // wherever the player happens to be.
   "theme": {
     "darks": ["#1a1d26", "#15171f", "#20242f"],
     "lights": ["#6f7a9c", "#5e6786", "#828db2"],
@@ -37,9 +41,9 @@
     "narrow":    { "radius": 6 },
     "mouth":     { "radius": 20 },
     "ring":      { "radius": 20, "ringHeight": 12 },
-    "wide-ring": { "radius": 28, "ringHeight": 18 },
-    "sleeve":    { "radius": 20, "ringHeight": 5 },
-    "box-ring":  { "halfWidth": 22, "halfHeight": 16, "squareness": 0.7, "ringHeight": 10 }
+    "wide-ring": { "radius": 30, "ringHeight": 12 },
+    "big-ring":  { "radius": 40, "ringHeight": 12 },
+    "box-ring":  { "halfWidth": 30, "halfHeight": 20, "squareness": 0.7, "ringHeight": 12 }
   },
 
   "start": "tube",
@@ -93,9 +97,9 @@
       { "at": 300, "kind": "shield", "surface": "ceiling", "angle": 0 }
     ] },
 
-    // Wider still: the bore goes to twenty-eight and the room overhead to eighteen. The walls are
-    // nearly flat under the ship and the core is a big thing, far off. Targets round it, to see how
-    // little of it is on screen at once.
+    // Wider: the bore goes to thirty and the core grows to keep the room at twelve. The walls are
+    // flatter under the ship and the core is a big thing, close overhead. Targets round it, to see
+    // how little of it is on screen at once, and the ring gun in fours: one wherever the player is.
     { "length": 220, "section": "wide-ring", "speed": 110 },        // 2450 - 2670
     { "length": 560, "obstacles": [                                 // 2670 - 3230
       { "at": 100, "kind": "target", "surface": "ceiling", "angle": 0 },
@@ -104,20 +108,23 @@
       { "at": 370, "kind": "target", "surface": "ceiling", "angle": -90 },
       { "at": 470, "full": true, "height": 3 }
     ], "pickups": [
-      { "at": 60, "kind": "ring-gun", "angle": 0 }
+      { "at": 60, "kind": "ring-gun", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
-    // Then the sleeve: the same bore with the core grown out to within five units of the wall. Not
-    // much room, a short hop, and collars alternating wall and core - the jump rhythm from Over and
-    // Under, wrapped round a cylinder. Speed up for it.
-    { "length": 240, "section": "sleeve", "speed": 118, "obstacles": [ // 3230 - 3470
-      { "at": 180, "surface": "ceiling", "full": true, "height": 2.5 }
+    // Wider still: forty, with the core at twenty-eight, so both walls are all but flat and the
+    // far side of either is a long way off. Collars alternating wall and core - the jump rhythm
+    // from Over and Under, wrapped round a cylinder - with shields in fours between them. Speed up
+    // for it.
+    { "length": 240, "section": "big-ring", "speed": 118, "obstacles": [ // 3230 - 3470
+      { "at": 180, "surface": "ceiling", "full": true, "height": 3 }
     ] },
     { "length": 640, "obstacles": [                                 // 3470 - 4110
-      { "at": 100, "full": true, "height": 2.5 },
-      { "at": 260, "surface": "ceiling", "full": true, "height": 2.5 },
-      { "at": 420, "full": true, "height": 2.5 },
-      { "at": 580, "surface": "ceiling", "full": true, "height": 2.5 }
+      { "at": 100, "full": true, "height": 3 },
+      { "at": 260, "surface": "ceiling", "full": true, "height": 3 },
+      { "at": 420, "full": true, "height": 3 },
+      { "at": 580, "surface": "ceiling", "full": true, "height": 3 }
+    ], "pickups": [
+      { "at": 340, "kind": "shield", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
     // A boxy ring, to see the walls with corners in them, and a breather.

@@ -77,6 +77,35 @@ bore, which is the only way to get more room overhead:
 On a section that is not round, the height is measured on its **narrow** axis, so the gap is wider
 than the number everywhere else and the number is still what says whether the ship fits.
 
+**Keep the room at 12, and change the bore.** A flat section leaves 12 units between its floor and
+ceiling (a `radius` of 6, opened), and that is the gap the jump and the collar were tuned in: a
+collar 3 high is cleared a quarter of the way into a jump and met only in the last quarter. A ring
+with 5 units of room turns both into the same band, a wall's collar and the core's look alike from
+inside, and a jump has no slack either end. So a ring that should feel tighter is not given less
+room; it is given a **bigger bore and a bigger core**, which flattens both walls under the ship and
+pushes the far side of each further off. Sleeve does this at 20, 30 and 40.
+
+| Bore | `ringHeight` | Core | The core's perimeter, for `angle` spacing |
+|---|---|---|---|
+| radius 20 | 12 | radius 8 | 50 |
+| radius 30 | 12 | radius 18 | 113 |
+| radius 40 | 12 | radius 28 | 176 |
+
+**In a big bore, put power-ups round the ring in multiples.** A pad is 1.5 units across and the
+outer wall of a 40 bore is 250 round, so a single pad is a thing most players never pass over.
+`count` and `angleStep` place one wherever the player happens to be: four at 90° is one within a
+half-turn of anyone, and only one of them is reachable at a time, so it hands out one pad, not four.
+
+```json
+{ "at": 340, "kind": "shield", "angle": 0, "count": 4, "angleStep": 90 }
+```
+
+**The ship keeps its place round the wall as the bore changes**, not its distance from the bottom
+of it - a widening bore is a cone the ship rides, and a ship a third of the way round stays a third
+of the way round. That holds for hollow tubes too, and for the core as it tapers between two rings;
+the one place it does not is the funnel into a flat section, which widens to the horizon before
+the planes part.
+
 It is a third arrangement alongside the hollow tube and the open planes, and it borrows one rule
 from each:
 

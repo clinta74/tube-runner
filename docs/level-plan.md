@@ -29,7 +29,7 @@ before it gets mixed with anything else. Levels are in `game/levels/`; the forma
 | 7 | **Earthworks** | Boxy sections, a long flat run, a fork | Box, flat, split | ✅ |
 | 8 | **Crossroads** | Forks as a real choice: short-and-mean vs long-and-clear | Split-heavy | ✅ |
 | 9 | **Loop the Loop** | A first look at the wireframe style: loops and switchbacks, the whole track in view | Round, wireframe | ✅ |
-| 10 | **Sleeve** | A first look at the ring: a bore too wide to see all of, a core overhead, the jump between the two | Ring, wide and tight | ✅ |
+| 10 | **Sleeve** | A first look at the ring: a bore too wide to see all of, a core overhead, the jump between the two | Rings at 20, 30 and 40, boxy ring | ✅ |
 | 11 | **Neon Run** | Everything, faster | All | ✅ |
 | 12 | **Clockwork** | Timed gates: obstacles that open and shut on a cycle | Round, oval | ✅ |
 | 13 | **Metronome** | Gates in rhythm with jumps | Flat, round | ✅ |
@@ -214,7 +214,7 @@ how obstacles are arranged.
 | 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4926 |
 | 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4496 |
 | 9 | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4556 |
-| 10 | Sleeve | 105 → 118 | Collars: the whole way round a wall | High: the jump between walls, both ways | Ring, wide ring, sleeve, boxy ring | Compulsory, in pairs | Light | Four shields, ring | 6186 |
+| 10 | Sleeve | 105 → 118 | Collars: the whole way round a wall | High: the jump between walls, both ways | Rings at 20, 30 and 40 with 12 of room, boxy ring | Compulsory, in pairs | Light | Shields, ring gun in fours | 6186 |
 | 11 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 5116 |
 
 Both late levels hand out shields *after* their hard stretches and put the tools *before* the obstacle
@@ -235,7 +235,7 @@ line or down the meaner branch, so they cost something to take.
 | Unstoppable | 6, before the breakable rows | 7 at the box, 11 before the twisting finish; 27, against a ring no shot opens |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
-| Rings, and the jump between their walls | 10, a wide bore with a core overhead and a shield on it | 10, collars that force the jump both ways, then the sleeve at speed |
+| Rings, and the jump between their walls | 10, a wide bore with a core overhead and a shield on it | 10, collars that force the jump both ways, then the biggest bore at speed |
 | Forks | 7 | 8, three junctions where the short way is the tight one; then every third level from 12 |
 | Warp zones | 8, in the run for home | every third level from 13, and all through block E |
 | Timed gates | 12, a single gate on a straight | 13, gates in rhythm with jumps |
