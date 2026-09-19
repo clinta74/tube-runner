@@ -457,12 +457,21 @@ public partial class ObstacleRenderer : Node3D
             edge[i] = new Vector3(point.X + normal.X * depth, point.Y + normal.Y * depth, 0f);
         }
 
+        // Which way the faces wind depends on which way the wall's normal points relative to the
+        // way round it: into the section from a tube's wall, out of the core from a ring's. Wound
+        // the same for both, the core's band shows only its unlit backs - a dim hairline round the
+        // core from any distance, and a collar nobody sees until it costs them.
+        var run = wall[1] - wall[0];
+        var rise = edge[0] - wall[0];
+        bool inverted = run.X * rise.Y - run.Y * rise.X < 0f;
+
         var front = new Vector3(0f, 0f, -halfLength);
         var back = new Vector3(0f, 0f, halfLength);
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
         {
+            if (inverted) (b, d) = (d, b);
             st.AddVertex(a); st.AddVertex(b); st.AddVertex(c);
             st.AddVertex(a); st.AddVertex(c); st.AddVertex(d);
         }
