@@ -42,17 +42,17 @@ public class PowerUpTests
     }
 
     [Fact]
-    public void ShieldSlot_AddsAnExtraUpToTheCap()
+    public void ShieldSlot_AddsOneExtra_AndNeverASecondWhileItIsHeld()
     {
         var game = Session([], [.. Enumerable.Range(1, 5).Select(i => Power(PickupKind.ShieldSlot, i * 50))]);
 
         Run(game, 6f);
 
-        // Extras are their own pool, and the normal three are untouched by them.
+        // The extra is its own pool of one, and the normal three are untouched by it.
         Assert.Equal(3, game.MaxShields);
         Assert.Equal(3, game.Shields);
-        Assert.Equal(3, game.ExtraShields);
-        Assert.Equal(6, game.TotalShields);
+        Assert.Equal(1, game.ExtraShields);
+        Assert.Equal(4, game.TotalShields);
     }
 
     [Fact]

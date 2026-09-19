@@ -356,7 +356,7 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
 |---|---|
 | `shield` | Restores one shield. |
 | `full-shields` | Restores every shield. |
-| `shield-slot` | Adds one **extra** shield, up to 3, on top of the normal three. |
+| `shield-slot` | Adds one **extra** shield on top of the normal three. Only one is ever held: a second pad while it is does nothing. |
 | `rapid-fire` | Fires about three times as fast for 8 seconds. |
 | `ring-gun` | 3 ring-gun shots. Each sweeps the whole tube, breaking every target and breakable block it passes; solid blocks survive. |
 | `unstoppable` | For 6 seconds the ship smashes through anything it touches — solid blocks included — scoring each one and losing no shields. |
@@ -368,10 +368,14 @@ obstacles (`at`, `surface`/`x` or `angle`, `branch`, and the repeat fields). Fly
   { "at": 80, "kind": "shield-slot", "angle": 180 }   // up on the ceiling
 ```
 
-An **extra shield is its own pool**, not a longer bar. It is spent before the normal shields, and
-neither `shield` nor `full-shields` ever gives one back — once an extra is gone it takes another
-`shield-slot` to hold one again. With 2 of 3 normal shields, picking one up gives a fourth point and
-leaves the empty third still empty.
+An **extra shield is its own pool of one**, not a longer bar. It is spent before the normal
+shields, and neither `shield` nor `full-shields` ever gives it back — once the extra is gone it
+takes another `shield-slot` to hold one again, and while one is held another pad does nothing. With
+2 of 3 normal shields, picking one up gives a fourth point and leaves the empty third still empty.
+
+In the late levels the pad sits **down the quick branch of a fork, past its well**: the branch that
+saves time is the one with a warp on it, and the extra is what makes taking it worth the risk.
+
 
 That is what makes it the rarest prize worth going off the fast line for: everything else the level
 hands out can be replaced later, and this cannot.

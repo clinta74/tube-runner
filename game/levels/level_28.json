@@ -81,6 +81,10 @@
       "obstacles": [
         { "at": 220, "branch": 0, "kind": "target", "angle": 90 },
         { "at": 150, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
+      ],
+      "pickups": [
+        // The extra shield, past the well on the quick road: the gamble pays whoever gets by it.
+        { "at": 390, "branch": 1, "kind": "shield-slot", "angle": -90 }
       ]
     },
     { "length": 160, "section": "tube" },                           // 1560 - 1720
@@ -156,6 +160,9 @@
       "obstacles": [
         { "at": 150, "branch": 0, "angle": 0, "count": 2, "spacing": 60, "angleStep": 120 },
         { "at": 180, "branch": 1, "kind": "target", "angle": 180 }
+      ],
+      "pickups": [
+        { "at": 380, "branch": 0, "kind": "shield-slot", "angle": 90 }
       ]
     },
 

@@ -69,7 +69,11 @@ public readonly record struct ShipInput(
 
 /// <param name="Ship">Movement settings.</param>
 /// <param name="Shields">Shields at the start; the run ends when they run out.</param>
-/// <param name="MaxExtraShields">Most extra shields that can be held at once, on top of the normal ones.</param>
+/// <param name="MaxExtraShields">
+/// Most extra shields that can be held at once, on top of the normal ones. One: an extra is a
+/// single spare point the run is carrying, spent first and never refilled, and a second pad while
+/// it is still held does nothing. More than one turned the bar into a longer bar.
+/// </param>
 /// <param name="RecoveryTime">Seconds of invulnerability and slow-down after a hit.</param>
 /// <param name="HitSlowdown">Speed multiplier right after a hit, easing back to 1 over the recovery.</param>
 /// <param name="ShotSpeed">Shot speed on top of the ship's own; ring shots too.</param>
@@ -118,7 +122,7 @@ public readonly record struct ShipInput(
 public sealed record SessionSettings(
     ShipSettings Ship,
     int Shields = 3,
-    int MaxExtraShields = 3,
+    int MaxExtraShields = 1,
     float RecoveryTime = 1.5f,
     float HitSlowdown = 0.45f,
     float ShotSpeed = 220f,

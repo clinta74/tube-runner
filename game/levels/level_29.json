@@ -89,6 +89,10 @@
       "warps": [
         { "at": 300, "branch": 1, "angle": 90 }
       ],
+      "pickups": [
+        // The extra shield, past the well on the quick road, for whoever gets by it.
+        { "at": 390, "branch": 1, "kind": "shield-slot", "angle": -90 }
+      ],
       "obstacles": [
         { "at": 230, "branch": 0, "kind": "target", "angle": 90 },
         { "at": 160, "branch": 1, "angle": 180, "width": 7 }

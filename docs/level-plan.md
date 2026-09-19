@@ -229,7 +229,7 @@ line or down the meaner branch, so they cost something to take.
 | Shooting targets | 1, targets on the wall | 2, rings of targets |
 | Breakable blocks (`hits`) | 2, a single 1-hit block | 2, a full ring to shoot through |
 | Shield / full shields | 1 shield, 2 full | placed after hard stretches |
-| Extra shield | 2, on the ceiling | going off-line to reach it; it is spent first and never refilled |
+| Extra shield | 2, on the ceiling | going off-line to reach it; it is spent first and never refilled; 28, 29 and 31 down the quick branch past its well |
 | Rapid fire | 2, before tough blocks | 2, 4-hit blocks |
 | Ring gun | 2, before a ring of targets | 2, second ring at an offset angle |
 | Unstoppable | 6, before the breakable rows | 7 at the box, 11 before the twisting finish; 26, 27 and 31 after a three-key ring's keys, as the answer to the ones that were missed; 27, against a ring no shot opens |
