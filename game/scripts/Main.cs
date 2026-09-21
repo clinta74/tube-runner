@@ -171,6 +171,7 @@ public partial class Main : Node3D
             if (arg == "--menu") _debugMenu = true;
             if (arg.StartsWith("--shot=")) _shotPath = arg["--shot=".Length..];
             if (arg == "--ceiling") _startCeiling = true;
+            if (arg == "--front") _debugFront = true;
             if (arg.StartsWith("--steer=")) _debugSteer = float.Parse(arg["--steer=".Length..], CultureInfo.InvariantCulture);
             if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
             if (arg == "--settings") _debugSettings = true;
@@ -294,6 +295,9 @@ public partial class Main : Node3D
 
     // Opens straight onto the settings page, likewise.
     private bool _debugSettings;
+
+    /// <summary>Looks at the ship from its front right, the victory lap's view, for a --shot of the nose.</summary>
+    private bool _debugFront;
 
     /// <summary>Holds the stick over for a --shot, since nothing else can press a key for one.</summary>
     private float? _debugSteer;
@@ -575,12 +579,12 @@ public partial class Main : Node3D
 
         // The victory lap swings the camera round to the ship's front right and holds it there,
         // eased in from wherever the run left it rather than cutting.
-        if (_outro)
+        if (_outro || _debugFront)
         {
             var over = FrameOnPath(pos.S + OutroAhead)
                 .PointOnSection(ridePoint + new System.Numerics.Vector2(OutroSide, OutroLift))
                 .RelativeTo(origin).ToGodot() + snapOffset;
-            float swing = _outroBlend * _outroBlend * (3f - 2f * _outroBlend);
+            float swing = _debugFront ? 1f : _outroBlend * _outroBlend * (3f - 2f * _outroBlend);
             camPos = camPos.Lerp(over, swing);
             target = target.Lerp(shipPos, swing);
         }

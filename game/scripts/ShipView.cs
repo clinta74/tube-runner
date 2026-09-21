@@ -6,8 +6,8 @@ using Theme = TubeRunner.Core.Theme;
 namespace TubeRunner.Game;
 
 /// <summary>
-/// The player's interceptor: a wedge fuselage with a faceted nose, swept wings, canted tail fins and
-/// twin engines, all built from primitives. From six units back only the silhouette and a few bright
+/// The player's interceptor: a wedge fuselage with a faceted nose and its cockpit glass set into it, cropped
+/// delta wings, canted tail fins and twin engines, built from primitives and two cut planforms. From six units back only the silhouette and a few bright
 /// accents read, so most of the detail is in how the parts move - nozzles stretch with speed,
 /// the ailerons and rudders work the way an aircraft's do, the fins flare as you ease off, and the
 /// hull runs hot while unstoppable. Forward is -Z, matching Godot's look_at.
@@ -18,7 +18,7 @@ public partial class ShipView : Node3D
 
     // How far a control surface swings at full deflection, and how fast it gets there. Quick, but
     // not instant: a key is either down or not, and a surface that snapped with it would flicker.
-    private const float AileronDegrees = 50f;
+    private const float AileronDegrees = 38f;
     private const float RudderDegrees = 16f;
     private const float SurfaceRate = 16f;
 
@@ -27,6 +27,27 @@ public partial class ShipView : Node3D
     // is held for as long as the stick is, because steering round a tube is a roll that carries on.
     private const float AileronKick = 0.95f;
     private const float AileronHold = 0.5f;
+
+    // The wing's planform, in its own frame: X out along the span from the root, Z aft. A cropped
+    // delta - the leading edge raked back about forty degrees, the trailing edge about eight.
+    private const float WingRoot = 0.2f;
+    private const float Span = 1.05f;
+    private const float RootLead = -0.42f;
+    private const float TipLead = 0.42f;
+    private const float RootTrail = 0.6f;
+    private const float TipTrail = 0.74f;
+
+    // The nose: a four-sided spike, its corners up, down and to either side. The cockpit glass is
+    // laid on its upper faces, so both are built from the same numbers.
+    private const float NoseRadius = 0.27f;
+    private const float NoseY = 0.02f;
+    private const float NoseBaseZ = -0.8f;
+    private const float NoseTipZ = -1.5f;
+
+    // The aileron's place along the span, and how deep it is cut into the trailing edge.
+    private const float AileronFrom = 0.4f;
+    private const float AileronTo = 1.0f;
+    private const float AileronChord = 0.22f;
 
     private readonly List<Node3D> _ailerons = new();
     private readonly List<Node3D> _fins = new();
@@ -109,21 +130,20 @@ public partial class ShipView : Node3D
             _shellMaterial.EmissionEnergyMultiplier = 0.6f + 1.1f * pulse;
         }
 
-        // Ailerons: a strip along each wing's outer edge, hinged along the edge it shares with the
-        // wing, one folding down and one up. The tip on the inside of the turn goes down and the
-        // outside one lifts, leaning the wing further into the bank than the hull goes. They lead the ship rather
-        // than follow it - full over as a turn begins, easing as the bank arrives, and thrown the
-        // other way to stop it - which is what makes them look like they are doing the work.
+        // Ailerons: a strip let into the back edge of each wing, hinged along its length, one down
+        // and one up. Steering right lifts the ship's right wing - it is riding up the wall that
+        // side - so it is the right aileron that drops, to lift it, and the left that rises. They
+        // lead the ship rather than follow it: full over as a turn begins, easing as the bank
+        // arrives, and thrown the other way to stop it, which is what makes them look like they
+        // are doing the work.
         float wanted = Mathf.Clamp(AileronKick * (steer - bank) + AileronHold * steer + roll, -1f, 1f);
         float ease = 1f - Mathf.Exp(-SurfaceRate * dt);
         _aileron = Mathf.Lerp(_aileron, wanted, ease);
         _rudder = Mathf.Lerp(_rudder, Mathf.Clamp(steer, -1f, 1f), ease);
         for (int i = 0; i < _ailerons.Count; i++)
         {
-            // About the hinge's Z, a negative angle drops whatever lies to +X and lifts what lies
-            // to -X. The right strip lies to +X of its hinge and the left to -X of its own, so the
-            // one angle folds the right tip down and the left tip up.
-            _ailerons[i].RotationDegrees = new Vector3(0f, 0f, -AileronDegrees * _aileron);
+            // About the hinge's own length, a positive angle drops the trailing edge.
+            _ailerons[i].RotationDegrees = new Vector3(Side(i) * AileronDegrees * _aileron, 0f, 0f);
         }
 
         // The fins are rudders as well as airbrakes: they swing their trailing edges into the turn,
@@ -210,18 +230,39 @@ public partial class ShipView : Node3D
 
         // Fuselage: a wedge, tipped with a four-sided nose so it stays faceted.
         Part(new PrismMesh { Size = new Vector3(0.58f, 0.4f, 1.8f) }, _hullMaterial, new Vector3(0f, 0f, 0.1f), Vector3.Zero);
-        Part(new CylinderMesh { TopRadius = 0f, BottomRadius = 0.27f, Height = 0.7f, RadialSegments = 4 },
-            _hullMaterial, new Vector3(0f, 0.02f, -1.15f), new Vector3(-90f, 0f, 0f));
+        Part(new CylinderMesh { TopRadius = 0f, BottomRadius = NoseRadius, Height = NoseBaseZ - NoseTipZ, RadialSegments = 4 },
+            _hullMaterial, new Vector3(0f, NoseY, (NoseBaseZ + NoseTipZ) * 0.5f), new Vector3(-90f, 0f, 0f));
 
-        // A canopy, low and swept back. The ship is looked at from the front right on the victory
-        // lap, so it wants something up front that reads as a cockpit rather than a blank wedge.
-        var canopy = Part(new SphereMesh { Radius = 0.14f, Height = 0.28f, RadialSegments = 10, Rings = 5 },
-            _darkMaterial, new Vector3(0f, 0.15f, -0.45f), Vector3.Zero);
-        canopy.Scale = new Vector3(0.82f, 0.6f, 1.9f);
-        // Its rim, which is what actually carries the shape: nothing here is lit well enough for a
-        // dark dome on a pale hull to show on its own.
-        Part(new BoxMesh { Size = new Vector3(0.26f, 0.015f, 0.52f) }, _accentMaterial,
-            new Vector3(0f, 0.11f, -0.45f), Vector3.Zero);
+        // The cockpit is part of the nose, not something carried on it. The nose is a four-sided
+        // spike with a sharp ridge on top, and nothing round sits in that: a dome on the spine read
+        // as a ball on the ship's back, and a teardrop pushed through the ridge read as a pod lying
+        // on it. So the glass is faceted like the hull - a dark pane set flush into each of the
+        // nose's two upper faces, meeting at the ridge, with a lit sill round it - and behind it a
+        // low dark fairing tapers back along the spine, which is all of it that shows from behind.
+        var tip = new Vector3(0f, NoseY, NoseTipZ);
+        var crown = new Vector3(0f, NoseY + NoseRadius, NoseBaseZ);
+        for (int i = 0; i < 2; i++)
+        {
+            var shoulder = new Vector3(Side(i) * NoseRadius, NoseY, NoseBaseZ);
+            // A point on this face: how far from the base toward the tip, and how far from the
+            // ridge down toward the shoulder.
+            Vector3 On(float along, float down) => crown.Lerp(tip, along).Lerp(shoulder.Lerp(tip, along), down);
+
+            var facing = (shoulder - crown).Cross(tip - crown).Normalized();
+            if (facing.Y < 0f) facing = -facing;
+            AddChild(new MeshInstance3D
+            {
+                Mesh = Pane(new[] { On(0.02f, 0f), On(0.06f, 0.62f), On(0.42f, 0.56f), On(0.72f, 0f) }, facing, 0.004f),
+                MaterialOverride = _accentMaterial,
+            });
+            AddChild(new MeshInstance3D
+            {
+                Mesh = Pane(new[] { On(0.05f, 0f), On(0.09f, 0.52f), On(0.41f, 0.46f), On(0.66f, 0f) }, facing, 0.008f),
+                MaterialOverride = _darkMaterial,
+            });
+        }
+        Part(new CylinderMesh { TopRadius = 0f, BottomRadius = 0.105f, Height = 0.7f, RadialSegments = 4 },
+            _darkMaterial, new Vector3(0f, 0.2f, NoseBaseZ + 0.35f), new Vector3(90f, 0f, 0f));
 
         // A strip down the spine, and two along the nose. Emissive because the ship is lit by one
         // headlight from the camera and nothing else - a panel line cut into the hull would be
@@ -249,44 +290,67 @@ public partial class ShipView : Node3D
         Part(new BoxMesh { Size = new Vector3(0.05f, 0.22f, 0.34f) }, _hullMaterial,
             new Vector3(0f, -0.2f, 0.62f), Vector3.Zero);
 
-        // Swept wings, each with a glowing leading edge and an aileron along its outer edge.
+        // Swept wings: a cropped delta, long at the root and short at the tip, with the leading
+        // edge raked hard back and the trailing edge only a little. A box turned on its corner was
+        // standing in for this, and from behind it read as a plank; a planform cut to shape is a
+        // wing. Lit along the leading edge and across the tip, which is the outline of the ship
+        // from the chase camera, and with the aileron let into the back edge.
         for (int i = 0; i < 2; i++)
         {
             float side = Side(i);
-            // Hard sweep and a deep chord: from behind the pair reads as one A-frame delta. The wing
-            // is a frame with its panels hung in it, which is what lets the aileron hinge off it.
-            // Its local +X runs outboard on both sides once the sweep is applied, so an offset times
-            // the side lands on the right wing's tip and the left's alike.
             var wing = new Node3D
             {
-                Position = new Vector3(side * 0.62f, -0.02f, 0.3f),
-                RotationDegrees = new Vector3(0f, side * -38f, side * 12f),
+                Position = new Vector3(side * WingRoot, -0.02f, 0f),
+                RotationDegrees = new Vector3(0f, 0f, side * 10f),
             };
             AddChild(wing);
 
-            Part(new BoxMesh { Size = new Vector3(1.0f, 0.08f, 0.85f) }, _hullMaterial,
-                Vector3.Zero, Vector3.Zero, wing);
-            Part(new BoxMesh { Size = new Vector3(1.0f, 0.04f, 0.12f) }, _accentMaterial,
-                new Vector3(0f, 0.025f, -0.37f), Vector3.Zero, wing);
+            // Outboard is +X on the right wing and -X on the left, so every X here is times the side.
+            Vector2 At(float x, float z) => new(side * x, z);
+            float TrailingEdge(float x) => RootTrail + (TipTrail - RootTrail) * x / Span;
 
-            // The aileron is a slim strip along the wing's outer edge, where the winglets used to
-            // stand on end: the same footprint laid flat. It is hinged along its long inboard edge,
-            // the one it shares with the wing, so it folds up or down like a wingtip rather than
-            // nodding like a flap - the strip is long and narrow, and turning it about its short
-            // end swung a plank through the air. It follows the tip edge rather than replacing the
-            // end of the wing, so the wing keeps its whole shape and the strip is what moves
-            // against it. Hull-coloured, so level it is the wing's own edge; the lit outer and
-            // trailing edges are what trace it as it folds, and the dark line is the hinge.
-            var hinge = new Node3D { Position = new Vector3(side * 0.5f, 0f, 0.13f) };
-            wing.AddChild(hinge);
-            Part(new BoxMesh { Size = new Vector3(0.14f, 0.06f, 0.46f) }, _hullMaterial,
-                new Vector3(side * 0.07f, 0f, 0f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.14f, 0.07f, 0.04f) }, _accentMaterial,
-                new Vector3(side * 0.07f, 0f, 0.22f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.03f, 0.07f, 0.46f) }, _accentMaterial,
-                new Vector3(side * 0.135f, 0f, 0f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.015f, 0.075f, 0.46f) }, _darkMaterial,
-                new Vector3(0f, 0f, 0f), Vector3.Zero, hinge);
+            // Round the outline from the root's leading edge, with a notch cut in the back for the
+            // aileron to sit in: it is part of the wing's shape, not something hung behind it.
+            var outline = new[]
+            {
+                At(0f, RootLead), At(Span, TipLead), At(Span, TipTrail),
+                At(AileronTo, TrailingEdge(AileronTo)), At(AileronTo, TrailingEdge(AileronTo) - AileronChord),
+                At(AileronFrom, TrailingEdge(AileronFrom) - AileronChord), At(AileronFrom, TrailingEdge(AileronFrom)),
+                At(0f, RootTrail),
+            };
+            wing.AddChild(new MeshInstance3D { Mesh = Planform(outline, 0.07f), MaterialOverride = _hullMaterial });
+
+            // The lit leading edge, laid along the rake, and a lit tip.
+            var lead = At(Span, TipLead) - At(0f, RootLead);
+            Part(new BoxMesh { Size = new Vector3(lead.Length() - 0.04f, 0.045f, 0.07f) }, _accentMaterial,
+                new Vector3(side * Span * 0.5f, 0.02f, (RootLead + TipLead) * 0.5f + 0.03f),
+                new Vector3(0f, Mathf.RadToDeg(-Mathf.Atan2(lead.Y, lead.X)), 0f), wing);
+            Part(new BoxMesh { Size = new Vector3(0.035f, 0.08f, TipTrail - TipLead) }, _accentMaterial,
+                new Vector3(side * Span, 0f, (TipLead + TipTrail) * 0.5f), Vector3.Zero, wing);
+
+            // The aileron: a strip along the back edge of the wing, hinged along its long front
+            // edge so the lit trailing edge lifts and drops. The mount lines it up with the
+            // trailing edge, which is not square to the ship, and the hinge inside it only ever
+            // turns about its own length.
+            var hingeFrom = At(AileronFrom, TrailingEdge(AileronFrom) - AileronChord);
+            var hingeTo = At(AileronTo, TrailingEdge(AileronTo) - AileronChord);
+            var middle = (hingeFrom + hingeTo) * 0.5f;
+            float length = (hingeTo - hingeFrom).Length() - 0.02f;
+            float rake = Mathf.Atan2(TipTrail - RootTrail, Span);
+            var mount = new Node3D
+            {
+                Position = new Vector3(middle.X, 0f, middle.Y),
+                RotationDegrees = new Vector3(0f, -side * Mathf.RadToDeg(rake), 0f),
+            };
+            wing.AddChild(mount);
+            var hinge = new Node3D();
+            mount.AddChild(hinge);
+            Part(new BoxMesh { Size = new Vector3(length, 0.06f, AileronChord) }, _hullMaterial,
+                new Vector3(0f, 0f, AileronChord * 0.5f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(length, 0.07f, 0.04f) }, _accentMaterial,
+                new Vector3(0f, 0f, AileronChord - 0.02f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(length, 0.075f, 0.015f) }, _darkMaterial,
+                Vector3.Zero, Vector3.Zero, hinge);
             _ailerons.Add(hinge);
         }
 
@@ -327,6 +391,81 @@ public partial class ShipView : Node3D
             _shellMaterial, new Vector3(0f, 0f, 0.1f), Vector3.Zero);
         _shell.Scale = new Vector3(1.15f, 0.62f, 1.45f);
         _shell.Visible = false;
+    }
+
+    /// <summary>
+    /// A flat slab cut to an outline: the outline in X and Z, extruded <paramref name="thickness"/>
+    /// in Y about zero. Flat-shaded, a normal per face, like the primitives the rest of the ship
+    /// is made of. The outline may be concave and may run either way round, which is what lets one
+    /// wing be the other's mirror image.
+    /// </summary>
+    private static ArrayMesh Planform(Vector2[] outline, float thickness)
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        float h = thickness * 0.5f;
+
+        // Godot's front faces wind clockwise. Rather than reason about which way round each face
+        // happens to come out, every triangle is checked against the way it is meant to face.
+        void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 normal)
+        {
+            if ((b - a).Cross(c - a).Dot(normal) > 0f) (b, c) = (c, b);
+            foreach (var v in new[] { a, b, c })
+            {
+                st.SetNormal(normal);
+                st.AddVertex(v);
+            }
+        }
+
+        var triangles = Geometry2D.TriangulatePolygon(outline);
+        for (int i = 0; i + 2 < triangles.Length; i += 3)
+        {
+            var (a, b, c) = (outline[triangles[i]], outline[triangles[i + 1]], outline[triangles[i + 2]]);
+            Face(new Vector3(a.X, h, a.Y), new Vector3(b.X, h, b.Y), new Vector3(c.X, h, c.Y), Vector3.Up);
+            Face(new Vector3(a.X, -h, a.Y), new Vector3(b.X, -h, b.Y), new Vector3(c.X, -h, c.Y), Vector3.Down);
+        }
+
+        // The edge, facing out. Which side is out depends on which way round the outline runs.
+        float area = 0f;
+        for (int i = 0; i < outline.Length; i++)
+        {
+            var (p, q) = (outline[i], outline[(i + 1) % outline.Length]);
+            area += p.X * q.Y - q.X * p.Y;
+        }
+        float turn = Mathf.Sign(area);
+        for (int i = 0; i < outline.Length; i++)
+        {
+            var (p, q) = (outline[i], outline[(i + 1) % outline.Length]);
+            var out2 = new Vector2(q.Y - p.Y, -(q.X - p.X)).Normalized() * turn;
+            var normal = new Vector3(out2.X, 0f, out2.Y);
+            var (pt, pb) = (new Vector3(p.X, h, p.Y), new Vector3(p.X, -h, p.Y));
+            var (qt, qb) = (new Vector3(q.X, h, q.Y), new Vector3(q.X, -h, q.Y));
+            Face(pt, qt, qb, normal);
+            Face(pt, qb, pb, normal);
+        }
+        return st.Commit();
+    }
+
+    /// <summary>
+    /// A flat four-sided panel facing <paramref name="facing"/>, lifted <paramref name="lift"/> off
+    /// the surface it lies on so the two do not fight over the same pixels.
+    /// </summary>
+    private static ArrayMesh Pane(Vector3[] corners, Vector3 facing, float lift)
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (int i = 1; i + 1 < corners.Length; i++)
+        {
+            var (a, b, c) = (corners[0], corners[i], corners[i + 1]);
+            // Godot's front faces wind clockwise as seen from the side they face.
+            if ((b - a).Cross(c - a).Dot(facing) > 0f) (b, c) = (c, b);
+            foreach (var v in new[] { a, b, c })
+            {
+                st.SetNormal(facing);
+                st.AddVertex(v + facing * lift);
+            }
+        }
+        return st.Commit();
     }
 
     private MeshInstance3D Part(Mesh mesh, Material material, Vector3 position, Vector3 rotationDegrees,

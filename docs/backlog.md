@@ -164,19 +164,29 @@ Late because it is the item most likely to be invisible in play. There is no amb
 headlight on the camera, so detail that relies on shading goes black at grazing angles — that is why
 the wings went black once already. And at six units back the ship is small on screen.
 
-One piece of it is done: the **control surfaces move with the flying**. Each aileron is a slim
-strip along its wing's outer edge, the winglets' footprint laid flat, hinged along the long edge
-it shares with the wing so that it folds down or up like a wingtip. It took four goes and three
-play tests to land there - on the trailing edge first, which worked but sat mid-wing; then as the
-whole outer quarter of the wing, which was too much surface and ate the wing's shape; then this
-strip hinged at its front, which swung a long plank about its short end; then hinged along its
-length, with the sense turned over so the tip on the inside of the turn is the one that drops.
-That last is a look, not aerodynamics: a real aileron works the other way up. One folds down and
-one up, and they lead the ship rather than follow it -
+Three pieces of it are done, across five goes and four play tests.
+
+**The wing is a cropped delta**, cut to its planform (`ShipView.Planform`) rather than a box turned
+on its corner: long at the root, short at the tip, the leading edge raked back about forty degrees
+and the trailing edge about eight, lit along the leading edge and across the tip.
+
+**The ailerons are strips let into the wing's back edge**, hinged along their length so the lit
+trailing edge lifts and drops. They got there by way of the trailing edge of the old wing (right
+idea, but mid-wing on a plank), the whole outer quarter of the wing (too much surface), a strip
+along the tip hinged at its front (a plank swung about its short end), and the same strip hinged
+along its length - which was the right hinge on the wrong wing. The sense is the game's, not an
+aircraft's: steering right lifts the ship's right wing, since it is riding up the wall that side,
+so it is the right aileron that drops. One goes down and one up, and they lead the ship -
 hard over as a turn starts, easing to about half while the stick is held, thrown the other way as
 it is let go, and full over through the half roll of a jump. The tail fins swing as rudders. They
 used to turn about their own middle, follow the smoothed bank, deflect the wrong way round, and be
 dark enough to vanish on a wire level. `tube play --steer 1 --shot` holds the stick for a look.
+
+**The cockpit is part of the nose.** Dark panes set flush into the nose's two upper faces, meeting
+at its ridge, with a lit sill, and a low dark fairing tapering back along the spine. A dome on the
+spine read as a ball on the ship's back, and a teardrop pushed through the ridge as a pod lying on
+it: nothing round sits in a faceted nose. `tube play --front --shot` looks at it from the front
+right, as the victory lap does.
 
 Settle first whether the complaint is *detail* or the ship reading as a cheap shape. If it is the
 latter, silhouette and motion buy more than geometry, and the cheap route gets most of it. A paused
