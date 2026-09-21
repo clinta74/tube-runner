@@ -171,6 +171,7 @@ public partial class Main : Node3D
             if (arg == "--menu") _debugMenu = true;
             if (arg.StartsWith("--shot=")) _shotPath = arg["--shot=".Length..];
             if (arg == "--ceiling") _startCeiling = true;
+            if (arg.StartsWith("--steer=")) _debugSteer = float.Parse(arg["--steer=".Length..], CultureInfo.InvariantCulture);
             if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
             if (arg == "--settings") _debugSettings = true;
             if (arg == "--title") forceTitle = true;
@@ -293,6 +294,9 @@ public partial class Main : Node3D
 
     // Opens straight onto the settings page, likewise.
     private bool _debugSettings;
+
+    /// <summary>Holds the stick over for a --shot, since nothing else can press a key for one.</summary>
+    private float? _debugSteer;
 
     private GameSettings _settings = new();
     private bool _updateCheckStarted;
@@ -462,7 +466,7 @@ public partial class Main : Node3D
             _hud.ShowMessage("");
         }
 
-        float steer = Input.GetAxis(InputSetup.SteerLeft, InputSetup.SteerRight);
+        float steer = _debugSteer ?? Input.GetAxis(InputSetup.SteerLeft, InputSetup.SteerRight);
         _session.Step(dt, new ShipInput(
             steer,
             Input.IsActionJustPressed(InputSetup.Jump),
@@ -548,7 +552,10 @@ public partial class Main : Node3D
         // the plume and the thrust bar are reading the same thing.
         var limits = _session.Ship.Settings;
         float thrust = Mathf.InverseLerp(limits.MinThrottle, limits.MaxThrottle, _session.Ship.Throttle);
-        _ship.UpdateState(dt, _bank, _session.Ship.Throttle, thrust, _fx.Intensity,
+        // A jump is a half roll to the left, fastest at its middle. It is by far the hardest the
+        // ship ever rolls, so the ailerons go hard over for it.
+        float jumpRoll = ship.IsJumping ? -Mathf.Sin(Mathf.Pi * ship.JumpProgress) : 0f;
+        _ship.UpdateState(dt, _bank, steer, jumpRoll, _session.Ship.Throttle, thrust, _fx.Intensity,
             _session.RamLeft, _session.RecoveryLeft);
 
         // The camera follows the ship's section-space pose along its path, so it stays level on

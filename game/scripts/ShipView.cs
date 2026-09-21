@@ -9,12 +9,24 @@ namespace TubeRunner.Game;
 /// The player's interceptor: a wedge fuselage with a faceted nose, swept wings, canted tail fins and
 /// twin engines, all built from primitives. From six units back only the silhouette and a few bright
 /// accents read, so most of the detail is in how the parts move - nozzles stretch with speed,
-/// ailerons deflect into a bank, the fins flare as you ease off, and the hull runs hot while
-/// unstoppable. Forward is -Z, matching Godot's look_at.
+/// the ailerons and rudders work the way an aircraft's do, the fins flare as you ease off, and the
+/// hull runs hot while unstoppable. Forward is -Z, matching Godot's look_at.
 /// </summary>
 public partial class ShipView : Node3D
 {
     private const float FlashSeconds = 0.07f;
+
+    // How far a control surface swings at full deflection, and how fast it gets there. Quick, but
+    // not instant: a key is either down or not, and a surface that snapped with it would flicker.
+    private const float AileronDegrees = 30f;
+    private const float RudderDegrees = 16f;
+    private const float SurfaceRate = 16f;
+
+    // An aileron answers two things. Most of it is how hard the ship is being asked to roll that it
+    // is not yet doing - the kick as a turn starts, and the opposite kick as it is let go. The rest
+    // is held for as long as the stick is, because steering round a tube is a roll that carries on.
+    private const float AileronKick = 0.95f;
+    private const float AileronHold = 0.5f;
 
     private readonly List<Node3D> _ailerons = new();
     private readonly List<Node3D> _fins = new();
@@ -34,6 +46,8 @@ public partial class ShipView : Node3D
     private float _glow;
     private float _flashLeft;
     private float _time;
+    private float _aileron;
+    private float _rudder;
 
     public override void _Ready() => Build();
 
@@ -70,10 +84,15 @@ public partial class ShipView : Node3D
     /// the same ground whatever speed the level runs at, where the speed effect does not.
     /// </param>
     /// <param name="bank">Smoothed steer in [-1, 1], the same value the whole ship rolls by.</param>
+    /// <param name="steer">The stick itself in [-1, 1], which the bank is on its way to.</param>
+    /// <param name="roll">
+    /// A roll being flown for some other reason, in [-1, 1] with right positive: the half roll of a
+    /// jump between walls, which is the hardest the ship ever rolls.
+    /// </param>
     /// <param name="throttle">Ship throttle; below 1 means easing off.</param>
     /// <param name="intensity">Speed effect in [0, 1], driving the engines.</param>
-    public void UpdateState(float dt, float bank, float throttle, float thrust, float intensity,
-        float ramLeft, float recoveryLeft)
+    public void UpdateState(float dt, float bank, float steer, float roll, float throttle, float thrust,
+        float intensity, float ramLeft, float recoveryLeft)
     {
         _time += dt;
         _flashLeft = Mathf.Max(0f, _flashLeft - dt);
@@ -90,17 +109,26 @@ public partial class ShipView : Node3D
             _shellMaterial.EmissionEnergyMultiplier = 0.6f + 1.1f * pulse;
         }
 
-        // Ailerons deflect into the bank, opposite sides opposite ways.
+        // Ailerons: hinged along the wing's trailing edge, one up and one down. To roll right the
+        // right one lifts, spoiling that wing, and the left one drops. They lead the ship rather
+        // than follow it - full over as a turn begins, easing as the bank arrives, and thrown the
+        // other way to stop it - which is what makes them look like they are doing the work.
+        float wanted = Mathf.Clamp(AileronKick * (steer - bank) + AileronHold * steer + roll, -1f, 1f);
+        float ease = 1f - Mathf.Exp(-SurfaceRate * dt);
+        _aileron = Mathf.Lerp(_aileron, wanted, ease);
+        _rudder = Mathf.Lerp(_rudder, Mathf.Clamp(steer, -1f, 1f), ease);
         for (int i = 0; i < _ailerons.Count; i++)
         {
-            _ailerons[i].RotationDegrees = new Vector3(Side(i) * 24f * bank, 0f, 0f);
+            // About the hinge's X, a negative angle lifts the trailing edge.
+            _ailerons[i].RotationDegrees = new Vector3(-Side(i) * AileronDegrees * _aileron, 0f, 0f);
         }
 
-        // Easing off the throttle flares the fins out like airbrakes.
+        // The fins are rudders as well as airbrakes: they swing their trailing edges into the turn,
+        // and easing off the throttle flares them out.
         float brake = Mathf.Clamp(1f - throttle, 0f, 1f);
         for (int i = 0; i < _fins.Count; i++)
         {
-            _fins[i].RotationDegrees = new Vector3(0f, 0f, Side(i) * -(22f + 30f * brake));
+            _fins[i].RotationDegrees = new Vector3(0f, RudderDegrees * _rudder, Side(i) * -(22f + 30f * brake));
         }
 
         // Engines stretch and brighten with how hard they are being driven, which is mostly the
@@ -229,8 +257,23 @@ public partial class ShipView : Node3D
             Part(new BoxMesh { Size = new Vector3(1.0f, 0.04f, 0.12f) }, _accentMaterial,
                 new Vector3(0f, 0.025f, -0.37f), Vector3.Zero, wing);
 
-            _ailerons.Add(Part(new BoxMesh { Size = new Vector3(0.42f, 0.06f, 0.18f) }, _darkMaterial,
-                new Vector3(side * 0.25f, 0f, 0.5f), Vector3.Zero, wing));
+            // The aileron hangs off a hinge on the trailing edge and swings about that, the way a
+            // real one does; turned about its own middle it just looked like a loose plank. Outboard,
+            // where a roll surface belongs, and with a lit trailing edge, because from six units
+            // back that edge moving up and down is the whole of what can be seen.
+            //
+            // In the hull's own colour, so that level it is simply the back of the wing. It was dark
+            // once, and on a wireframe level a dark surface against black is a piece missing from
+            // the wing rather than a part of it. A dark line along the hinge is what says it moves.
+            var hinge = new Node3D { Position = new Vector3(side * 0.21f, 0f, 0.4f) };
+            wing.AddChild(hinge);
+            Part(new BoxMesh { Size = new Vector3(0.58f, 0.03f, 0.03f) }, _darkMaterial,
+                new Vector3(0f, 0.03f, 0.02f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.58f, 0.06f, 0.3f) }, _hullMaterial,
+                new Vector3(0f, 0f, 0.17f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.58f, 0.07f, 0.05f) }, _accentMaterial,
+                new Vector3(0f, 0f, 0.33f), Vector3.Zero, hinge);
+            _ailerons.Add(hinge);
 
             // A winglet at each tip, with a lit cap. The wing's local +X runs outboard on both sides
             // once its sweep is applied, so the same offset times the side lands on the right tip.

@@ -164,6 +164,13 @@ Late because it is the item most likely to be invisible in play. There is no amb
 headlight on the camera, so detail that relies on shading goes black at grazing angles — that is why
 the wings went black once already. And at six units back the ship is small on screen.
 
+One piece of it is done: the **control surfaces work like an aircraft's**. The ailerons hang off a
+hinge on the wing's trailing edge, one up and one down, and lead the ship rather than follow it -
+hard over as a turn starts, easing to about half while the stick is held, thrown the other way as
+it is let go, and full over through the half roll of a jump. The tail fins swing as rudders. They
+used to turn about their own middle, follow the smoothed bank, deflect the wrong way round, and be
+dark enough to vanish on a wire level. `tube play --steer 1 --shot` holds the stick for a look.
+
 Settle first whether the complaint is *detail* or the ship reading as a cheap shape. If it is the
 latter, silhouette and motion buy more than geometry, and the cheap route gets most of it. A paused
 screenshot up close should decide it.
