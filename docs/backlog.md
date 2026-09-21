@@ -164,12 +164,15 @@ Late because it is the item most likely to be invisible in play. There is no amb
 headlight on the camera, so detail that relies on shading goes black at grazing angles — that is why
 the wings went black once already. And at six units back the ship is small on screen.
 
-One piece of it is done: the **control surfaces work like an aircraft's**. Each aileron is a slim
-strip along its wing's outer edge, hinged at its front: the winglets' footprint laid flat. It took
-three goes and two play tests to land there - on the trailing edge first, which worked but sat
-mid-wing; then as the whole outer quarter of the wing, which was too much surface and ate the
-wing's shape; then this, which leaves the wing whole and puts a small surface at the widest point
-of the silhouette. One goes up and one down, and they lead the ship rather than follow it -
+One piece of it is done: the **control surfaces move with the flying**. Each aileron is a slim
+strip along its wing's outer edge, the winglets' footprint laid flat, hinged along the long edge
+it shares with the wing so that it folds down or up like a wingtip. It took four goes and three
+play tests to land there - on the trailing edge first, which worked but sat mid-wing; then as the
+whole outer quarter of the wing, which was too much surface and ate the wing's shape; then this
+strip hinged at its front, which swung a long plank about its short end; then hinged along its
+length, with the sense turned over so the tip on the inside of the turn is the one that drops.
+That last is a look, not aerodynamics: a real aileron works the other way up. One folds down and
+one up, and they lead the ship rather than follow it -
 hard over as a turn starts, easing to about half while the stick is held, thrown the other way as
 it is let go, and full over through the half roll of a jump. The tail fins swing as rudders. They
 used to turn about their own middle, follow the smoothed bank, deflect the wrong way round, and be

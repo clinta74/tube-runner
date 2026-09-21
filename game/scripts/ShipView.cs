@@ -18,7 +18,7 @@ public partial class ShipView : Node3D
 
     // How far a control surface swings at full deflection, and how fast it gets there. Quick, but
     // not instant: a key is either down or not, and a surface that snapped with it would flicker.
-    private const float AileronDegrees = 30f;
+    private const float AileronDegrees = 50f;
     private const float RudderDegrees = 16f;
     private const float SurfaceRate = 16f;
 
@@ -109,8 +109,9 @@ public partial class ShipView : Node3D
             _shellMaterial.EmissionEnergyMultiplier = 0.6f + 1.1f * pulse;
         }
 
-        // Ailerons: a strip along each wing's outer edge, hinged at its front, one up and one down.
-        // To roll right the right one lifts, spoiling that wing, and the left one drops. They lead the ship rather
+        // Ailerons: a strip along each wing's outer edge, hinged along the edge it shares with the
+        // wing, one folding down and one up. The tip on the inside of the turn goes down and the
+        // outside one lifts, leaning the wing further into the bank than the hull goes. They lead the ship rather
         // than follow it - full over as a turn begins, easing as the bank arrives, and thrown the
         // other way to stop it - which is what makes them look like they are doing the work.
         float wanted = Mathf.Clamp(AileronKick * (steer - bank) + AileronHold * steer + roll, -1f, 1f);
@@ -119,8 +120,10 @@ public partial class ShipView : Node3D
         _rudder = Mathf.Lerp(_rudder, Mathf.Clamp(steer, -1f, 1f), ease);
         for (int i = 0; i < _ailerons.Count; i++)
         {
-            // About the hinge's X, a negative angle lifts the trailing edge.
-            _ailerons[i].RotationDegrees = new Vector3(-Side(i) * AileronDegrees * _aileron, 0f, 0f);
+            // About the hinge's Z, a negative angle drops whatever lies to +X and lifts what lies
+            // to -X. The right strip lies to +X of its hinge and the left to -X of its own, so the
+            // one angle folds the right tip down and the left tip up.
+            _ailerons[i].RotationDegrees = new Vector3(0f, 0f, -AileronDegrees * _aileron);
         }
 
         // The fins are rudders as well as airbrakes: they swing their trailing edges into the turn,
@@ -267,23 +270,23 @@ public partial class ShipView : Node3D
                 new Vector3(0f, 0.025f, -0.37f), Vector3.Zero, wing);
 
             // The aileron is a slim strip along the wing's outer edge, where the winglets used to
-            // stand on end: the same footprint laid flat and hinged at its front. It follows the tip
-            // edge rather than replacing the end of the wing, so the wing keeps its whole shape and
-            // the strip is what moves against it. Out at the tip is where a roll surface has the
-            // most leverage, and it is the widest point of the silhouette, so a small surface there
-            // shows more than a large one inboard. Hull-coloured, so level it is the wing's own
-            // edge; the lit trailing and outer edges are what trace it as it moves, and the dark
-            // line is the gap it moves in.
-            var hinge = new Node3D { Position = new Vector3(side * 0.56f, 0f, -0.1f) };
+            // stand on end: the same footprint laid flat. It is hinged along its long inboard edge,
+            // the one it shares with the wing, so it folds up or down like a wingtip rather than
+            // nodding like a flap - the strip is long and narrow, and turning it about its short
+            // end swung a plank through the air. It follows the tip edge rather than replacing the
+            // end of the wing, so the wing keeps its whole shape and the strip is what moves
+            // against it. Hull-coloured, so level it is the wing's own edge; the lit outer and
+            // trailing edges are what trace it as it folds, and the dark line is the hinge.
+            var hinge = new Node3D { Position = new Vector3(side * 0.5f, 0f, 0.13f) };
             wing.AddChild(hinge);
-            Part(new BoxMesh { Size = new Vector3(0.12f, 0.06f, 0.46f) }, _hullMaterial,
-                new Vector3(0f, 0f, 0.23f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.12f, 0.07f, 0.04f) }, _accentMaterial,
-                new Vector3(0f, 0f, 0.45f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.025f, 0.07f, 0.46f) }, _accentMaterial,
-                new Vector3(side * 0.06f, 0f, 0.23f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.14f, 0.06f, 0.46f) }, _hullMaterial,
+                new Vector3(side * 0.07f, 0f, 0f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.14f, 0.07f, 0.04f) }, _accentMaterial,
+                new Vector3(side * 0.07f, 0f, 0.22f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.03f, 0.07f, 0.46f) }, _accentMaterial,
+                new Vector3(side * 0.135f, 0f, 0f), Vector3.Zero, hinge);
             Part(new BoxMesh { Size = new Vector3(0.015f, 0.075f, 0.46f) }, _darkMaterial,
-                new Vector3(side * -0.06f, 0f, 0.23f), Vector3.Zero, hinge);
+                new Vector3(0f, 0f, 0f), Vector3.Zero, hinge);
             _ailerons.Add(hinge);
         }
 
