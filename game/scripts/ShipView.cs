@@ -109,8 +109,8 @@ public partial class ShipView : Node3D
             _shellMaterial.EmissionEnergyMultiplier = 0.6f + 1.1f * pulse;
         }
 
-        // Ailerons: hinged along the wing's trailing edge, one up and one down. To roll right the
-        // right one lifts, spoiling that wing, and the left one drops. They lead the ship rather
+        // Ailerons: the wingtips, each hinged along its own leading edge, one up and one down. To
+        // roll right the right one lifts, spoiling that wing, and the left one drops. They lead the ship rather
         // than follow it - full over as a turn begins, easing as the bank arrives, and thrown the
         // other way to stop it - which is what makes them look like they are doing the work.
         float wanted = Mathf.Clamp(AileronKick * (steer - bank) + AileronHold * steer + roll, -1f, 1f);
@@ -246,41 +246,43 @@ public partial class ShipView : Node3D
         Part(new BoxMesh { Size = new Vector3(0.05f, 0.22f, 0.34f) }, _hullMaterial,
             new Vector3(0f, -0.2f, 0.62f), Vector3.Zero);
 
-        // Swept wings, each with a glowing leading edge and an aileron on the trailing edge.
+        // Swept wings, each with a glowing leading edge and an all-moving tip for an aileron.
         for (int i = 0; i < 2; i++)
         {
             float side = Side(i);
-            // Hard sweep and a deep chord: from behind the pair reads as one A-frame delta.
-            var wing = Part(new BoxMesh { Size = new Vector3(1.0f, 0.08f, 0.85f) }, _hullMaterial,
-                new Vector3(side * 0.62f, -0.02f, 0.3f), new Vector3(0f, side * -38f, side * 12f));
+            // Hard sweep and a deep chord: from behind the pair reads as one A-frame delta. The wing
+            // is a frame with the panels hung in it, so the fixed part can stop short of the tip.
+            // Its local +X runs outboard on both sides once the sweep is applied, so an offset times
+            // the side lands on the right wing's tip and the left's alike.
+            var wing = new Node3D
+            {
+                Position = new Vector3(side * 0.62f, -0.02f, 0.3f),
+                RotationDegrees = new Vector3(0f, side * -38f, side * 12f),
+            };
+            AddChild(wing);
 
-            Part(new BoxMesh { Size = new Vector3(1.0f, 0.04f, 0.12f) }, _accentMaterial,
-                new Vector3(0f, 0.025f, -0.37f), Vector3.Zero, wing);
+            Part(new BoxMesh { Size = new Vector3(0.74f, 0.08f, 0.85f) }, _hullMaterial,
+                new Vector3(side * -0.13f, 0f, 0f), Vector3.Zero, wing);
+            Part(new BoxMesh { Size = new Vector3(0.74f, 0.04f, 0.12f) }, _accentMaterial,
+                new Vector3(side * -0.13f, 0.025f, -0.37f), Vector3.Zero, wing);
 
-            // The aileron hangs off a hinge on the trailing edge and swings about that, the way a
-            // real one does; turned about its own middle it just looked like a loose plank. Outboard,
-            // where a roll surface belongs, and with a lit trailing edge, because from six units
-            // back that edge moving up and down is the whole of what can be seen.
-            //
-            // In the hull's own colour, so that level it is simply the back of the wing. It was dark
-            // once, and on a wireframe level a dark surface against black is a piece missing from
-            // the wing rather than a part of it. A dark line along the hinge is what says it moves.
-            var hinge = new Node3D { Position = new Vector3(side * 0.21f, 0f, 0.4f) };
+            // The aileron is the wingtip itself: the outer quarter of the span, hinged along its
+            // own leading edge, where the winglets used to stand. Out at the tip is where a roll
+            // surface has the most leverage, and it is also the widest point of the silhouette, so
+            // from six units back a tip lifting or dropping is the easiest movement on the ship to
+            // see. In the hull's colour, so level it is simply the end of the wing; the lit trailing
+            // and outer edges are what trace it as it moves, and the dark line is the gap it moves in.
+            var hinge = new Node3D { Position = new Vector3(side * 0.37f, 0f, -0.2f) };
             wing.AddChild(hinge);
-            Part(new BoxMesh { Size = new Vector3(0.58f, 0.03f, 0.03f) }, _darkMaterial,
-                new Vector3(0f, 0.03f, 0.02f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.58f, 0.06f, 0.3f) }, _hullMaterial,
-                new Vector3(0f, 0f, 0.17f), Vector3.Zero, hinge);
-            Part(new BoxMesh { Size = new Vector3(0.58f, 0.07f, 0.05f) }, _accentMaterial,
-                new Vector3(0f, 0f, 0.33f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.26f, 0.07f, 0.62f) }, _hullMaterial,
+                new Vector3(0f, 0f, 0.31f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.26f, 0.08f, 0.05f) }, _accentMaterial,
+                new Vector3(0f, 0f, 0.61f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.035f, 0.08f, 0.62f) }, _accentMaterial,
+                new Vector3(side * 0.125f, 0f, 0.31f), Vector3.Zero, hinge);
+            Part(new BoxMesh { Size = new Vector3(0.02f, 0.085f, 0.62f) }, _darkMaterial,
+                new Vector3(side * -0.13f, 0f, 0.31f), Vector3.Zero, hinge);
             _ailerons.Add(hinge);
-
-            // A winglet at each tip, with a lit cap. The wing's local +X runs outboard on both sides
-            // once its sweep is applied, so the same offset times the side lands on the right tip.
-            var winglet = Part(new BoxMesh { Size = new Vector3(0.05f, 0.24f, 0.34f) }, _hullMaterial,
-                new Vector3(side * 0.47f, 0.11f, 0.06f), new Vector3(0f, 0f, side * -10f), wing);
-            Part(new BoxMesh { Size = new Vector3(0.055f, 0.03f, 0.34f) }, _accentMaterial,
-                new Vector3(0f, 0.12f, 0f), Vector3.Zero, winglet);
         }
 
         // Canted tail fins.
