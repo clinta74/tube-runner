@@ -8,6 +8,9 @@ render_mode unshaded, cull_disabled;
 
 // Segment index of this chunk; per-instance so every chunk shares one material.
 instance uniform int segment_index = 0;
+// Added to every chunk's index. A track that takes over from another mid-flight is shifted by however
+// many segments the old one was ahead, so each wall keeps the look it already had (see Main.HandOver).
+uniform int segment_offset = 0;
 uniform float segment_length = 60.0;
 // Extra checker edge blur, in cell widths.
 uniform float softness = 0.06;
@@ -66,7 +69,7 @@ float checker(vec2 p, float soft) {
 }
 
 void fragment() {
-	float seg = float(segment_index);
+	float seg = float(segment_index + segment_offset);
 	float local = UV.y;
 
 	// Wireframe: keep the lines and throw the wall away, so the track ahead can be seen through it -

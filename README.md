@@ -38,6 +38,20 @@ saves one frame to that file, and quits.
 tube play --level bench/aperture.json --start 370 --shot builds/shots/iris.png
 ```
 
+`tube play` with nothing after it opens on the title screen; any of the options above goes straight
+to the level instead. To look at the title or one of its pages, ask for it:
+
+```bash
+tube play --title --shot builds/shots/title.png
+tube play --title-page times --shot builds/shots/times.png   # zones, times, controls, about, settings
+```
+
+Two more pages are for checking that the title's tube really does carry on into the first level with
+nothing changing. `--title-page start` picks Start by itself, and `--title-page wrap` waits for the
+ship to be put back a wall segment; with `--shot` each saves the same instant twice, as
+`<name>-before.png` and `<name>.png`, drawn either side of the move. Apart from the ship's engines
+the two files should be identical.
+
 ## Export a standalone build
 
 One-time setup: install Godot's export templates (in the editor, **Editor > Manage Export Templates >

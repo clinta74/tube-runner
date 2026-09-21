@@ -65,6 +65,24 @@ public sealed class Track
     /// <summary>Splits in track order.</summary>
     public IReadOnlyList<TrackSplit> Splits => _splits;
 
+    /// <summary>
+    /// How far the track runs dead straight in its starting section before anything about it changes:
+    /// a turn, a climb, another section, a fork. Over that stretch one place looks like any other.
+    /// </summary>
+    public double StraightStart
+    {
+        get
+        {
+            foreach (var p in _pieces)
+            {
+                var piece = p.Piece;
+                bool plain = piece.YawRate == 0f && piece.PitchRate == 0f && piece.EndSection == _startSection;
+                if (!plain || SplitAt(p.StartS + piece.Length * 0.5) is not null) return p.StartS;
+            }
+            return Length;
+        }
+    }
+
     private double LastFrameS => (_frames.Count - 1) * (double)SampleSpacing;
 
     public void Append(TrackPiece piece)

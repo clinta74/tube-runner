@@ -19,18 +19,52 @@ public static class LevelLoader
         UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow,
     };
 
-    public static Level Parse(string json)
+    /// <summary>
+    /// A level's name, id and successor, without building any of it. Listing the levels in running
+    /// order needs only these, and <see cref="Parse"/> lays a whole track to get them.
+    /// </summary>
+    public static LevelHeader ReadHeader(string json)
     {
-        LevelData data;
+        var data = Read(json);
+        return new LevelHeader(data.Name, Identifier(data), data.Next);
+    }
+
+    public static Level Parse(string json) => Build(Read(json));
+
+    /// <summary>
+    /// The level with a straight, empty run of <paramref name="leadIn"/> units put in front of it,
+    /// in the section and at the speed it starts with. Everything in the level sits that much
+    /// further along and is otherwise untouched. The title screen flies this: a tube that is the
+    /// first level's own, with the level itself waiting at the end of it.
+    /// </summary>
+    public static Level ParseWithLeadIn(string json, float leadIn)
+    {
+        var data = Read(json);
+        data.Track.Insert(0, new PieceData { Length = leadIn });
+        // Placements inside a piece move with their piece. Only those given against the whole track
+        // have to be moved by hand.
+        foreach (var list in new IEnumerable<PlacementData>[] { data.Obstacles, data.Pickups, data.Warps, data.ThrustZones })
+        {
+            foreach (var placed in list) placed.At += leadIn;
+        }
+        foreach (var aperture in data.Apertures) aperture.At += leadIn;
+        return Build(data);
+    }
+
+    private static LevelData Read(string json)
+    {
         try
         {
-            data = JsonSerializer.Deserialize<LevelData>(json, Options) ?? throw new LevelFormatException("Level file is empty.");
+            return JsonSerializer.Deserialize<LevelData>(json, Options) ?? throw new LevelFormatException("Level file is empty.");
         }
         catch (JsonException e)
         {
             throw new LevelFormatException($"Invalid JSON: {e.Message}");
         }
+    }
 
+    private static Level Build(LevelData data)
+    {
         var sections = new Dictionary<string, CrossSection>();
         foreach (var (name, section) in data.Sections) sections[name] = ToSection(name, section);
 

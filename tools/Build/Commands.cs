@@ -18,6 +18,8 @@ internal static class Commands
                         --summary            open straight onto the end-of-run results screen
                         --menu               open straight onto the Escape menu
                         --settings           open straight onto the settings page
+                        --title              open on the title screen, even with the options above
+                        --title-page <name>  and with a page up: zones, times, controls, about, settings
                         --shot <file>        save one frame to that file, then quit
                         --ceiling            start on the ceiling, or a ring's core
                         --shot-at <units>    take the shot at that point on the track
@@ -49,7 +51,7 @@ internal static class Commands
         switch (args[0])
         {
             case "play":
-                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling"], values: ["level", "start", "record-fps", "shot", "shot-at"]));
+                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title"], values: ["level", "start", "record-fps", "shot", "shot-at", "title-page"]));
                 break;
             case "export":
                 Export(Options.Parse(options, flags: ["debug", "signed"], values: ["version"]));
@@ -101,6 +103,8 @@ internal static class Commands
         if (options.Flag("settings")) game.Add("--settings");
         if (options.Value("shot") is string shot) game.Add("--shot=" + Path.GetFullPath(shot));
         if (options.Flag("ceiling")) game.Add("--ceiling");
+        if (options.Flag("title")) game.Add("--title");
+        if (options.Value("title-page") is string page) game.Add("--title-page=" + page);
         if (options.Number("shot-at") is double shotAt) game.Add("--shot-at=" + shotAt.ToString(CultureInfo.InvariantCulture));
         if (game.Count > 0) engine.AddRange(["--", .. game]);
 

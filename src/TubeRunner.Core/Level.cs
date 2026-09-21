@@ -1,5 +1,8 @@
 namespace TubeRunner.Core;
 
+/// <summary>What a level file says about itself before anything is built: see <see cref="LevelLoader.ReadHeader"/>.</summary>
+public readonly record struct LevelHeader(string Name, string Id, string? Next);
+
 /// <summary>A playable level: a planned track plus its settings and colors. Load with <see cref="LevelLoader"/>.</summary>
 public sealed class Level
 {

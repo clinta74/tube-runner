@@ -87,7 +87,7 @@ public partial class GameMenu : Control
         {
             var button = new Button { Text = label, CustomMinimumSize = new Vector2(460f, 64f), FocusMode = FocusModeEnum.All };
             button.AddThemeFontSizeOverride("font_size", ButtonFontSize);
-            StyleButton(button);
+            StyleButton(button, _accent);
             // Run once this frame is over, not from inside the press. A pick can rebuild the menu under
             // the button being pressed, and the same press would otherwise still read as a jump or a
             // shot when the game carries on this frame: picking Resume with Space made the ship jump.
@@ -138,7 +138,7 @@ public partial class GameMenu : Control
 
         var done = new Button { Text = "Back", CustomMinimumSize = new Vector2(460f, 64f), FocusMode = FocusModeEnum.All };
         done.AddThemeFontSizeOverride("font_size", ButtonFontSize);
-        StyleButton(done);
+        StyleButton(done, _accent);
         done.Pressed += () => Callable.From(back).CallDeferred();
         done.MouseEntered += done.GrabFocus;
         var center = new CenterContainer();
@@ -147,6 +147,131 @@ public partial class GameMenu : Control
 
         Visible = true;
         FocusLater(updates);
+    }
+
+    /// <summary>
+    /// A page of facts: a name and what goes with it on each row, a line of small print, then the
+    /// buttons. The first button starts focused, so it should be the one that changes nothing.
+    /// </summary>
+    public void OpenPage(string title, IReadOnlyList<(string Name, string Value)> rows, string? note,
+        IReadOnlyList<(string Label, Action Pick)> options)
+    {
+        _title.Text = title;
+        ClearRows();
+
+        var grid = new GridContainer { Columns = 2 };
+        grid.AddThemeConstantOverride("h_separation", 40);
+        grid.AddThemeConstantOverride("v_separation", 10);
+        foreach (var (name, value) in rows)
+        {
+            var left = new Label { Text = name, Modulate = new Color(1f, 1f, 1f, 0.6f) };
+            left.AddThemeFontSizeOverride("font_size", RowFontSize);
+            var right = new Label { Text = value };
+            right.AddThemeFontSizeOverride("font_size", RowFontSize);
+            grid.AddChild(left);
+            grid.AddChild(right);
+        }
+        _buttons.AddChild(grid);
+        if (note is not null) _buttons.AddChild(Note(note));
+
+        Button? first = null;
+        foreach (var (label, pick) in options)
+        {
+            var button = new Button { Text = label, CustomMinimumSize = new Vector2(460f, 60f), FocusMode = FocusModeEnum.All };
+            button.AddThemeFontSizeOverride("font_size", RowFontSize);
+            StyleButton(button, _accent);
+            button.Pressed += () => Callable.From(pick).CallDeferred();
+            button.MouseEntered += button.GrabFocus;
+            var center = new CenterContainer();
+            center.AddChild(button);
+            _buttons.AddChild(center);
+            first ??= button;
+        }
+
+        Visible = true;
+        if (first is not null) FocusLater(first);
+    }
+
+    /// <summary>
+    /// A list longer than the screen: rows in a window that scrolls to follow the focus, with Back
+    /// under it. A row with a pick is a choice; one without is only there to be read, and still takes
+    /// the focus so the keys can walk the list past it.
+    /// </summary>
+    public void OpenList(string title, IReadOnlyList<(string Left, string Right, Action? Pick)> rows, string? note, Action back)
+    {
+        _title.Text = title;
+        ClearRows();
+
+        var scroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(760f, 470f),
+            FollowFocus = true,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        };
+        var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        list.AddThemeConstantOverride("separation", 4);
+        scroll.AddChild(list);
+
+        Button? first = null;
+        foreach (var (left, right, pick) in rows)
+        {
+            var row = new Button
+            {
+                Text = left,
+                Alignment = HorizontalAlignment.Left,
+                CustomMinimumSize = new Vector2(0f, 46f),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                FocusMode = FocusModeEnum.All,
+            };
+            row.AddThemeFontSizeOverride("font_size", 26);
+            StyleButton(row, _accent, margin: 14, quiet: pick is null);
+            if (pick is not null) row.Pressed += () => Callable.From(pick).CallDeferred();
+            row.MouseEntered += row.GrabFocus;
+
+            var value = new Label
+            {
+                Text = right,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                MouseFilter = MouseFilterEnum.Ignore,
+                Modulate = new Color(1f, 1f, 1f, right == "--" ? 0.35f : 0.9f),
+            };
+            value.AddThemeFontSizeOverride("font_size", 26);
+            row.AddChild(value);
+            value.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            value.OffsetRight = -28f;
+
+            list.AddChild(row);
+            first ??= row;
+        }
+        _buttons.AddChild(scroll);
+        if (note is not null) _buttons.AddChild(Note(note));
+
+        var done = new Button { Text = "Back", CustomMinimumSize = new Vector2(460f, 60f), FocusMode = FocusModeEnum.All };
+        done.AddThemeFontSizeOverride("font_size", RowFontSize);
+        StyleButton(done, _accent);
+        done.Pressed += () => Callable.From(back).CallDeferred();
+        done.MouseEntered += done.GrabFocus;
+        var center = new CenterContainer();
+        center.AddChild(done);
+        _buttons.AddChild(center);
+
+        Visible = true;
+        FocusLater(first ?? done);
+    }
+
+    private static Label Note(string text)
+    {
+        var note = new Label
+        {
+            Text = text,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            CustomMinimumSize = new Vector2(700f, 0f),
+            Modulate = new Color(1f, 1f, 1f, 0.6f),
+        };
+        note.AddThemeFontSizeOverride("font_size", 22);
+        return note;
     }
 
     // Focus once the new controls are laid out. Skipped if something replaced the page first in the
@@ -245,13 +370,19 @@ public partial class GameMenu : Control
         return box;
     }
 
-    private void StyleButton(Button button)
+    /// <summary>
+    /// The one look every button in the game has, the title's included. A quiet button is a row that
+    /// is only there to be read: it still shows where the focus is, but does not light up like a
+    /// thing that can be picked.
+    /// </summary>
+    public static void StyleButton(Button button, Color accent, int margin = 12, bool quiet = false)
     {
-        button.AddThemeStyleboxOverride("normal", Box(new Color(1f, 1f, 1f, 0.05f), 2, new Color(1f, 1f, 1f, 0.16f), 12));
-        button.AddThemeStyleboxOverride("hover", Box(new Color(_accent, 0.2f), 2, _accent, 12));
-        button.AddThemeStyleboxOverride("pressed", Box(new Color(_accent, 0.38f), 2, _accent, 12));
+        float lit = quiet ? 0.08f : 0.2f;
+        button.AddThemeStyleboxOverride("normal", Box(new Color(1f, 1f, 1f, quiet ? 0.02f : 0.05f), 2, new Color(1f, 1f, 1f, quiet ? 0.06f : 0.16f), margin));
+        button.AddThemeStyleboxOverride("hover", Box(new Color(accent, lit), 2, accent, margin));
+        button.AddThemeStyleboxOverride("pressed", Box(new Color(accent, quiet ? lit : 0.38f), 2, accent, margin));
         // Drawn over the others, so the keyboard's choice looks the same as the mouse's.
-        button.AddThemeStyleboxOverride("focus", Box(new Color(_accent, 0.2f), 3, _accent, 12));
+        button.AddThemeStyleboxOverride("focus", Box(new Color(accent, lit), quiet ? 2 : 3, accent, margin));
         foreach (var name in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
         {
             button.AddThemeColorOverride(name, Colors.White);

@@ -43,6 +43,10 @@ public partial class Hud : CanvasLayer
     private HBoxContainer _shieldBar = null!;
     private static readonly Color ExtraShieldColor = new(1f, 0.82f, 0.25f);
 
+    private ColorRect _curtain = null!;
+    private float _curtainLeft;
+    private readonly List<CanvasItem> _playWidgets = new();
+
     private Color _accent = Colors.White;
     private int _normalPips;
     private float _titleLeft;
@@ -77,11 +81,33 @@ public partial class Hud : CanvasLayer
         _shieldBar.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft, Control.LayoutPresetMode.KeepSize, Margin);
         _shieldBar.GrowVertical = Control.GrowDirection.Begin;
 
-        // Added last so it draws over everything, including a run summary - which it leaves alone, so
-        // closing the menu puts the results back exactly as they were.
+        _playWidgets.AddRange(new CanvasItem[] { _score, _time, _speed, _shieldBar, _thrustBar, _jumpCue });
+
+        // Under the menu, so a page opened from the title covers the title rather than the reverse.
+        Title = new TitleScreen();
+        AddChild(Title);
+
+        // Added after everything else in play so it draws over them, including a run summary - which
+        // it leaves alone, so closing the menu puts the results back exactly as they were.
         Menu = new GameMenu();
         AddChild(Menu);
+
+        _curtain = new ColorRect { Color = new Color(0f, 0f, 0f, 0f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        AddChild(_curtain);
+        _curtain.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
+
+    /// <summary>The title screen. Main decides what it offers; this only shows it.</summary>
+    public TitleScreen Title { get; private set; } = null!;
+
+    /// <summary>
+    /// How much of the play HUD is showing, from 0 to 1. Nothing on the title is being played, so
+    /// the score, the clock, the shields and the rest stay off it and come up as a run begins.
+    /// </summary>
+    public float PlayAlpha { get; set; } = 1f;
+
+    /// <summary>Comes up from black over half a second, for the places the game has to cut.</summary>
+    public void FadeIn() => _curtainLeft = 1f;
 
     /// <summary>The Escape menu. Main decides what it offers; this only shows it.</summary>
     public GameMenu Menu { get; private set; } = null!;
@@ -342,7 +368,10 @@ public partial class Hud : CanvasLayer
         }
 
         _titleLeft = Mathf.Max(0f, _titleLeft - dt);
-        _title.Modulate = new Color(1f, 1f, 1f, Mathf.Clamp(_titleLeft, 0f, 1f));
+        _title.Modulate = new Color(1f, 1f, 1f, Mathf.Clamp(_titleLeft, 0f, 1f) * PlayAlpha);
+        foreach (var widget in _playWidgets) widget.Modulate = new Color(1f, 1f, 1f, PlayAlpha);
+        _curtainLeft = Mathf.Max(0f, _curtainLeft - dt * 2f);
+        _curtain.Color = new Color(0f, 0f, 0f, _curtainLeft * _curtainLeft * (3f - 2f * _curtainLeft));
         _flashLeft = Mathf.Max(0f, _flashLeft - dt * 2.5f);
         _flash.Color = _flash.Color with { A = 0.45f * _flashLeft };
     }

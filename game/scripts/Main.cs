@@ -107,6 +107,8 @@ public partial class Main : Node3D
     private float _finalRun;
     private float _trackViewBehind;
     private readonly List<(string Label, Action Pick)> _menu = new();
+    // What backing out of a question or a page returns to: the Escape menu in a run, the title on it.
+    private Action _menuRoot = () => { };
     private bool _menuOpen;
     private bool _menuConfirming;
     private string _menuTitle = "PAUSED";
@@ -155,6 +157,7 @@ public partial class Main : Node3D
         // For testing: `godot -- --level=res://levels/level_05.json --start=3000` plays a given
         // level, starting partway through it. It only applies to the level the run begins on.
         _startS = CameraBehind + 10.0;
+        bool forceTitle = false, testRun = false;
         foreach (var arg in OS.GetCmdlineUserArgs())
         {
             if (arg.StartsWith("--level=")) LevelPath = arg["--level=".Length..];
@@ -170,18 +173,35 @@ public partial class Main : Node3D
             if (arg == "--ceiling") _startCeiling = true;
             if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
             if (arg == "--settings") _debugSettings = true;
+            if (arg == "--title") forceTitle = true;
+            if (arg.StartsWith("--title-page="))
+            {
+                forceTitle = true;
+                _debugTitlePage = arg["--title-page=".Length..];
+            }
+            // Everything else here is for looking at one piece of the game, and the title is in the way.
+            else if (arg != "--no-update-check" && arg != "--title") testRun = true;
         }
+        _firstLevel = LevelPath;
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
         _settings = GameSettings.FromJson(FileAccess.FileExists(SettingsPath) ? FileAccess.GetFileAsString(SettingsPath) : null);
         ApplySettings();
         _runStart = LevelPath;
-        LoadLevel(LevelPath, carry: null, startS: _startS);
+        _menuRoot = OpenMenu;
+        if (forceTitle || !testRun)
+        {
+            EnterTitle();
+        }
+        else
+        {
+            LoadLevel(LevelPath, carry: null, startS: _startS);
 
-        // A test run with --start skips the start screen, so recordings and quick checks just go.
-        _running = _practice || _debugSummary;
-        if (_debugSummary) FillDebugSummary();
-        else if (!_running) _hud.ShowMessage(StartScreenMessage());
+            // A test run with --start skips the start screen, so recordings and quick checks just go.
+            _running = _practice || _debugSummary;
+            if (_debugSummary) FillDebugSummary();
+            else if (!_running) _hud.ShowMessage(StartScreenMessage());
+        }
 
         _updates = new UpdateChecker();
         AddChild(_updates);
@@ -193,6 +213,23 @@ public partial class Main : Node3D
         {
             OpenMenu();
             OpenSettings();
+        }
+        switch (_debugTitlePage)
+        {
+            case "zones": OpenZones(); break;
+            case "times": OpenBestTimes(); break;
+            case "controls": OpenControls(); break;
+            case "about": OpenAbout(); break;
+            case "settings": OpenTitlePage(OpenSettings); break;
+            // Picks Start by itself, and with --shot saves the frame either side of the handover,
+            // which is the only honest way to see whether the walls carried across.
+            case "wrap":
+                _shotFrames = int.MaxValue;
+                break;
+            case "start":
+                _shotFrames = int.MaxValue;
+                StartFromTitle(_firstLevel);
+                break;
         }
     }
 
@@ -211,7 +248,7 @@ public partial class Main : Node3D
         // A raw string keeps the source file's own line endings, and on a Windows checkout those are
         // CRLF. The label breaks the line at both halves, so every line was drawn double-spaced and the
         // screen ran off the top and bottom of the window - taking the title and "Space to start" with it.
-        var text = StartScreen.ReplaceLineEndings("\n");
+        var text = ControlsText();
         var version = UpdateChecker.CurrentVersion;
         if (!version.IsDevelopment) text += $"\n\nv{version}";
         if (_update is not null) text += $"\n\nVersion {_update.Version} is out     Esc to get it";
@@ -221,9 +258,13 @@ public partial class Main : Node3D
     private void OnUpdateFound(ReleaseInfo release)
     {
         _update = release;
-        // Only the start screen is redrawn with it. Mid-run the notice waits in the menu rather than
-        // appearing over the tube.
-        if (!_running && !_menuOpen) _hud.ShowMessage(StartScreenMessage());
+        // Only the title or the start screen is redrawn with it. Mid-run the notice waits in the menu
+        // rather than appearing over the tube.
+        if (_titleUp)
+        {
+            if (Title.AtRoot) ShowTitleMenu();
+        }
+        else if (!_running && !_menuOpen) _hud.ShowMessage(StartScreenMessage());
     }
 
     private UpdateChecker _updates = null!;
@@ -256,24 +297,9 @@ public partial class Main : Node3D
     private GameSettings _settings = new();
     private bool _updateCheckStarted;
 
-    private const string StartScreen = """
-        TUBE RUNNER
-
-        Steer            A / D   or   left / right
-        Speed up, slow   W / S   or   up / down
-        Jump             Space   (on flat sections)
-        Fire             Ctrl / J / Enter / left mouse   (one shot a press)
-        Ring gun         E / K / right mouse
-        Retry level      R
-        Pause            P
-        Menu, quit       Esc
-
-        Gamepad: stick to steer and set speed, A to jump, X to fire, Y for the ring gun, Start for the menu
-
-        Space to start
-        """;
-
-    private void LoadLevel(string path, RunState? carry, double? startS = null)
+    /// <param name="at">Where on the surface the ship starts, for a level taking over from the
+    /// title mid-flight; its S is ignored in favour of <paramref name="startS"/>.</param>
+    private void LoadLevel(string path, RunState? carry, double? startS = null, TrackPosition? at = null)
     {
         LevelPath = path;
         Level level;
@@ -289,11 +315,27 @@ public partial class Main : Node3D
             return;
         }
 
-        _level = level;
-        _levelEntry = carry;
         // Only the level a run actually begins from names the run. The victory lap loads with no
         // carry as well, and it must not take the run's key with it while the results are still up.
         if (path == _runStart) _runStartId = level.Id;
+
+        // Start on the floor; by default far enough in that the camera has track behind it.
+        double s = startS ?? CameraBehind + 10.0;
+        var start = at is TrackPosition given
+            ? given with { S = s, Branch = -1 }
+            : new TrackPosition(s, _startCeiling ? Surface.Ceiling : Surface.Floor, 0f);
+        // The level the title handed over to keeps the shift it was given, so a retry does not
+        // repaint its walls. Every other level is drawn the way it always is.
+        if (path != _offsetLevel) _segmentOffset = 0;
+        BeginLevel(level, carry, start);
+    }
+
+    // Everything a level needs once there is a Level to have: the session, the renderers, the HUD.
+    // The title's tube comes straight here, since it is built rather than read from a file.
+    private void BeginLevel(Level level, RunState? carry, TrackPosition start)
+    {
+        _level = level;
+        _levelEntry = carry;
         // The victory lap widens this and nothing else does; put it back for an ordinary level.
         _track.ViewBehind = _trackViewBehind;
         _outro = false;
@@ -305,15 +347,14 @@ public partial class Main : Node3D
         _lastSplit = null;
 
         var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
-        // Start on the floor; by default far enough in that the camera has track behind it.
-        _levelStart = startS ?? CameraBehind + 10.0;
-        var start = new TrackPosition(_levelStart, _startCeiling ? Surface.Ceiling : Surface.Floor, 0f);
+        _levelStart = start.S;
         _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry, level.Warps,
             level.ThrustZones);
 
         ThemeView.Apply(level.Theme, WallMaterial);
         _ship.ApplyTheme(level.Theme);
         WallMaterial.SetShaderParameter("segment_length", level.SegmentLength);
+        WallMaterial.SetShaderParameter("segment_offset", _segmentOffset);
         _track.Reset();
         _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps, level.Next is null);
         _obstacles.Reset();
@@ -340,13 +381,20 @@ public partial class Main : Node3D
             return;
         }
 
+        // The title flies its own tube and answers its own Escape; none of what follows applies to it.
+        if (_titleUp)
+        {
+            ProcessTitle(dt);
+            return;
+        }
+
         // The menu holds everything still while it is up: the session is never stepped, so a run
         // cannot end or advance behind it.
         if (Input.IsActionJustPressed(InputSetup.Menu))
         {
             // Backing out of a question returns to the menu rather than dismissing everything, so
             // Escape never means "yes" by accident.
-            if (_menuConfirming) OpenMenu();
+            if (_menuConfirming) _menuRoot();
             else if (_menuOpen) CloseMenu();
             else OpenMenu();
         }
@@ -441,7 +489,15 @@ public partial class Main : Node3D
         // Before the start and after the run, the ship stands still, so effects and engine wind down.
         float speed = _running && _session.State == SessionState.Playing ? ship.ForwardSpeed : 0f;
         _fx.Update(speed, dt);
-        _audio.SetSpeed(speed);
+        // On the title the engine idles under the menu and the play HUD is off; both come up as a
+        // run begins, over the same moment the menu takes to go.
+        _playBlend = Mathf.MoveToward(_playBlend, _titleUp ? 0f : 1f, dt / 0.7f);
+        _engineBlend = Mathf.MoveToward(_engineBlend, _titleUp && !_starting ? 0f : 1f, dt / 1.2f);
+        _hud.PlayAlpha = _playBlend;
+        _audio.SetSpeed(speed * Mathf.Lerp(0.45f, 1f, _engineBlend));
+        // Nothing of the level is drawn while the ship holds station in front of it: being put
+        // back a segment would make every block in sight jump one further off.
+        _obstacles.Visible = !_titleUp || _starting;
         _audio.SetMusic(_session.Momentum, _session.RamLeft, _running && _session.State == SessionState.Playing);
 
         var track = _level.Track;
@@ -695,6 +751,7 @@ public partial class Main : Node3D
     // and nothing to restart a run from if one was never really started.
     private void OpenMenu()
     {
+        _menuRoot = OpenMenu;
         _menuTitle = "PAUSED";
         _menuConfirming = false;
         _menu.Clear();
@@ -728,6 +785,11 @@ public partial class Main : Node3D
                 CloseMenu();
             }));
         }
+        _menu.Add(("Quit to title", () => Confirm("Leave this run for the title?", "Yes, leave it", () =>
+        {
+            EnterTitle();
+            _hud.FadeIn();
+        })));
         _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
 
         _menuOpen = true;
@@ -741,7 +803,7 @@ public partial class Main : Node3D
         _menuTitle = question;
         _menuConfirming = true;
         _menu.Clear();
-        _menu.Add(("No, go back", OpenMenu));
+        _menu.Add(("No, go back", () => _menuRoot()));
         _menu.Add((yes, act));
         RefreshMenu();
     }
@@ -765,7 +827,7 @@ public partial class Main : Node3D
             ApplySettings();
             SaveSettings();
             StartUpdateCheck();
-        }, OpenMenu);
+        }, () => _menuRoot());
     }
 
     private void ApplySettings()
@@ -852,7 +914,8 @@ public partial class Main : Node3D
     {
         _shake = Mathf.Max(0f, _shake - 2f * dt);
         float amount = 0.35f * _shake * _shake + 0.04f * _fx.Intensity;
-        if (amount <= 0f) return;
+        // A --shot is for comparing frames, and a random nudge is a difference that means nothing.
+        if (amount <= 0f || _shotPath is not null) return;
 
         var basis = _camera.GlobalTransform.Basis;
         _camera.GlobalPosition += (basis.X * (GD.Randf() * 2f - 1f) + basis.Y * (GD.Randf() * 2f - 1f)) * amount;

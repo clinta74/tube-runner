@@ -169,7 +169,10 @@ latter, silhouette and motion buy more than geometry, and the cheap route gets m
 screenshot up close should decide it.
 
 ### 12. The rest of the finale: autopilot, camera, victory tube
-*From item 8. The three parts that are not the win screen.*
+*From item 8. The three parts that are not the win screen.* **Done**, all three: the victory lap
+loads an empty flat track, `StepOutro` flies it by feeding the ship synthetic input, and the camera
+swings round to its front right. The title screen's autopilot is the same idea on a different tube.
+The notes below are kept for the reasoning.
 
 Last because it is the largest and the least load-bearing. The looping item-free tube is cheap and
 reuses everything. The autopilot should feed `ShipSim` synthetic input rather than add a second
@@ -475,6 +478,42 @@ nothing on purpose.
 Still open: a hairline seam down the top of a ring's wall where the strip closes on itself; the far
 end's checker aliases in the widest bores; collars cannot be gates or movers; the jump is a fixed
 0.55 s whatever the gap; and splits, apertures and warps are refused in a ring.
+
+### A title screen, and a Start with no cut
+
+The game opens on a title: its name, and Start game, Start from a zone, Best times, Settings,
+Controls, About and Quit down the left, over a tube the ship is already flying. The pages open in
+the Escape menu's panel. Left alone for twenty seconds the menu fades out and leaves the flying, and
+whatever wakes it is swallowed so that key does nothing else. The Escape menu gained Quit to title.
+
+**Start does not cut.** The tube behind the menu is the first level itself with a straight lead-in
+in front of it (`LevelLoader.ParseWithLeadIn`). The ship holds station in the lead-in on a
+treadmill: every time it has flown one wall segment it is put back one, and the walls are drawn one
+index further on (`segment_offset` in the wall shader), so the picture never changes and the level
+never gets nearer. Start stops putting it back and hands over the stick; where the level begins the
+ship is handed to the level proper, a whole number of segments further back with the index shift to
+match. `tube play --title-page start --shot` saves that instant drawn both ways, and the two files
+are identical on every wall pixel.
+
+- **Why a treadmill and not an endless straight tube.** That was the first version, and it left one
+  difference: the level bends 184 units past its start, well inside the fade, so the far end of
+  the tube visibly changed at the swap. The join is only invisible if what is ahead is the same,
+  which means it has to be the level that is ahead.
+- **The lead-in is sized from the level**: long enough that from where the ship is held, the first
+  thing that is not plain straight tube is beyond the fade (`SegmentJoin.LeadIn`). For First Loop
+  that is 300 units, and the run-up after Start is about three seconds, with the stick live and
+  the throttle held where every level starts it so the run-up cannot be used to arrive faster.
+- **Blocks are not drawn while the ship holds station.** They have no distance fade and show out to
+  450, further than the walls, so the treadmill would make them jump. They come on at Start.
+- **Starting from a later zone is a cut**, softened by a fade. Its bore and colours are its own.
+- **A retry keeps the index shift** the level was handed, so restarting does not repaint its walls.
+  First Loop's palette sequence now depends on how long the title was up; nothing reads it.
+- **Zones unlock by being reached**: one with a best time, or whose predecessor has one.
+- The name comes from the project's `config/name`, so renaming the game renames the title.
+
+Still open: the title has no music of its own beyond the run's quietest layer; About credits the
+GitHub handle, which wants a real name or a studio name before release; and the Controls page is a
+fixed list, which key rebinding will have to feed.
 
 ## Standing constraints
 
