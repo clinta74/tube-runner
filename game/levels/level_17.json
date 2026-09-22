@@ -132,7 +132,7 @@
     // Handover to Shoal: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4010 - 4130
+    { "length": 120, "speed": 130, "section": "tube" },                           // 4010 - 4130
     { "length": 276 }                                               // 4130 - 4406
   ]
 }

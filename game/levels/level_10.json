@@ -157,7 +157,7 @@
     // Handover to Neon Run: blend into its tube, then the first 276 units of its track, so the
     // camera sees the same tube on both sides of the join. Nothing to hit out here; the level
     // finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "handover" },                       // 5790 - 5910
+    { "length": 120, "speed": 100, "section": "handover" },                       // 5790 - 5910
     { "length": 200 },                                              // 5910 - 6110
     { "length": 76, "turn": -25.333333 }                            // 6110 - 6186
   ]

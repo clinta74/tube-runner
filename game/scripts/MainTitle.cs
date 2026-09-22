@@ -182,7 +182,7 @@ public partial class Main
     {
         _session.Ship.WarpTo(_session.Ship.Position.S - _level.SegmentLength);
         _segmentOffset += 1;
-        WallMaterial.SetShaderParameter("segment_offset", _segmentOffset);
+        _track.SegmentOffset = _segmentOffset;
     }
 
     /// <summary>

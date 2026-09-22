@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 using Godot;
 using TubeRunner.Core;
 
@@ -172,6 +173,7 @@ public partial class Main : Node3D
             if (arg.StartsWith("--shot=")) _shotPath = arg["--shot=".Length..];
             if (arg == "--ceiling") _startCeiling = true;
             if (arg == "--front") _debugFront = true;
+            if (arg == "--join") _debugJoin = true;
             if (arg.StartsWith("--steer=")) _debugSteer = float.Parse(arg["--steer=".Length..], CultureInfo.InvariantCulture);
             if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
             if (arg == "--settings") _debugSettings = true;
@@ -204,6 +206,10 @@ public partial class Main : Node3D
             if (_debugSummary) FillDebugSummary();
             else if (!_running) _hud.ShowMessage(StartScreenMessage());
         }
+
+        // A shot taken to compare two frames is spoiled by the speed streaks, which animate on their
+        // own clock and differ between any two frames whatever the walls do.
+        if (_shotPath is not null && (_debugJoin || _debugTitlePage is "start" or "wrap")) _fx.Visible = false;
 
         _updates = new UpdateChecker();
         AddChild(_updates);
@@ -311,16 +317,27 @@ public partial class Main : Node3D
     {
         LevelPath = path;
         Level level;
-        try
+        List<JumpWindow> windows;
+        if (_preload is { } ready && ready.Path == path && ready.Task.IsCompletedSuccessfully)
         {
-            level = LevelLoader.Parse(FileAccess.GetFileAsString(path));
+            // Read ahead while the level before was being flown, and already drawn over its end.
+            (level, windows) = ready.Task.Result;
+            _preload = null;
         }
-        catch (LevelFormatException e)
+        else
         {
-            GD.PushError($"{path}: {e.Message}");
-            _hud.ShowMessage($"Can't load {path}\n{e.Message}");
-            SetProcess(false);
-            return;
+            try
+            {
+                level = LevelLoader.Parse(FileAccess.GetFileAsString(path));
+            }
+            catch (LevelFormatException e)
+            {
+                GD.PushError($"{path}: {e.Message}");
+                _hud.ShowMessage($"Can't load {path}\n{e.Message}");
+                SetProcess(false);
+                return;
+            }
+            windows = JumpWindows.Find(level.Track);
         }
 
         // Only the level a run actually begins from names the run. The victory lap loads with no
@@ -335,15 +352,17 @@ public partial class Main : Node3D
         // The level the title handed over to keeps the shift it was given, so a retry does not
         // repaint its walls. Every other level is drawn the way it always is.
         if (path != _offsetLevel) _segmentOffset = 0;
-        BeginLevel(level, carry, start);
+        BeginLevel(level, carry, start, windows);
     }
 
     // Everything a level needs once there is a Level to have: the session, the renderers, the HUD.
     // The title's tube comes straight here, since it is built rather than read from a file.
-    private void BeginLevel(Level level, RunState? carry, TrackPosition start)
+    private void BeginLevel(Level level, RunState? carry, TrackPosition start, List<JumpWindow>? windows = null)
     {
         _level = level;
         _levelEntry = carry;
+        _nextInstalledFor = null;
+        _tailThemed = false;
         // The victory lap widens this and nothing else does; put it back for an ordinary level.
         _track.ViewBehind = _trackViewBehind;
         _outro = false;
@@ -359,17 +378,72 @@ public partial class Main : Node3D
         _session = new GameSession(level.Track, level.Obstacles, settings, start, level.Pickups, carry, level.Warps,
             level.ThrustZones);
 
-        ThemeView.Apply(level.Theme, WallMaterial);
         _ship.ApplyTheme(level.Theme);
-        WallMaterial.SetShaderParameter("segment_length", level.SegmentLength);
-        WallMaterial.SetShaderParameter("segment_offset", _segmentOffset);
-        _track.Reset();
-        _track.Init(level.Track, WallMaterial, level.SegmentLength, level.Theme, level.Warps, level.Next is null);
-        _obstacles.Reset();
-        _obstacles.Init(_session, level.Theme, JumpWindows.Find(level.Track));
+        _track.Init(level, WallMaterial, _segmentOffset);
+        _obstacles.Init(_session, level, windows ?? JumpWindows.Find(level.Track));
         _fx.SetStreakColor(level.Theme.SeamLight.ToColor());
         _hud.Init(level.Name, _session.MaxShields, _session.ExtraShields, level.Theme.SeamLight.ToColor(),
             _bestTimes.Get(LevelId));
+
+        if (level.Next is not null) StartPreload(LevelPath.GetBaseDir().PathJoin(level.Next));
+    }
+
+    // ------------------------------------------------------------------ the next level, ahead of time
+
+    // The level after this one, being read on another thread, and the level that reading was last
+    // installed over: its opening drawn over this level's end in its own colours, so the run does
+    // not stop to read it and the tube does not repaint when it takes over.
+    private (string Path, Task<(Level Level, List<JumpWindow> Windows)> Task)? _preload;
+    private Level? _nextInstalledFor;
+    private bool _tailThemed;
+
+    private void StartPreload(string path)
+    {
+        // Already reading it: a retry of this level does not start again.
+        if (_preload is { } current && current.Path == path) return;
+        if (!FileAccess.FileExists(path))
+        {
+            _preload = null;
+            return;
+        }
+        // The file is read here, where the engine is happy to be asked; the parsing and the search
+        // for jump windows are pure sums over it and can take their time on another thread. Between
+        // them they were most of the stall at every level line.
+        string json = FileAccess.GetFileAsString(path);
+        _preload = (path, Task.Run(() =>
+        {
+            var level = LevelLoader.Parse(json);
+            return (level, JumpWindows.Find(level.Track));
+        }));
+    }
+
+    // Once the next level is read, lay its opening over the end of this one. Done here rather than
+    // on the reading thread because everything it builds is a scene node.
+    private void PollPreload()
+    {
+        if (_preload is not { } ready || !ready.Task.IsCompletedSuccessfully) return;
+        if (ReferenceEquals(_nextInstalledFor, _level) || _level.Next is null) return;
+        if (ready.Path != LevelPath.GetBaseDir().PathJoin(_level.Next)) return;
+
+        var (next, windows) = ready.Task.Result;
+        _track.SetNext(next, WallMaterial);
+        // A session that is never stepped, so the next level's things stand still until it starts.
+        var settings = new SessionSettings(new ShipSettings(SteerSpeed, MaxPlaneOffset));
+        var preview = new GameSession(next.Track, next.Obstacles, settings, new TrackPosition(0, Surface.Floor, 0f),
+            next.Pickups, null, next.Warps, next.ThrustZones);
+        _obstacles.SetNext(next, preview, windows, _track.Map);
+        _nextInstalledFor = _level;
+    }
+
+    // The ship, the streaks and the HUD take the next level's colours as the ship crosses into the
+    // stretch drawn in them, so everything near the player changes at one line on the wall.
+    private void ThemeTheTail(double s)
+    {
+        if (_tailThemed || _track.Next is not { } next || s < _track.TailFrom) return;
+        _tailThemed = true;
+        _ship.ApplyTheme(next.Theme);
+        _fx.SetStreakColor(next.Theme.SeamLight.ToColor());
+        _hud.SetAccent(next.Theme.SeamLight.ToColor());
     }
 
     public override void _Process(double delta)
@@ -386,6 +460,23 @@ public partial class Main : Node3D
             image.SavePng(_shotPath);
             GD.Print($"Wrote {_shotPath}");
             GetTree().Quit();
+            return;
+        }
+
+        PollPreload();
+
+        // The second half of a --join shot: the frame drawn last is the old level at its finish,
+        // saved now; then the next level takes over without the ship moving, and the ordinary shot
+        // the frame after is that. Any difference between the two files is a real one.
+        if (_joinHeld)
+        {
+            _joinHeld = false;
+            GetViewport().GetTexture().GetImage().SavePng(_shotPath!.GetBaseName() + "-before.png");
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            SwapToNext();
+            DrawWorld(0f, steer: 0f);
+            GD.Print($"Level line: {stopwatch.Elapsed.TotalMilliseconds:0.0} ms to take over and draw");
+            _shotFrames = 1;
             return;
         }
 
@@ -512,8 +603,9 @@ public partial class Main : Node3D
         var split = pos.Branch >= 0 ? track.SplitAt(pos.S) : null;
         var frame = FrameOnPath(pos.S);
         var origin = frame.Position;
+        ThemeTheTail(pos.S);
         _track.UpdateView(pos.S, origin);
-        _obstacles.UpdateView(origin, dt);
+        _obstacles.UpdateView(origin, dt, pos.S, _track.TailFrom, _track.Map);
         _hud.Update(_session, dt, SplitTotal);
 
         var (point, up2) = ship.Pose(RideHeight);
@@ -677,9 +769,33 @@ public partial class Main : Node3D
 
         if (best) SaveBestTimes();
         _hud.Callout($"{_level.Name.ToUpperInvariant()}   {time:0.00}s{(best ? "   NEW BEST" : "")}");
-        LoadLevel(LevelPath.GetBaseDir().PathJoin(_level.Next), _session.Carry);
+        if (_shotPath is not null && _debugJoin)
+        {
+            // Hold this frame, drawn as the old level at its finish, and swap next frame: see _Process.
+            _joinHeld = true;
+            return true;
+        }
+        SwapToNext();
         return true;
     }
+
+    /// <summary>
+    /// The next level takes over from exactly where the ship is. The level finishes 16 units into
+    /// the copy of the next level's opening that ends it, plus whatever the last step carried it
+    /// past that, and the ship is put down at the same distance into the next level, on the same
+    /// wall at the same place round it. It used to be put at 16 in the middle of the floor, which
+    /// was a small jump back and sideways at every line.
+    /// </summary>
+    private void SwapToNext()
+    {
+        var pos = _session.Ship.Position;
+        double into = pos.S - (_level.Track.Length - LevelJoin.Handover);
+        LoadLevel(LevelPath.GetBaseDir().PathJoin(_level.Next!), _session.Carry, into, pos);
+    }
+
+    // A --shot of the level line, held so the same instant is drawn as both levels.
+    private bool _debugJoin;
+    private bool _joinHeld;
 
     // The run's splits, with its total and the best total to beat. A full run is 26 levels, so the
     // list is handed over as rows the HUD can scroll rather than as one block of text.

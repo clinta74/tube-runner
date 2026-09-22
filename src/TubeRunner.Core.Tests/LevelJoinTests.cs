@@ -14,7 +14,10 @@ namespace TubeRunner.Core.Tests;
 /// snap. So a level's end has to become the next level's start before the finish, and stay that way
 /// for as far as the camera can see past it.
 ///
-/// Colours are allowed to change; they are the one thing that is meant to announce a new level.
+/// Colours are the one thing that changes, and since the next level's opening is drawn over the end
+/// of the level before it in its own colours, even that change is seen coming rather than cut to.
+/// Speed is held too: the ship flies the copy at the speed the next level starts at, so the line is
+/// not felt as a lurch either.
 /// </summary>
 public class LevelJoinTests(ITestOutputHelper output)
 {
@@ -77,7 +80,13 @@ public class LevelJoinTests(ITestOutputHelper output)
         }
 
         float endSpeed = ending.SpeedAt(finish), startSpeed = starting.SpeedAt(NextStart);
-        float speed = Math.Abs(endSpeed - startSpeed);
+        // Along the whole copy, not only at the line: the next level may change speed inside its
+        // opening, and the copy has to carry that too.
+        float speed = 0f;
+        for (double d = 0; d <= RunOut - Step; d += Step)
+        {
+            speed = Math.Max(speed, Math.Abs(ending.SpeedAt(finish + d) - starting.SpeedAt(NextStart + d)));
+        }
 
         output.WriteLine($"{from} -> {to}: section {worstSection:0.00} at {worstSectionAt:+0;-0}"
             + (worstSection > SectionTolerance ? $" ({sectionDetail})" : "")
@@ -86,8 +95,7 @@ public class LevelJoinTests(ITestOutputHelper output)
         var problems = new List<string>();
         if (worstSection > SectionTolerance) problems.Add($"the tube changes shape ({sectionDetail}, {worstSectionAt:+0;-0} from the finish)");
         if (worstPath > PathTolerance) problems.Add($"the path differs by {worstPath:0.0} units ({worstPathAt:+0;-0} from the finish)");
-        // Speed is reported but allowed to change: each level keeps its own speed curve, and the change is
-        // felt rather than seen.
+        if (speed > SpeedTolerance) problems.Add($"the speed changes by {speed:0} u/s (set 'speed' on the piece before the copy to {startSpeed:0}, the next level's start)");
         Assert.True(problems.Count == 0,
             $"{from} hands over to {to} with a visible jump: {string.Join("; ", problems)}. "
             + $"Extend {from} so that by its finish, {RunOut:0} units before its end, it already matches the start of {to}.");
@@ -111,6 +119,35 @@ public class LevelJoinTests(ITestOutputHelper output)
         Assert.True(appearing.Count == 0,
             $"{to} has {appearing.Count} item(s) in view when {from} hands over to it, which appear from nowhere: "
             + $"{string.Join(", ", appearing)}. Move them past {inView:0}.");
+    }
+
+    // The next level's opening is drawn over the end of the level before it, in its own colours,
+    // by one rigid move (LevelJoin.Alignment). That only works if the copy really is congruent: the
+    // same path, not merely a path within tolerance in each level's own terms.
+    [Theory]
+    [MemberData(nameof(Joins))]
+    public void TheHandoverStretch_IsOneRigidMoveApart(string from, string to)
+    {
+        var ending = Load(from).Track;
+        var starting = Load(to).Track;
+        var map = LevelJoin.Alignment(ending, starting);
+        double tail = ending.Length - LevelJoin.Handover;
+        Assert.Equal(NextStart + RunOut, LevelJoin.Handover, 6);
+
+        double worst = 0, worstAt = 0;
+        float worstTurn = 1f;
+        for (double s = 0; s <= LevelJoin.Handover; s += Step)
+        {
+            var a = ending.FrameAt(tail + s);
+            var b = starting.FrameAt(s);
+            var mapped = map.Map(b.Position);
+            double d = Math.Sqrt(Math.Pow(mapped.X - a.Position.X, 2) + Math.Pow(mapped.Y - a.Position.Y, 2) + Math.Pow(mapped.Z - a.Position.Z, 2));
+            if (d > worst) (worst, worstAt) = (d, s);
+            worstTurn = Math.Min(worstTurn, Vector3.Dot(map.MapDirection(b.Forward), a.Forward));
+        }
+        output.WriteLine($"{from} -> {to}: laid over its end, the opening is off by at most {worst:0.000} units (at {worstAt:0}), heading within {Math.Acos(Math.Clamp(worstTurn, -1, 1)) * 180 / Math.PI:0.00} degrees");
+        Assert.True(worst <= PathTolerance, $"{to}'s opening laid over {from}'s end is off by {worst:0.00} units at {worstAt:0}.");
+        Assert.True(worstTurn >= 0.9995f, $"{to}'s opening laid over {from}'s end turns away from it.");
     }
 
     public static TheoryData<string, string> Joins()

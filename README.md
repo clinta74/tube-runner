@@ -46,6 +46,13 @@ tube play --title --shot builds/shots/title.png
 tube play --title-page times --shot builds/shots/times.png   # zones, times, controls, about, settings
 ```
 
+`--join` with `--shot` does the same for a level line: it saves the last frame of one level and the
+first of the next, drawn at the same instant, so the handover can be checked to the pixel.
+
+```bash
+tube play --level level_10.json --start 5850 --join --shot builds/shots/join.png
+```
+
 Two more pages are for checking that the title's tube really does carry on into the first level with
 nothing changing. `--title-page start` picks Start by itself, and `--title-page wrap` waits for the
 ship to be put back a wall segment; with `--shot` each saves the same instant twice, as

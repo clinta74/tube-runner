@@ -149,7 +149,7 @@
     // Handover to Clockwork: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "handover" },                       // 4720 - 4840
+    { "length": 120, "speed": 105, "section": "handover" },                       // 4720 - 4840
     { "length": 276 }                                               // 4840 - 5116
   ]
 }

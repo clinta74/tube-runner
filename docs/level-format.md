@@ -213,7 +213,11 @@ every join, from just behind the ship to the old level's end wall.
   next level's starting section, then the next level's **first 276 units** - its first straight and
   any turn or climb, cut in proportion (a turn is a constant rate, so a cut piece bends exactly like
   the start of the original). If the two levels define their start tube differently, add a
-  `"handover"` section with the next level's values. Colours and speed may change at the join.
+  `"handover"` section with the next level's values, and give that blend piece the next level's
+  starting `speed`, so the copy is flown at the speed the next level begins at. Only the colours
+  change - and those change ahead of the ship, not at it: once the next level has been read, its
+  own opening is drawn over the copy in its own colours, so the new palette begins at a wall seam
+  276 units out and the level line itself changes nothing on screen.
 - **Keep a level's first 276 units plain.** Nothing in them may change the section, and nothing may be
   placed there - an obstacle, pickup or well there would appear from nowhere at the handover. A piece
   that blends its shape eases in and out over its whole length, so a copy cut part-way through can't

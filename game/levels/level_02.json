@@ -82,7 +82,7 @@
     // Handover to Throttle: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 1650 - 1770
+    { "length": 120, "speed": 85, "section": "tube" },                           // 1650 - 1770
     { "length": 276 }                                               // 1770 - 2046
   ]
 }

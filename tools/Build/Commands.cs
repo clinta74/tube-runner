@@ -25,6 +25,7 @@ internal static class Commands
                         --shot-at <units>    take the shot at that point on the track
                         --steer <-1..1>      hold the stick there, for a shot of the ship turning
                         --front              look at the ship from its front right, as the victory lap does
+                        --join               with --shot: save the frame either side of the next level line
 
           export      Export the standalone Windows build to builds/windows, and zip it.
                         --version <x.y.z>    stamp the version, so the game checks for newer releases
@@ -53,7 +54,7 @@ internal static class Commands
         switch (args[0])
         {
             case "play":
-                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title", "front"], values: ["level", "start", "record-fps", "shot", "shot-at", "title-page", "steer"]));
+                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title", "front", "join"], values: ["level", "start", "record-fps", "shot", "shot-at", "title-page", "steer"]));
                 break;
             case "export":
                 Export(Options.Parse(options, flags: ["debug", "signed"], values: ["version"]));
@@ -107,6 +108,7 @@ internal static class Commands
         if (options.Flag("ceiling")) game.Add("--ceiling");
         if (options.Number("steer") is double held) game.Add("--steer=" + held.ToString(CultureInfo.InvariantCulture));
         if (options.Flag("front")) game.Add("--front");
+        if (options.Flag("join")) game.Add("--join");
         if (options.Flag("title")) game.Add("--title");
         if (options.Value("title-page") is string page) game.Add("--title-page=" + page);
         if (options.Number("shot-at") is double shotAt) game.Add("--shot-at=" + shotAt.ToString(CultureInfo.InvariantCulture));

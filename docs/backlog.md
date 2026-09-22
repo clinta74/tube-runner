@@ -539,6 +539,37 @@ Still open: the title has no music of its own beyond the run's quietest layer; A
 GitHub handle, which wants a real name or a studio name before release; and the Controls page is a
 fixed list, which key rebinding will have to feed.
 
+### Levels that run into each other without a cut
+
+A level line used to be a stall and a repaint: the next level was read and its track laid on the
+frame the ship crossed the line, which took 60 to 270 ms depending on the level, and every wall in
+sight took the new colours at once. Timed with a stopwatch before the change; the parse was a
+third to a half of it, and finding the jump windows - a search along the whole track - was most of
+the rest. Now:
+
+- **The next level is read ahead**, on another thread, as soon as a level starts. Parsing and the
+  jump-window search are pure sums in Core, so they can run there; only the file read stays on the
+  main thread. Once read, its opening is built as scene nodes mid-level, which costs a few
+  milliseconds once.
+- **Its opening is drawn over the end of the current level**, in its own colours and on its own
+  segment grid, since the end of a level is a copy of that opening (`LevelJoin.Handover`, 276
+  units) and one rigid move lays the one over the other (`LevelJoin.Alignment`, checked for every
+  join by `LevelJoinTests`). The track and obstacle renderers each hold two views for this; the next
+  view sits under a rotated node so its own world lies along the end of the current one.
+- **At the line the next view is kept**, not rebuilt: the same chunks, materials and indices, with
+  the view's transform reset and its obstacle view pointed at the real session. The ship is put
+  down exactly where it was, on the same wall, rather than at 16 in the middle of the floor. The
+  line costs about 2.5 ms and changes nothing on screen; `tube play --join --shot` proves it.
+- **The colours change at a wall seam 276 units ahead**, where every seam already changes the
+  pattern, and the ship, streaks and HUD take the new colours as the ship crosses that seam.
+- **Speed is carried too.** Every level's handover blend piece now sets the next level's start
+  speed, and the join test holds speed along the whole copy; Throttle's first speed change moved
+  past 276 for it. Before this, every one of the 31 lines changed speed on the spot, by up to 85 u/s.
+
+Still open: a hit's slowdown is not carried across the line, so a hit in the last second and a
+half of a level ends early; and the next level's things are drawn from a session that is never
+stepped, so a mover in its first 450 units stands still until the line.
+
 ## Standing constraints
 
 Any of this has to keep three guards passing, all of which exist because something shipped wrong:

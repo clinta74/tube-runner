@@ -129,7 +129,7 @@
     // Handover to Firing Order: straighten and blend into its tube, then the first 276 units of its
     // track, so the camera sees the same tube on both sides of the join. Nothing to hit out here; the
     // level finishes 16 units into this copy, which is where the next level places the ship.
-    { "length": 120, "section": "tube" },                           // 4140 - 4260
+    { "length": 120, "speed": 115, "section": "tube" },                           // 4140 - 4260
     { "length": 276 }                                               // 4260 - 4536
   ]
 }

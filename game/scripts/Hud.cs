@@ -126,6 +126,13 @@ public partial class Hud : CanvasLayer
         BuildPips(shields, extras);
     }
 
+    /// <summary>The colour the HUD highlights in: the next level's, once the ship is flying its colours.</summary>
+    public void SetAccent(Color accent)
+    {
+        _accent = accent;
+        Menu.SetAccent(accent);
+    }
+
     /// <summary>Briefly shows a line of text at the top of the screen, e.g. for a power-up.</summary>
     public void Callout(string text)
     {
