@@ -50,7 +50,8 @@ public sealed record RunState(
     float Throttle,
     int Score,
     float Momentum = 0f,
-    float AgilityLeft = 0f);
+    float AgilityLeft = 0f,
+    float RecoveryLeft = 0f);
 
 /// <param name="Throttle">In [-1, 1]; positive speeds up, negative slows down.</param>
 /// <param name="Special">Fire the ring gun, if it has charges.</param>
@@ -230,6 +231,9 @@ public sealed class GameSession
             RingCharges = carry.RingCharges;
             RamLeft = carry.RamLeft;
             AgilityLeft = carry.AgilityLeft;
+            // A hit in the last moments of a level is still being recovered from when the next one
+            // starts: the slowdown and the grace carry on across the line rather than ending at it.
+            RecoveryLeft = carry.RecoveryLeft;
             Ship.Throttle = carry.Throttle;
             Momentum = carry.Momentum;
             _carriedScore = carry.Score;
@@ -305,7 +309,7 @@ public sealed class GameSession
     public int Score => _carriedScore + _bonus + (int)(Ship.Position.S / 10.0);
 
     /// <summary>State to carry into the next level of the run.</summary>
-    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score, Momentum, AgilityLeft);
+    public RunState Carry => new(Shields, ExtraShields, RapidFireLeft, RingCharges, RamLeft, Ship.Throttle, Score, Momentum, AgilityLeft, RecoveryLeft);
 
     public void Step(float dt, ShipInput input)
     {

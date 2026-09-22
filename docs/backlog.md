@@ -590,9 +590,11 @@ the rest. Now:
   speed, and the join test holds speed along the whole copy; Throttle's first speed change moved
   past 276 for it. Before this, every one of the 31 lines changed speed on the spot, by up to 85 u/s.
 
-Still open: a hit's slowdown is not carried across the line, so a hit in the last second and a
-half of a level ends early; and the next level's things are drawn from a session that is never
-stepped, so a mover in its first 450 units stands still until the line.
+Two loose ends closed after v0.9.1: a hit's recovery now carries across the line in the run state,
+so the slowdown and the grace run their course; and the next level's view runs its movers and
+gates on a clock set to the time still to go until the line, counting up to zero at the ship's
+present speed, so they are already moving on the approach and are exactly where the real clock
+finds them when the level starts.
 
 ## Standing constraints
 

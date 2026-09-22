@@ -296,6 +296,16 @@ public partial class ObstacleView : Node3D
     public double? ShipS { get; set; }
 
     /// <summary>
+    /// The clock movers and gates run on, when it is not this session's: a view of the next level
+    /// is drawn from a session that is never stepped, and its clock is set from outside to the time
+    /// until that level starts, counting up to zero, so what moves in its opening is already moving
+    /// as the ship approaches and is exactly where the real clock will find it at the line.
+    /// </summary>
+    public float? Clock { get; set; }
+
+    private float Now => Clock ?? _session.Elapsed;
+
+    /// <summary>
     /// Points the view at another session over the same level. The obstacles, pads and wells are
     /// the level's own objects and the views are keyed by them, so nothing on screen changes; only
     /// whose clock and whose keys are asked from here on.
@@ -395,7 +405,7 @@ public partial class ObstacleView : Node3D
         if (o.Aperture is not null) return CreateBladeView(o);
         if (o.Full) return CreateCollarView(o);
 
-        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f);
+        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(Now), o.Height / 2f);
         bool target = o.Kind == ObstacleKind.Target;
         float size = Mathf.Min(o.Width, o.Height);
         Mesh mesh = target
@@ -911,7 +921,7 @@ public partial class ObstacleView : Node3D
         // A mover's pose is recomputed every frame: its center is captured once at creation, so
         // without this its collision box slides around the tube while the thing you can see stays put.
         var center = view.Obstacle is { Sweep: not 0f } o
-            ? Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), o.Height / 2f).Center
+            ? Pose(o.S, o.Branch, o.Surface, o.XAt(Now), o.Height / 2f).Center
             : view.Center;
         var pos = center.RelativeTo(origin).ToGodot();
 
@@ -919,7 +929,7 @@ public partial class ObstacleView : Node3D
         // rather than counted. The socket itself never moves.
         if (view.Slides && view.Obstacle is { } gate)
         {
-            pos -= view.Up * (1f - gate.ExtensionAt(_session.Elapsed)) * (gate.Height + 0.4f);
+            pos -= view.Up * (1f - gate.ExtensionAt(Now)) * (gate.Height + 0.4f);
         }
 
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
@@ -970,7 +980,7 @@ public partial class ObstacleView : Node3D
     // the spot reads from a distance whether or not anything is standing in it.
     private View CreateSocketView(Obstacle o)
     {
-        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(_session.Elapsed), 0.05f);
+        var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(Now), 0.05f);
         var node = new MeshInstance3D
         {
             Mesh = new BoxMesh { Size = new Vector3(o.Width * 1.12f, 0.1f, o.Length * 1.8f) },

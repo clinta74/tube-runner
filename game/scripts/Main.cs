@@ -605,7 +605,11 @@ public partial class Main : Node3D
         var origin = frame.Position;
         ThemeTheTail(pos.S);
         _track.UpdateView(pos.S, origin);
-        _obstacles.UpdateView(origin, dt, pos.S, _track.TailFrom, _track.Map);
+        // The next level's clock starts at zero when the ship crosses the line, 16 units into the
+        // copy of its opening; until then it reads the time still to go, at the speed the ship has.
+        double toLine = _track.TailFrom + LevelJoin.Handover - _session.Settings.FinishRunOut - pos.S;
+        _obstacles.UpdateView(origin, dt, pos.S, _track.TailFrom, _track.Map,
+            (float)(toLine / Math.Max(1f, ship.ForwardSpeed)));
         _hud.Update(_session, dt, SplitTotal);
 
         var (point, up2) = ship.Pose(RideHeight);

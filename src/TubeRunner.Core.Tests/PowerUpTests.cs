@@ -226,6 +226,29 @@ public class PowerUpTests
         Assert.True(second.Score >= carried.Score);
     }
 
+    // A hit taken just before a level line is still being recovered from on the other side of it:
+    // the ship is still slowed and still in its grace, rather than back to full speed and hittable
+    // the moment the next level starts.
+    [Fact]
+    public void Carry_KeepsAHitsRecoveryAcrossTheLine()
+    {
+        var first = Session([Block(80)], []);
+        Run(first, 1.8f);
+        var carried = first.Carry;
+        Assert.True(carried.RecoveryLeft > 0f, "the hit at 80 should still be being recovered from");
+
+        var track = new Track(Circle, startSpeed: 50f);
+        track.Append(new TrackPiece(2000f, Circle));
+        var second = new GameSession(track, [Block(20)], Settings, new TrackPosition(0, Surface.Floor, 0f), null, carried);
+        second.Step(1f / 60f, default);
+
+        Assert.Equal(carried.RecoveryLeft, second.RecoveryLeft, 1);
+        Assert.True(second.Ship.SpeedScale < 1f, "still slowed");
+        // And the block right at the start is met inside the grace, so it costs nothing.
+        Run(second, 1f);
+        Assert.Equal(carried.Shields, second.Shields);
+    }
+
     [Fact]
     public void Pickup_OnTheOtherSurfaceOfOpenPlanes_IsMissed()
     {

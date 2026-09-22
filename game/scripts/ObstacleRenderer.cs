@@ -66,11 +66,13 @@ public partial class ObstacleRenderer : Node3D
 
     /// <param name="s">Where the ship is along the current track.</param>
     /// <param name="tailFrom">Where along the current track the next level begins.</param>
-    public void UpdateView(Vector3d origin, float dt, double s, double tailFrom, RigidMap map)
+    /// <param name="secondsToLine">How long until the next level starts, at the ship's present speed.</param>
+    public void UpdateView(Vector3d origin, float dt, double s, double tailFrom, RigidMap map, float secondsToLine)
     {
         _current?.UpdateView(origin, dt);
         if (_next is null) return;
         _next.ShipS = s - tailFrom;
+        _next.Clock = -secondsToLine;
         _next.UpdateView(map.Unmap(origin), dt);
     }
 
