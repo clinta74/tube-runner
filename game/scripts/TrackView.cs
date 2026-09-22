@@ -235,7 +235,7 @@ public partial class TrackView : Node3D
         // A funnel is shaded by its slopes, and a slope shaded darker than near-black is no slope
         // at all. It takes a tone a little up from the wall's dark cell, so the throats can fall
         // away from it into the dark.
-        _funnelColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.3f);
+        _funnelColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.55f);
         _endWallColor = endsTheRun ? theme.Block.ToVector3() : theme.Far.ToVector3();
         _endRimColor = endsTheRun ? theme.SeamLight.ToVector3() : theme.Far.ToVector3();
 

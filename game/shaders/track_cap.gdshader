@@ -49,9 +49,9 @@ void fragment() {
 	// Held outside any branch, because derivatives in non-uniform control flow are undefined.
 	vec3 gn = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
 	float facing = abs(dot(gn, normalize(-VERTEX)));
-	col *= mix(1.0, 0.4 + 0.6 * facing, funnel);
+	col *= mix(1.0, 0.6 + 0.4 * facing, funnel);
 	// And darker the deeper it is sunk, which is what says the throat goes in rather than out.
-	col *= mix(1.0, 0.25, UV2.x * funnel);
+	col *= mix(1.0, 0.5, UV2.x * funnel);
 
 	col = mix(col, to_linear(far_color), smoothstep(fade_start, fade_end, length(VERTEX)));
 	ALBEDO = col;
