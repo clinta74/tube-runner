@@ -132,7 +132,7 @@ public class LevelJoinTests(ITestOutputHelper output)
         var starting = Load(to).Track;
         var map = LevelJoin.Alignment(ending, starting);
         double tail = ending.Length - LevelJoin.Handover;
-        Assert.Equal(NextStart + RunOut, LevelJoin.Handover, 6);
+        Assert.Equal(LevelJoin.Handover, NextStart + RunOut, 6);
 
         double worst = 0, worstAt = 0;
         float worstTurn = 1f;
