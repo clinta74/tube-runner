@@ -17,6 +17,9 @@ public partial class ObstacleRenderer : Node3D
     private ObstacleView? _next;
     private Level? _nextLevel;
 
+    /// <summary>A fixed reach for every view instead of each style's own (`--view`).</summary>
+    public float? ViewAhead { get; set; }
+
     public void Reset()
     {
         Drop(ref _current);
@@ -46,7 +49,7 @@ public partial class ObstacleRenderer : Node3D
         Drop(ref _current);
         Drop(ref _next);
         _nextLevel = null;
-        _current = new ObstacleView();
+        _current = new ObstacleView { ViewOverride = ViewAhead };
         AddChild(_current);
         _current.Init(session, level.Theme, jumpWindows);
     }
@@ -58,6 +61,7 @@ public partial class ObstacleRenderer : Node3D
         _nextLevel = next;
         _next = new ObstacleView
         {
+            ViewOverride = ViewAhead,
             Transform = new Transform3D(new Basis(map.X.ToGodot(), map.Y.ToGodot(), map.Z.ToGodot()), Vector3.Zero),
         };
         AddChild(_next);

@@ -11,7 +11,7 @@
        while installing, and in any Defender or SmartScreen warning, comes from the signing
        certificate's subject instead - so once a certificate exists, set this to the same name. -->
   <Package Name="Tube Runner"
-           Manufacturer="clinta74"
+           Manufacturer="Clint Andrews"
            Version="$(var.GameVersion)"
            UpgradeCode="5E8C2B7A-3D41-4F6B-9A2E-7C1D0F8B6E24"
            Scope="perUserOrMachine"

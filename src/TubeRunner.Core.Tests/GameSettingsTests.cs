@@ -46,6 +46,28 @@ public class GameSettingsTests
         Assert.Equal(saved, GameSettings.FromJson(saved.ToJson()));
     }
 
+    // The window comes back where it was closed, on whichever screen that was - a negative X is a
+    // monitor to the left - and maximised if it was. Until the game has been closed from a window
+    // there is nowhere to come back to.
+    [Fact]
+    public void TheWindow_IsRememberedOnceItHasBeenClosed()
+    {
+        Assert.Null(new GameSettings().Window);
+
+        var saved = new GameSettings { Window = new WindowPlace(-1920, 40, 1600, 900, Maximized: true) };
+
+        Assert.Equal(saved, GameSettings.FromJson(saved.ToJson()));
+    }
+
+    [Theory]
+    [InlineData("""{ "window": { "x": 0, "y": 0, "width": 10, "height": 10 } }""")]
+    [InlineData("""{ "window": { "x": 0, "y": 0, "width": 100000, "height": 600 } }""")]
+    [InlineData("""{ "window": null }""")]
+    public void AWindowThatCouldNotBeUsed_IsForgotten(string json)
+    {
+        Assert.Null(GameSettings.FromJson(json).Window);
+    }
+
     [Fact]
     public void Json_IsReadableByAPerson()
     {

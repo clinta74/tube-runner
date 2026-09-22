@@ -1,0 +1,37 @@
+{
+  "name": "Reach",
+  "speed": 60,
+  "segmentLength": 60,
+
+  // A bench for how far ahead things on the walls are drawn in the see-through style, not a level.
+  // One straight, with a block every 100 units spiralling round the wall from 300 out to 1500, so a
+  // single frame from the start shows every distance at once:
+  //   tube play --level bench/reach.json --start 20 --shot builds/shots/reach.png
+  //   tube play --level bench/reach.json --start 20 --view 450 --shot builds/shots/reach-450.png
+  // The style draws out to twice the fade (1400 here) and dithers things in from there to the fade
+  // (700), so the far blocks should thin out and the last one or two be barely there. With --view
+  // the reach is fixed instead, and a block past it is simply missing.
+  "theme": {
+    "wire": true,
+    "seamLight": "#7ff0ff",
+    "far": "#000000",
+    "ship": "#ffffff",
+    "block": "#ff8a3a",
+    "target": "#ff3a6a",
+    "breakable": "#7cffb0",
+    "fadeStart": 60,
+    "fadeEnd": 700,
+    "glow": 0.5
+  },
+
+  "sections": {
+    "tube": { "radius": 6 }
+  },
+
+  "start": "tube",
+  "track": [
+    { "length": 1800, "obstacles": [
+      { "at": 300, "angle": 0, "count": 13, "spacing": 100, "angleStep": 90, "width": 8 }
+    ] }
+  ]
+}

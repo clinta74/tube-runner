@@ -135,10 +135,15 @@ It still raises the priority of (10), fork funnels — a flat wall with holes in
 conspicuous in a level built to be seen through.
 
 ### Small follow-up: obstacles still appear at 450 in a wire level
-The track now builds much further in the wire style, but `ObstacleRenderer` keeps its own view
-distance, so blocks and wells pop in well inside the visible tube. One line to change; held back
-because obstacle views are individual nodes rather than batched chunks, so the cost is worth seeing
-before extending it.
+**Done.** The reach was already extended to twice the fade with the seamless handover, which is
+where the track's own reach is; what was left was that things arrived there at full brightness in
+a tube already dimmed to a quarter. Every wall material in a see-through level is now dithered in
+from twice the fade to the fade, so nothing pops at any reach, and the reach stays at twice the
+fade. `--view <units>` fixes the reach for comparing, and `bench/reach.json` is a straight tube
+with a block every 100 units for looking at the band; in the levels themselves almost nothing is
+ever more than a few hundred units off in a straight line, so the band mostly matters through the
+walls. Both wire levels also got more to fly round: a block in most of Loop the Loop's loops and
+hairpins, and one before most of Highwire's wells.
 
 ### 9. A level map on the HUD
 *From item 3. HUD + a testable projection in Core.* **Dropped** after play testing with the fork
@@ -371,7 +376,11 @@ effects volume. Settings apply and save as they change, to `settings.json` besid
 `tube play --menu` and `--settings` open straight onto them.
 
 Still open:
-- **Remember the window's size and position** between launches. Planned alongside screen mode, left out.
+- ~~**Remember the window's size and position** between launches.~~ Done: the window's place is
+  saved on the way out (`WindowPlace` in the settings, from the menu's Quit and from the close
+  button alike) and restored before the screen mode is applied, on whichever screen it was, with
+  maximised remembered as a flag over the last plain place. A place on a screen that is no longer
+  there keeps only its size. Test runs and shots leave the window alone.
 - **Motion options** (shake, speed streaks, hit flash), still only if someone finds the effects too much.
 - **Key rebinding**, the item below.
 
@@ -571,9 +580,9 @@ are identical on every wall pixel.
 - **Zones unlock by being reached**: one with a best time, or whose predecessor has one.
 - The name comes from the project's `config/name`, so renaming the game renames the title.
 
-Still open: the title has no music of its own beyond the run's quietest layer; About credits the
-GitHub handle, which wants a real name or a studio name before release; and the Controls page is a
-fixed list, which key rebinding will have to feed.
+Still open: the title has no music of its own beyond the run's quietest layer, and the Controls
+page is a fixed list, which key rebinding will have to feed. About now credits Clint Andrews with a
+copyright line, and the installer's publisher and the exe's file details say the same.
 
 ### Levels that run into each other without a cut
 

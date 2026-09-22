@@ -51,18 +51,24 @@
     // A well on a bend in a full-width tube: the shape from Roulette, as a reminder.
     { "length": 360, "turn": -65, "warps": [                        //  220 -  580
       { "at": 200, "angle": 90 }
+    ], "obstacles": [
+      { "at": 90, "angle": -90, "width": 7 }
     ] },
 
     // Now the same well in a narrow bore. Nothing changed about the well; there is simply less wall
     // left to use, so the same hazard is a much tighter steer.
     { "length": 380, "section": "narrow", "turn": 70, "warps": [    //  580 -  960
       { "at": 210, "angle": 90 }
+    ], "obstacles": [
+      { "at": 90, "angle": 180, "width": 7 }
     ] },
 
     { "length": 260, "section": "wide", "speed": 160, "pickups": [  //  960 - 1220
       { "at": 130, "kind": "rapid-fire" }
     ], "obstacles": [
-      { "at": 200, "kind": "target", "angle": 180 }
+      { "at": 60, "angle": 90, "width": 7 },
+      { "at": 200, "kind": "target", "angle": 180 },
+      { "at": 240, "angle": -90, "width": 7 }
     ] },
 
     // Two wells on one bend, on opposite walls, with the safe line threading between them. This is
@@ -70,10 +76,14 @@
     { "length": 420, "section": "narrow", "turn": -75, "warps": [   // 1220 - 1640
       { "at": 150, "angle": 90 },
       { "at": 320, "angle": -90 }
+    ], "obstacles": [
+      { "at": 40, "angle": 180, "width": 7 }
     ] },
 
     { "length": 240, "section": "tube", "pickups": [                // 1640 - 1880
       { "at": 120, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 190, "angle": -90, "width": 7 }
     ] },
 
     // A fork in a narrow chamber: the quick branch is tighter still and carries a well, so the fast
@@ -95,16 +105,20 @@
       ],
       "obstacles": [
         { "at": 230, "branch": 0, "kind": "target", "angle": 90 },
+        { "at": 350, "branch": 0, "angle": 0, "width": 7 },
         { "at": 160, "branch": 1, "angle": 180, "width": 7 }
       ]
     },
-    { "length": 160, "section": "tube" },                           // 2480 - 2640
+    { "length": 160, "section": "tube", "obstacles": [              // 2480 - 2640
+      { "at": 80, "angle": 90, "width": 7 }
+    ] },
 
     // A ring in the see-through style. Blades are visible from much further out here than a solid
     // level allows, so this one asks for aim at distance rather than reaction - and a gap is left in
     // it, because a sealed ring at 165 in a wire level is read long before it can be reached.
     { "length": 400, "section": "wide", "obstacles": [              // 2640 - 3040
-      { "at": 80, "kind": "target", "angle": 90, "group": "hk" }
+      { "at": 80, "kind": "target", "angle": 90, "group": "hk" },
+      { "at": 180, "angle": -90, "width": 7 }
     ], "apertures": [
       { "at": 300, "blades": 6, "open": 1, "keys": ["hk"] }
     ] },
@@ -132,12 +146,16 @@
     // sight until the corner opens. The signs arrive before the bend, which is the only warning.
     { "length": 210, "section": "narrow", "speed": 175, "turn": 80, "warps": [ // 3720 - 3930
       { "at": 130, "angle": 90 }
+    ], "obstacles": [
+      { "at": 50, "angle": 180, "width": 7 }
     ] },
     { "length": 210, "turn": -85, "climb": 14, "obstacles": [       // 3930 - 4140
       { "at": 105, "angle": 0, "width": 7 }
     ] },
     { "length": 210, "turn": 75, "climb": -16, "warps": [           // 4140 - 4350
       { "at": 120, "angle": -90 }
+    ], "obstacles": [
+      { "at": 40, "angle": 90, "width": 7 }
     ] },
 
     // Handover to Blackout: straighten and blend into its tube, then the first 276 units of its

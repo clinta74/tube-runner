@@ -144,7 +144,7 @@ public partial class Main
         {
             // Out of a page back to the title; from the title itself, Escape offers the way out.
             if (_menuOpen) ShowTitleMenu();
-            else ConfirmFromTitle("Quit the game?", "Yes, quit", () => GetTree().Quit());
+            else ConfirmFromTitle("Quit the game?", "Yes, quit", QuitGame);
         }
 
         // Once Start is picked the stick is the player's. Only the stick: the throttle stays where
@@ -241,7 +241,7 @@ public partial class Main
         options.Add(("Settings", () => OpenTitlePage(OpenSettings)));
         options.Add(("Controls", OpenControls));
         options.Add(("About", OpenAbout));
-        options.Add(("Quit", () => ConfirmFromTitle("Quit the game?", "Yes, quit", () => GetTree().Quit())));
+        options.Add(("Quit", () => ConfirmFromTitle("Quit the game?", "Yes, quit", QuitGame)));
 
         var version = UpdateChecker.CurrentVersion;
         string notice = _update is null ? "" : $"Version {_update.Version} is out     see About";
@@ -378,7 +378,8 @@ public partial class Main
         {
             ("Version", version.IsDevelopment ? "development build" : $"v{version}"),
             ("Updates", updates),
-            ("Made by", "clinta74"),
+            ("Made by", "Clint Andrews"),
+            ("Copyright", "© 2026 Clint Andrews"),
             ("Built with", "Godot 4 and C#"),
             ("Project", $"github.com/{Updates.Repository}"),
         };

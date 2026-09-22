@@ -116,9 +116,14 @@ public partial class ObstacleView : Node3D
     private Mesh _ringMesh = null!;
     private Mesh _padMesh = null!;
     private float _time;
+    // In the see-through style, the distances between which things are dithered in.
+    private (float From, float To)? _wireFade;
 
     /// <summary>How far ahead views are made in the solid style, where the fade hides the rest.</summary>
     [Export] public float ViewAhead { get; set; } = 450f;
+
+    /// <summary>A fixed reach instead of the style's own, for looking at the difference (`--view`).</summary>
+    public float? ViewOverride { get; set; }
 
     // What this level actually uses. A wire level sees much further than a solid one, and obstacles
     // appearing out of nothing well inside a tube the player can already see reads worse than the
@@ -195,6 +200,14 @@ public partial class ObstacleView : Node3D
         _glow = theme.Glow;
         _breakable = theme.Breakable.ToColor();
 
+        // In the see-through style the walls' lines dim with distance and the track is built out to
+        // twice the fade, so things on the walls are made that far out too. Solid at that distance
+        // they popped in at full brightness far down a tube already dimmed to a quarter. So out
+        // there they are dithered in: nothing where the track's reach ends, whole by the fade
+        // distance, arriving the way the lines do. A solid level hides its far end behind the fade
+        // and needs none of this.
+        _wireFade = theme.Wire ? (theme.FadeEnd, theme.FadeEnd * 2f) : null;
+
         _blockMaterial = Solid(theme.Block.ToColor());
         // Hazard stripes for plates. Nothing else in the game is this colour, because nothing else
         // has to be read as "no way through this one" from as far off as the player can see it.
@@ -217,7 +230,7 @@ public partial class ObstacleView : Node3D
         _themeGlow = theme.Glow;
         _targetColor = theme.Target.ToColor();
         // Matches the track's own reach, so obstacles and the tube they sit in appear together.
-        _viewAhead = theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead;
+        _viewAhead = ViewOverride ?? (theme.Wire ? Math.Max(ViewAhead, theme.FadeEnd * 2f) : ViewAhead);
         _keyGroups.Clear();
         _keyMaterials.Clear();
         _doorMaterials.Clear();
@@ -245,11 +258,11 @@ public partial class ObstacleView : Node3D
         }
         // The socket a gate withdraws into, left on the wall so its position is readable even when
         // nothing is standing there. Dark, unlit, and flush: a mark, not an obstacle.
-        _socketMaterial = new StandardMaterial3D
+        _socketMaterial = Faded(new StandardMaterial3D
         {
             AlbedoColor = theme.SeamDark.ToColor(),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-        };
+        });
         // Everything below is set against the glow's HDR threshold of 1.3 in main.tscn. Under it a
         // material is flat paint; over it, it blooms. Move that threshold and these move with it.
         _targetMaterial = Glowing(theme.Target.ToColor(), 1.9f + theme.Glow);
@@ -261,12 +274,12 @@ public partial class ObstacleView : Node3D
         // A road sign: a yellow triangular plate with a black hole on it.
         _plateMaterial = Glowing(new Color(1f, 0.86f, 0.32f), 2.1f);
         _plateMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
-        _iconMaterial = new StandardMaterial3D
+        _iconMaterial = Faded(new StandardMaterial3D
         {
             AlbedoColor = new Color(0.02f, 0.02f, 0.02f),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-        };
+        });
         // A three-sided cylinder is a flat triangular plate; a many-sided one is the disc on it. The
         // border is a slightly wider, thinner triangle behind, so the yellow reads with a dark rim
         // rather than as another lump on the wall - a sign that looks like a block is worse than no
@@ -278,11 +291,11 @@ public partial class ObstacleView : Node3D
 
         // A pad whose keys are still standing. Unlit and almost black, so it reads as switched off
         // rather than as a power-up in an unusual colour - the label on it says what it will be.
-        _deadPadMaterial = new StandardMaterial3D
+        _deadPadMaterial = Faded(new StandardMaterial3D
         {
             AlbedoColor = new Color(0.08f, 0.09f, 0.11f),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-        };
+        });
 
         _shotMesh = new CapsuleMesh { Radius = 0.12f, Height = 1.4f };
         _burstMesh = new SphereMesh { Radius = 0.15f, Height = 0.3f, RadialSegments = 6, Rings = 3 };
@@ -1160,22 +1173,36 @@ public partial class ObstacleView : Node3D
         return (frame.PointOnSection(point), frame.Forward.ToGodot(), frame.DirectionOnSection(normal).ToGodot());
     }
 
-    private StandardMaterial3D Solid(Color color) => new()
+    private StandardMaterial3D Solid(Color color) => Faded(new()
     {
         AlbedoColor = color,
         Roughness = 0.5f,
         EmissionEnabled = _glow > 0f,
         Emission = color,
         EmissionEnergyMultiplier = 0.5f * _glow,
-    };
+    });
 
-    private static StandardMaterial3D Glowing(Color color, float energy) => new()
+    private StandardMaterial3D Glowing(Color color, float energy) => Faded(new()
     {
         AlbedoColor = color,
         EmissionEnabled = true,
         Emission = color,
         EmissionEnergyMultiplier = energy,
-    };
+    });
+
+    // Dithered away with distance in the see-through style; left alone in a solid level. Dither
+    // rather than alpha, so nothing has to be sorted and the glow keeps working on what is left.
+    // Godot's distance fade hides what is nearer than the minimum and shows what is past the
+    // maximum - it is made for hiding things the camera is inside - and fades the other way round
+    // when the minimum is the larger, which is the way round wanted here.
+    private StandardMaterial3D Faded(StandardMaterial3D material)
+    {
+        if (_wireFade is not { } fade) return material;
+        material.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelDither;
+        material.DistanceFadeMinDistance = fade.To;
+        material.DistanceFadeMaxDistance = fade.From;
+        return material;
+    }
 
     // A smashed blade in flight.
     private sealed record Flung(Node3D Node, Vector3 Axis, float Rate, float Expires)

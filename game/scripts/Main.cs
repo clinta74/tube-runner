@@ -175,6 +175,7 @@ public partial class Main : Node3D
             if (arg == "--front") _debugFront = true;
             if (arg == "--join") _debugJoin = true;
             if (arg.StartsWith("--steer=")) _debugSteer = float.Parse(arg["--steer=".Length..], CultureInfo.InvariantCulture);
+            if (arg.StartsWith("--view=")) _debugView = float.Parse(arg["--view=".Length..], CultureInfo.InvariantCulture);
             if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
             if (arg == "--settings") _debugSettings = true;
             if (arg == "--title") forceTitle = true;
@@ -190,6 +191,9 @@ public partial class Main : Node3D
 
         _bestTimes = BestTimes.FromJson(FileAccess.FileExists(BestTimesPath) ? FileAccess.GetFileAsString(BestTimesPath) : null);
         _settings = GameSettings.FromJson(FileAccess.FileExists(SettingsPath) ? FileAccess.GetFileAsString(SettingsPath) : null);
+        _rememberWindow = !testRun && _shotPath is null;
+        _obstacles.ViewAhead = _debugView;
+        PlaceWindow();
         ApplySettings();
         _runStart = LevelPath;
         _menuRoot = OpenMenu;
@@ -288,6 +292,11 @@ public partial class Main : Node3D
     /// what they saw, which is a slow way to find out that a mesh is inside out.
     /// </summary>
     private string? _shotPath;
+    // --view: how far ahead things on the walls are drawn, instead of what the level's style says.
+    private float? _debugView;
+    // Whether the window's place is saved on the way out and restored on the way in. Not for test
+    // runs, whose shots are compared over time and want the window the project gives them.
+    private bool _rememberWindow;
     private int _shotFrames = 45;
 
     /// <summary>Where along the track to take the shot, rather than after a fixed count of frames.
@@ -921,7 +930,7 @@ public partial class Main : Node3D
             EnterTitle();
             _hud.FadeIn();
         })));
-        _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", () => GetTree().Quit())));
+        _menu.Add(("Quit", () => Confirm("Quit the game?", "Yes, quit", QuitGame)));
 
         _menuOpen = true;
         _shake = 0f;
@@ -970,9 +979,66 @@ public partial class Main : Node3D
             ScreenMode.Borderless => DisplayServer.WindowMode.Fullscreen,
             _ => DisplayServer.WindowMode.Windowed,
         };
-        if (DisplayServer.WindowGetMode() != mode) DisplayServer.WindowSetMode(mode);
+        var current = DisplayServer.WindowGetMode();
+        // A maximised window is a window: forcing it back to plain windowed would undo the
+        // player's own maximise, at every settings change and at launch after PlaceWindow.
+        bool asSet = current == mode || (mode == DisplayServer.WindowMode.Windowed && current == DisplayServer.WindowMode.Maximized);
+        if (!asSet) DisplayServer.WindowSetMode(mode);
         DisplayServer.WindowSetVsyncMode(_settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
         _audio.SetVolumes(_settings.MasterVolume, _settings.MusicVolume, _settings.EffectsVolume);
+    }
+
+    /// <summary>
+    /// Puts the window back where it was closed, before the screen mode is applied, so a fullscreen
+    /// setting has a window to come back to when it is switched off. The position is only used
+    /// where a screen still is: a window left on a monitor that has since been unplugged would
+    /// come back off every screen, so then only its size is kept.
+    /// </summary>
+    private void PlaceWindow()
+    {
+        if (!_rememberWindow || _settings.Window is not { } place) return;
+        DisplayServer.WindowSetSize(new Vector2I(place.Width, place.Height));
+        // Judged by the middle of the top edge, which is where a title bar is grabbed.
+        var grip = new Vector2I(place.X + place.Width / 2, place.Y);
+        for (int screen = 0; screen < DisplayServer.GetScreenCount(); screen++)
+        {
+            if (!DisplayServer.ScreenGetUsableRect(screen).HasPoint(grip)) continue;
+            DisplayServer.WindowSetPosition(new Vector2I(place.X, place.Y));
+            break;
+        }
+        if (place.Maximized) DisplayServer.WindowSetMode(DisplayServer.WindowMode.Maximized);
+    }
+
+    /// <summary>
+    /// Notes where the window is, for the next launch. Nothing while it is fullscreen or minimised:
+    /// neither is a place, and the last windowed one stays good.
+    /// </summary>
+    private void RememberWindow()
+    {
+        if (!_rememberWindow) return;
+        var position = DisplayServer.WindowGetPosition();
+        var size = DisplayServer.WindowGetSize();
+        WindowPlace? place = DisplayServer.WindowGetMode() switch
+        {
+            DisplayServer.WindowMode.Windowed => new WindowPlace(position.X, position.Y, size.X, size.Y),
+            DisplayServer.WindowMode.Maximized => (_settings.Window ?? new WindowPlace(position.X, position.Y, size.X, size.Y)) with { Maximized = true },
+            _ => null,
+        };
+        if (place is null || place == _settings.Window) return;
+        _settings = _settings with { Window = place };
+        SaveSettings();
+    }
+
+    private void QuitGame()
+    {
+        RememberWindow();
+        GetTree().Quit();
+    }
+
+    public override void _Notification(int what)
+    {
+        // The window's close button and Alt+F4. The tree quits by itself after this.
+        if (what == NotificationWMCloseRequest) RememberWindow();
     }
 
     private void SaveSettings()

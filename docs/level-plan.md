@@ -213,7 +213,7 @@ how obstacles are arranged.
 | 6 | Over and Under | 105 → 130 | Full-width walls | Medium | Flat, round | 5, in rhythm | Breakable rows | Rapid, ring, shield | 3146 |
 | 7 | Earthworks | 80 → 125 | Mixed | Medium | Box, flat, split | 2 | Mixed | Shields, rapid, ring, slot in a branch | 4926 |
 | 8 | Crossroads | 95 → 138 | Per branch | High: the inside line | Chambers, tubes | – | Mixed | Shield, rapid, ring, unstoppable | 4496 |
-| 9 | Loop the Loop | 110 flat | Light, spaced | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4556 |
+| 9 | Loop the Loop | 110 flat | Light, spaced, a block in most loops and hairpins | Low: the track does the turning | Round, wireframe | – | Mixed | Two shields, rapid, ring | 4556 |
 | 10 | Sleeve | 105 → 118 | Collars: the whole way round a wall | High: the jump between walls, both ways | Rings at 20, 30 and 40 with 12 of room, boxy ring | Compulsory, in pairs | Light | Shields, ring gun in fours | 6186 |
 | 11 | Neon Run | 100 → 160 | Mixed, dense | High | All | Several | Mixed | Shields, rapid, two rings, slot | 5116 |
 

@@ -54,7 +54,7 @@ internal static class Commands
         switch (args[0])
         {
             case "play":
-                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title", "front", "join"], values: ["level", "start", "record-fps", "shot", "shot-at", "title-page", "steer"]));
+                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title", "front", "join"], values: ["level", "start", "record-fps", "shot", "shot-at", "title-page", "steer", "view"]));
                 break;
             case "export":
                 Export(Options.Parse(options, flags: ["debug", "signed"], values: ["version"]));
@@ -107,6 +107,7 @@ internal static class Commands
         if (options.Value("shot") is string shot) game.Add("--shot=" + Path.GetFullPath(shot));
         if (options.Flag("ceiling")) game.Add("--ceiling");
         if (options.Number("steer") is double held) game.Add("--steer=" + held.ToString(CultureInfo.InvariantCulture));
+        if (options.Number("view") is double view) game.Add("--view=" + view.ToString(CultureInfo.InvariantCulture));
         if (options.Flag("front")) game.Add("--front");
         if (options.Flag("join")) game.Add("--join");
         if (options.Flag("title")) game.Add("--title");

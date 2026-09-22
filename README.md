@@ -53,6 +53,13 @@ first of the next, drawn at the same instant, so the handover can be checked to 
 tube play --level level_10.json --start 5850 --join --shot builds/shots/join.png
 ```
 
+`--view <units>` draws the things on the walls out to a fixed distance instead of as far as the
+level's style does (450 in a solid level, twice the fade in a see-through one), for comparing reaches:
+
+```bash
+tube play --level level_09.json --start 1100 --view 700 --shot builds/shots/view-700.png
+```
+
 Two more pages are for checking that the title's tube really does carry on into the first level with
 nothing changing. `--title-page start` picks Start by itself, and `--title-page wrap` waits for the
 ship to be put back a wall segment; with `--shot` each saves the same instant twice, as
