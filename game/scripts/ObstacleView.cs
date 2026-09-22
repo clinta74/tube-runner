@@ -61,6 +61,7 @@ public partial class ObstacleView : Node3D
     private readonly List<MeshInstance3D> _shotViews = new();
     private readonly List<MeshInstance3D> _ringViews = new();
     private readonly List<Burst> _bursts = new();
+    private readonly List<Flung> _flung = new();
     private readonly ProfileShapeCache _shapes = new();
     private GameSession _session = null!;
     private Func<Obstacle, View> _createObstacle = null!;
@@ -139,6 +140,7 @@ public partial class ObstacleView : Node3D
         foreach (var node in _shotViews) node.QueueFree();
         foreach (var node in _ringViews) node.QueueFree();
         foreach (var burst in _bursts) burst.Node.QueueFree();
+        foreach (var flung in _flung) flung.Node.QueueFree();
         _views.Clear();
         // Sockets and jump marks are keyed by things that do not survive a level change, so without
         // clearing these their nodes would stay in the tree for the rest of the run, unreachable.
@@ -152,6 +154,7 @@ public partial class ObstacleView : Node3D
         _shotViews.Clear();
         _ringViews.Clear();
         _bursts.Clear();
+        _flung.Clear();
     }
 
     /// <param name="jumpWindows">
@@ -312,9 +315,12 @@ public partial class ObstacleView : Node3D
     /// </summary>
     public void Rebind(GameSession session) => _session = session;
 
+    private float _lastDt;
+
     public void UpdateView(Vector3d origin, float dt)
     {
         _time += dt;
+        _lastDt = dt;
         double s = ShipS ?? _session.Ship.Position.S;
 
         // Warning signs pulse. Nothing else on a wall does, so movement is what separates a sign
@@ -546,6 +552,9 @@ public partial class ObstacleView : Node3D
         // never made; one already swinging keeps its view until it has finished getting out of the way.
         bool gone = o.Destroyed || (open && (view is null || progress >= 1f));
         bool there = !gone && InView(o.S, s);
+        // A blade that is smashed is not deleted, it is knocked off: it keeps its shape and spins
+        // away ahead of the ship, the way a leaf torn out of a shutter would.
+        if (o.Destroyed && view is not null && _views.Remove(o)) Fling(o, view);
         Sync(_views, o, there, burst: o.Destroyed, _createObstacle, origin);
 
         if (there && _views.TryGetValue(o, out view) && view.OpenedAt is not null)
@@ -1040,6 +1049,68 @@ public partial class ObstacleView : Node3D
         }
     }
 
+    /// <summary>
+    /// Sends a smashed blade spinning off. It goes with the ship - a little faster, so it pulls
+    /// ahead and can be seen going - and out towards the wall it stood on, tumbling, and shrinks
+    /// away over the last of its flight rather than blinking out.
+    /// </summary>
+    private void Fling(Obstacle o, View view)
+    {
+        var shape = _shapes.Get(_session.Track.SectionAt(o.S, o.Branch));
+        var frame = _session.Track.FrameAt(o.S, o.Branch);
+        var onWall = shape.PointAt(o.Surface, o.X);
+        var outward = frame.DirectionOnSection(System.Numerics.Vector2.Normalize(onWall)).ToGodot();
+        var forward = view.Forward;
+        float speed = _session.Ship.ForwardSpeed;
+        var velocity = forward * (speed * 1.1f + 5f) + outward * 7f;
+
+        // The blade's mesh is built about the tube's axis, since that is what it turns round as an
+        // iris; a leaf knocked loose has to tumble about its own middle, so the mesh is hung under
+        // a pivot there. Its middle is a little over halfway from the axis to the wall.
+        var mesh = view.Node;
+        var middle = onWall * (0.5f * (1f + IrisShut));
+        var pivot = new Node3D();
+        AddChild(pivot);
+        pivot.GlobalTransform = mesh.GlobalTransform;
+        mesh.Reparent(pivot, keepGlobalTransform: false);
+        mesh.Position = new Vector3(-middle.X, -middle.Y, 0f);
+        var centre = view.Center + frame.DirectionOnSection(middle);
+
+        // Tumbling about an axis across the blade, so it is seen edge-on and face-on by turns.
+        var axis = (outward.Cross(forward) + outward * 0.35f).Normalized();
+        _flung.Add(new Flung(pivot, axis, 9f + o.Blade * 1.7f, _time + FlungSeconds)
+        {
+            Center = centre,
+            Velocity = velocity,
+        });
+        SpawnBurst(centre, view.BurstMaterial);
+    }
+
+    private const float FlungSeconds = 0.9f;
+
+    private void UpdateFlung(Vector3d origin, float dt)
+    {
+        for (int i = _flung.Count - 1; i >= 0; i--)
+        {
+            var flung = _flung[i];
+            float left = flung.Expires - _time;
+            if (left <= 0f)
+            {
+                flung.Node.QueueFree();
+                _flung.RemoveAt(i);
+                continue;
+            }
+            var step = flung.Velocity * dt;
+            flung.Center += new Vector3d(step.X, step.Y, step.Z);
+            flung.Node.Position = flung.Center.RelativeTo(origin).ToGodot();
+            flung.Node.RotateObjectLocal(axis: flung.Node.GlobalBasis.Inverse() * flung.Axis, angle: flung.Rate * dt);
+            // Shrinking the whole way, quickest at the end: a leaf spinning off is a thing that
+            // gets smaller, not a thing that hangs in the air and then goes.
+            float shrink = left / FlungSeconds;
+            flung.Node.Scale = Vector3.One * Mathf.Max(0.02f, 0.25f + 0.75f * shrink * shrink);
+        }
+    }
+
     private void SpawnBurst(Vector3d center, Material material)
     {
         var particles = new CpuParticles3D
@@ -1065,6 +1136,7 @@ public partial class ObstacleView : Node3D
 
     private void UpdateBursts(Vector3d origin)
     {
+        UpdateFlung(origin, _lastDt);
         for (int i = _bursts.Count - 1; i >= 0; i--)
         {
             var burst = _bursts[i];
@@ -1104,6 +1176,13 @@ public partial class ObstacleView : Node3D
         Emission = color,
         EmissionEnergyMultiplier = energy,
     };
+
+    // A smashed blade in flight.
+    private sealed record Flung(Node3D Node, Vector3 Axis, float Rate, float Expires)
+    {
+        public Vector3d Center { get; set; }
+        public Vector3 Velocity { get; set; }
+    }
 
     private sealed record View(Node3D Node, Vector3d Center, Vector3 Forward, Vector3 Up, bool Spins, Material BurstMaterial)
     {

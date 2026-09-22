@@ -145,6 +145,27 @@ public class ApertureTests
         Assert.True(game.RingCharges > 0);
     }
 
+    // A ring opening is machinery moving, and the session says so once per key that opens some
+    // of it - so a three-key ring says it three times, and a key that opens nothing says nothing.
+    [Fact]
+    public void ARingSaysWhenAKeyOpensSomeOfIt()
+    {
+        var key = new Obstacle { Kind = ObstacleKind.Target, S = 250, Surface = Surface.Ceiling, Width = 40f, Group = "k" };
+        var loose = new Obstacle { Kind = ObstacleKind.Target, S = 300, Surface = Surface.Ceiling, Width = 40f, Group = "nothing" };
+        var blade = new Obstacle { Kind = ObstacleKind.Block, S = 500, Width = 6f, Aperture = "ring", Blade = 0, BladeCount = 6, LockedBy = "k" };
+        var game = Game([key, loose, blade], []);
+
+        int opened = 0;
+        for (int i = 0; i < 60 * 8 && game.Ship.Position.S < 450; i++)
+        {
+            game.Step(1f / 60f, new ShipInput(Fire: true));
+            opened += game.Events.Count(e => e == SessionEvent.ApertureOpened);
+        }
+
+        Assert.True(key.Destroyed && loose.Destroyed, "both targets should have been shot on the way");
+        Assert.Equal(1, opened);
+    }
+
     [Fact]
     public void APadWithNoLock_IsAlwaysThere()
     {

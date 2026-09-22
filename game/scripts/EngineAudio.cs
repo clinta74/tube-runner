@@ -75,6 +75,13 @@ public partial class EngineAudio : AudioStreamPlayer
                 _voices.Add(Voice.Tone(660f, 1320f, 0.15f, 0.22f));
                 _voices.Add(Voice.Noise(0.25f, 0.2f));
                 break;
+            case SessionEvent.ApertureOpened:
+                // Machinery: a latch, a motor winding up through the swing, and a settle at the end
+                // of it. Timed to the iris, which takes just under half a second to open.
+                _voices.Add(Voice.Noise(0.05f, 0.28f));
+                _voices.Add(Voice.Tone(150f, 480f, 0.42f, 0.16f, square: true));
+                _voices.Add(Voice.Tone(1180f, 1320f, 0.09f, 0.14f, delay: 0.4f));
+                break;
             case SessionEvent.ShotBlocked:
                 _voices.Add(Voice.Tone(320f, 180f, 0.06f, 0.1f, square: true));
                 break;

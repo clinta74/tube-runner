@@ -489,14 +489,18 @@ onwards to 27-31).
 
 Still open:
 
-- **The ring gun is a skeleton key.** One sweep destroys every key it passes, so it opens an
-  aperture outright. Levels ration charges around rings and use ordered key groups where a ring has
-  to resist one (a sweep takes a single member of an ordered group). If that turns out to read as a
-  bug rather than as a rule, the alternative is a key kind the ring cannot touch.
-- **Blades have no break-up.** An aperture rammed under unstoppable bursts like any other block.
-  Blades spinning off would be the right look and wants the same work as cracks on breakables.
-- **No sound of its own.** A ring opening is the one piece of machinery in the game with no noise;
-  `EngineAudio` has the voices for it.
+- **The ring gun is a skeleton key, and that is the rule.** One sweep destroys every key it
+  passes, so it opens an aperture outright. Decided after play testing rather than changed: the
+  levels are already built round it - charges are rationed near rings, and a ring that has to
+  resist a sweep uses an ordered group, which a sweep takes one member of - and a key kind the ring
+  cannot touch would be a second rule to teach for the sake of the first. The format guide says to
+  treat it as deliberate.
+- **Blades spin off.** A smashed blade keeps its shape and is knocked away ahead of the ship, a
+  little faster than it, out towards its own wall and tumbling, shrinking away over the last of a
+  flight of under a second, with the ordinary burst at the impact. It used to burst like a block.
+- **A ring has a sound.** `ApertureOpened` is raised once per key that opens some of a ring, so a
+  three-key ring says it three times, and the synth answers with a latch, a motor winding up
+  through the swing and a settle, timed to the iris.
 
 ### Rings: a cylinder down the middle of the bore
 
@@ -525,9 +529,15 @@ The pickup multiplies the rate by 1.6 for 10 s and carries between levels like t
 also handed out before the fast finishes of 29, 30 and 31, and left out of the finale, which gives
 nothing on purpose.
 
-Still open: a hairline seam down the top of a ring's wall where the strip closes on itself; the far
-end's checker aliases in the widest bores; collars cannot be gates or movers; the jump is a fixed
-0.55 s whatever the gap; and splits, apertures and warps are refused in a ring.
+The far end of the widest bores no longer shimmers: it was the wall seams, a fixed width in
+world units and so narrower than a pixel far off, and a line thinner than a pixel flickers rather
+than thins. A seam now fades out as it thins, and the far end settles into plain checker. The
+hairline seam down the top of a ring's wall, noted earlier, could not be reproduced afterwards -
+the strip's two ends land on the same point and the same texture coordinate - and is taken as
+fixed along the way.
+
+Still open, as design room rather than faults: collars cannot be gates or movers; the jump is a
+fixed 0.55 s whatever the gap; and splits, apertures and warps are refused in a ring.
 
 ### A title screen, and a Start with no cut
 

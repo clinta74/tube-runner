@@ -96,15 +96,24 @@ void fragment() {
 	float x = UV.x * AROUND[pick(seg, 1.0, 4)] + local * TWIST[pick(seg, 2.0, 4)];
 	float y = local / ALONG[pick(seg, 3.0, 4)];
 	float t = checker(vec2(x, y), softness);
+	// Cells a few pixels long do not alias, but they scroll, and a wall of scrolling stripes a few
+	// pixels wide shimmers. Down the far end of a wide bore the checker settles towards its own
+	// average instead, before the distance fade takes it.
+	float cell = max(fwidth(x), fwidth(y));
+	t = mix(t, 0.5, smoothstep(0.12, 0.5, cell));
 	vec3 dark = to_linear(darks[pick(seg, 4.0, dark_count)]);
 	vec3 light = to_linear(lights[pick(seg, 5.0, light_count)]) * (1.0 + glow);
 	vec3 col = mix(dark, light, t);
 
-	// Seam at each segment boundary: a groove with a thin bright core.
+	// Seam at each segment boundary: a groove with a thin bright core. Far down a wide bore a seam
+	// is narrower than a pixel, and a line thinner than a pixel does not get thinner, it flickers -
+	// which is what the far end of the widest bores was doing. So a seam fades out as it thins,
+	// and the far end settles into plain checker.
 	float d = min(local, segment_length - local);
 	float aa = fwidth(local);
-	col = mix(col, to_linear(seam_dark), 1.0 - smoothstep(0.35, 0.7 + aa, d));
-	col = mix(col, to_linear(seam_light) * (1.0 + 2.0 * glow), 1.0 - smoothstep(0.08, 0.18 + aa, d));
+	float thin = 1.0 - smoothstep(0.4, 1.6, aa);
+	col = mix(col, to_linear(seam_dark), (1.0 - smoothstep(0.35, 0.7 + aa, d)) * thin);
+	col = mix(col, to_linear(seam_light) * (1.0 + 2.0 * glow), (1.0 - smoothstep(0.08, 0.18 + aa, d)) * thin);
 
 	// Fade with distance for depth.
 	col = mix(col, to_linear(far_color), smoothstep(fade_start, fade_end, length(VERTEX)));

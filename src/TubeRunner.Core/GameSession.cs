@@ -17,6 +17,9 @@ public enum SessionEvent
     Jumped,
     Hit,
     TargetDestroyed,
+
+    /// <summary>A key has fallen that opens blades of an aperture: a key's worth of the ring is swinging open.</summary>
+    ApertureOpened,
     BlockDamaged,
     BlockDestroyed,
     ShotBlocked,
@@ -688,6 +691,18 @@ public sealed class GameSession
         o.Destroyed = true;
         _bonus += points;
         _events.Add(e);
+        // A ring opens a key's worth at a time, so each key that opens some of its blades is a
+        // piece of machinery moving, and says so.
+        if (o.Group is not null && KeysAreDown(o.Group) && OpensBlades(o.Group)) _events.Add(SessionEvent.ApertureOpened);
+    }
+
+    private bool OpensBlades(string group)
+    {
+        foreach (var o in _obstacles)
+        {
+            if (o.Aperture is not null && o.LockedBy == group && !o.Destroyed) return true;
+        }
+        return false;
     }
 
     // Ring shots break every target and breakable block they pass, all the way around the tube,
