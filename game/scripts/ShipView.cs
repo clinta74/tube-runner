@@ -84,9 +84,11 @@ public partial class ShipView : Node3D
 
         _hullMaterial.AlbedoColor = _shipColor;
         // A floor under the theme's glow keeps unlit faces in the ship's color instead of black.
+        // Low: the ship is lit by a key, a fill and the environment's ambient now, and a hull that
+        // glows on its own washes out the shading those give it.
         _hullMaterial.EmissionEnabled = true;
         _hullMaterial.Emission = _shipColor;
-        _hullMaterial.EmissionEnergyMultiplier = Mathf.Max(_glow, 0.3f);
+        _hullMaterial.EmissionEnergyMultiplier = HullGlow;
 
         _darkMaterial.AlbedoColor = _shipColor.Darkened(0.7f);
 
@@ -193,13 +195,15 @@ public partial class ShipView : Node3D
         {
             _hullMaterial.EmissionEnabled = true;
             _hullMaterial.Emission = _shipColor;
-            _hullMaterial.EmissionEnergyMultiplier = Mathf.Max(_glow, 0.3f);
+            _hullMaterial.EmissionEnergyMultiplier = HullGlow;
         }
 
         float flash = _flashLeft / FlashSeconds;
         _flash.Visible = flash > 0f;
         if (_flash.Visible) _flash.Scale = Vector3.One * (0.35f + 0.9f * flash);
     }
+
+    private float HullGlow => 0.1f + 0.3f * _glow;
 
     // Right-hand parts are built first, so even indices are the +X side.
     private static float Side(int index) => index % 2 == 0 ? 1f : -1f;
@@ -208,7 +212,7 @@ public partial class ShipView : Node3D
     {
         // Low metallic on purpose: the only light is a headlight on the camera and there is no sky
         // to reflect, so a metallic hull goes black wherever a face sits edge-on to it.
-        _hullMaterial = new StandardMaterial3D { AlbedoColor = Colors.White, Metallic = 0.2f, Roughness = 0.5f };
+        _hullMaterial = new StandardMaterial3D { AlbedoColor = Colors.White, Metallic = 0.2f, Roughness = 0.38f };
         _darkMaterial = new StandardMaterial3D { AlbedoColor = Colors.Gray, Metallic = 0.25f, Roughness = 0.55f };
         // Above the 1.3 HDR threshold, or these read as flat paint: the accents are the few bright
         // marks meant to carry the silhouette from six units back.

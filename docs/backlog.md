@@ -203,6 +203,15 @@ spine read as a ball on the ship's back, and a teardrop pushed through the ridge
 it: nothing round sits in a faceted nose. `tube play --front --shot` looks at it from the front
 right, as the victory lap does.
 
+**The lighting is done too.** The one light was a headlight on the camera, so every face turned
+to the camera was lit the same and the hull was a white cut-out from the front. It is a rig on the
+camera now: a warm key from the upper left, 45 degrees down and 38 across, a cool fill from the
+lower right at a quarter of its strength, and a bluish ambient in the environment, with the hull's
+own glow brought down from 0.3 to a floor of 0.1 so the shading shows through it, and its
+roughness eased so there is a little highlight. Blocks and pads take the same light and read as
+they did. Rig, not sun: the tube rolls round the ship as it steers, so a fixed light direction
+would have the ship lit from below half the time.
+
 Settle first whether the complaint is *detail* or the ship reading as a cheap shape. If it is the
 latter, silhouette and motion buy more than geometry, and the cheap route gets most of it. A paused
 screenshot up close should decide it.
