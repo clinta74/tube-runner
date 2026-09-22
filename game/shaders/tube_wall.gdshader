@@ -3,6 +3,7 @@
 // Each mesh chunk is one segment (see TrackRenderer.cs).
 // UV.x = distance around the section / perimeter (continues past 0..1 onto open planes),
 // UV.y = distance into the segment (world units).
+// UV2.x = how far into a warp well a point lies; UV2.y = how far down a fork's funnel it is sunk.
 shader_type spatial;
 render_mode unshaded, cull_disabled;
 
@@ -130,6 +131,12 @@ void fragment() {
 	// it vanishes on flat wall, where the band's tail would otherwise wash the whole tube.
 	float lip = (well - 0.05) / 0.03;
 	col += to_linear(seam_light) * (1.0 + 2.0 * glow) * 1.15 * exp(-lip * lip) * smoothstep(0.0, 0.02, well);
+
+	// A fork's funnel: the same checker, lit off the geometric normal so its slopes read, and
+	// darker the deeper it is sunk, which is what says the throats go in rather than out.
+	float sunk = UV2.y;
+	col *= mix(1.0, 0.75 + 0.25 * facing, step(0.001, sunk));
+	col *= mix(1.0, 0.7, sunk);
 
 	ALBEDO = col;
 	}

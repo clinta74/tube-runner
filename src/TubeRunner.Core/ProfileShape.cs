@@ -195,6 +195,18 @@ public sealed class ProfileShape
         return Wrap(Surface.Floor, (_u[best] - 0.75f) * Perimeter);
     }
 
+    /// <summary>
+    /// The curve parameter of the outline point in direction <paramref name="angle"/> from the
+    /// centre (radians, counter-clockwise from the right): the same number <see cref="PointAt"/>
+    /// runs on, so a point off the outline can be given the wall's own texture coordinate.
+    /// </summary>
+    public float ParameterAt(float angle)
+    {
+        float k = MathUtil.Wrap01(angle / MathF.Tau) * Samples;
+        int i = Math.Clamp((int)MathF.Floor(k), 0, Samples - 1);
+        return _u[i] + (_u[i + 1] - _u[i]) * (k - i);
+    }
+
     private Vector2 CurvePoint(float u)
     {
         u = MathUtil.Wrap01(u);

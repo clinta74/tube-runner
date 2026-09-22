@@ -156,11 +156,16 @@ nearest opening against how far it is from the chamber wall, so every opening's 
 throat deep in one plane where the branch tube takes over, and the chamber wall is not sunk at all.
 Vertices that land inside an opening are moved out onto its rim along their own spoke - the hole is
 cut by the mesh, not the shader - and the branch tubes start where the throats end, twelve units
-into the split, and stop the same distance before the merge. The surface is lit off screen
-derivatives like a well's rim, darkened towards the throat, and in a tone a little up from the
-wall's dark cell so the slopes show; the rim glow is kept to the throat, because where an opening
-touches the chamber wall the surface between them is a strip the whole depth of the throat, and lit
-along its length it was a streak across the wall. Wireframe levels have no caps and no funnels.
+into the split, and stop the same distance before the merge. The funnel wears the wall's own
+material: each spoke carries the texture coordinate of the point where it meets the chamber wall
+(`ProfileShape.ParameterAt`) and the depth carries on the distance along the segment, so the
+chamber's checker runs off the wall and down into the throats. It went through a flat colour first,
+shaded off screen derivatives like a well's rim, and after two play tests that read as dark and
+then as a blur; the checker is what makes it a surface. The slopes are lit off the geometric normal
+and darkened a little towards the throat. Where an opening touches the chamber wall the surface
+between them is a strip the whole depth of the throat - the chamber wall carrying on - and the
+wall's own vertex stays on the wall there, or it left a slit onto the void. Wireframe levels have no
+caps and no funnels.
 
 The original note: the abruptness was structural, a flat disc across the chamber with the branch
 openings cut out by a shader, so the player flew at a wall with holes rather than into diverging

@@ -80,7 +80,6 @@ public partial class TrackView : Node3D
     private Vector3 _endWallColor;
     private Vector3 _endRimColor;
     private Vector3 _coreFaceColor;
-    private Vector3 _funnelColor;
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
@@ -232,10 +231,6 @@ public partial class TrackView : Node3D
         // core stands in the open bore and would read as a hole in that. It takes a tone between the
         // wall's two cell colours instead - a lit flat end, neither a light cell nor a dark one.
         _coreFaceColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.55f);
-        // A funnel is shaded by its slopes, and a slope shaded darker than near-black is no slope
-        // at all. It takes a tone a little up from the wall's dark cell, so the throats can fall
-        // away from it into the dark.
-        _funnelColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.55f);
         _endWallColor = endsTheRun ? theme.Block.ToVector3() : theme.Far.ToVector3();
         _endRimColor = endsTheRun ? theme.SeamLight.ToVector3() : theme.Far.ToVector3();
 
@@ -459,6 +454,11 @@ public partial class TrackView : Node3D
     /// full throat deep, in one plane, where the branch tube takes over, and the chamber wall is
     /// not sunk at all. Vertices that land inside an opening are moved out onto its rim, which
     /// cuts the hole with the mesh rather than the shader and gives the tube a rim to meet.
+    ///
+    /// It wears the wall's own material. Each spoke carries the texture coordinate of the point
+    /// where it meets the chamber wall and the depth carries on the distance along the segment, so
+    /// the chamber's checker runs off the wall and down the funnel unbroken, converging on the
+    /// throats. A flat colour, however it was shaded, read as a blur between the tubes.
     /// </summary>
     private Placed BuildFunnel(CapSpec spec)
     {
@@ -466,10 +466,16 @@ public partial class TrackView : Node3D
         double s = spec.S;
         var frame = _track.FrameAt(s);
         var chamber = _track.SectionAt(s);
+        var outline = _shapes.Get(chamber);
         var origin = frame.Position;
         float depth = FunnelDepth(split);
         // A fork sinks forward into the split, a merge back into it.
-        var sink = frame.Forward * (spec.Along > 0f ? -depth : depth);
+        bool merge = spec.Along > 0f;
+        var sink = frame.Forward * (merge ? -depth : depth);
+        // The segment this wall belongs to, and how far into it the wall stands: the funnel's
+        // texture runs on from there, forward into the split or back into it.
+        long segment = (long)Math.Floor(s / _chunkLength);
+        float into = (float)(s - segment * _chunkLength);
 
         int holes = split.BranchCount;
         var centres = new System.Numerics.Vector2[holes];
@@ -546,6 +552,15 @@ public partial class TrackView : Node3D
                 while (i + 1 <= FunnelRings && inside[At(i + 1, j)] == hole) i++;
                 int last = i;
                 var entry = inside[At(first - 1, j)] == hole ? points[At(first - 1, j)] : Crossing(points[At(first - 1, j)], points[At(first, j)], hole);
+                if (last == FunnelRings)
+                {
+                    // The opening touches the chamber wall here. The wall's own vertex stays on the
+                    // wall - it is at most a hair inside the opening, since openings fit inside the
+                    // chamber - so the funnel still reaches the wall along this spoke; moved onto
+                    // the rim it left a slit between the two, open onto the void.
+                    inside[At(last, j)] = -1;
+                    last--;
+                }
                 var exit = last < FunnelRings ? Crossing(points[At(last + 1, j)], points[At(last, j)], hole) : entry;
                 int middle = (first + last) / 2;
                 for (int k = first; k <= last; k++) points[At(k, j)] = k <= middle ? entry : exit;
@@ -558,6 +573,9 @@ public partial class TrackView : Node3D
         for (int v = 0; v < count; v++)
         {
             var p = points[v];
+            // Round the chamber, the spoke's own place on the wall; the centre has no spoke and
+            // takes the floor's middle.
+            float around = v == 0 ? 0.75f : outline.ParameterAt(MathF.Tau * ((v - 1) % FunnelSpokes) / FunnelSpokes);
             float toHole = float.MaxValue;
             for (int h = 0; h < holes; h++)
             {
@@ -575,8 +593,8 @@ public partial class TrackView : Node3D
             float n = toHole + toWall > 1e-5f ? toHole / (toHole + toWall) : 1f;
             float sunk = 1f - n * n * (3f - 2f * n);
 
-            st.SetUV(new Vector2(p.X, p.Y));
-            st.SetUV2(new Vector2(sunk, 0f));
+            st.SetUV(new Vector2(around, into + (merge ? -depth : depth) * sunk));
+            st.SetUV2(new Vector2(0f, sunk));
             st.AddVertex((frame.PointOnSection(p) + sink * sunk).RelativeTo(origin).ToGodot());
         }
 
@@ -600,11 +618,9 @@ public partial class TrackView : Node3D
             }
         }
 
-        var material = CapMaterial(split, spec.Along, core: false);
-        material.SetShaderParameter("funnel", 1f);
-        material.SetShaderParameter("cap_color", _funnelColor);
-        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
+        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = _material };
         AddChild(node);
+        node.SetInstanceShaderParameter("segment_index", (int)segment);
         return new Placed(node, origin);
     }
 

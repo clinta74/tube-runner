@@ -128,4 +128,21 @@ public class ProfileShapeTests
         Assert.Equal(expected.Surface, actual.Surface);
         Assert.Equal(expected.X, actual.X, precision: 3);
     }
+
+    // A point off the outline gets the wall's own texture coordinate by the direction it lies in:
+    // the curve parameter runs from the right side midpoint, a quarter per quarter turn on a circle.
+    [Fact]
+    public void ParameterAt_IsTheCurveParameterOfTheOutlinePointInThatDirection()
+    {
+        var shape = new ProfileShape(CrossSection.Circle(5f));
+
+        Assert.Equal(0f, shape.ParameterAt(0f), 3);
+        Assert.Equal(0.25f, shape.ParameterAt(MathF.PI / 2f), 3);
+        Assert.Equal(0.5f, shape.ParameterAt(MathF.PI), 3);
+        Assert.Equal(0.75f, shape.ParameterAt(-MathF.PI / 2f), 3);
+
+        // Which is what PointAt runs on: the floor's centre is the bottom, parameter three quarters.
+        var bottom = shape.PointAt(Surface.Floor, 0f);
+        Assert.Equal(0.75f, shape.ParameterAt(MathF.Atan2(bottom.Y, bottom.X)), 3);
+    }
 }
