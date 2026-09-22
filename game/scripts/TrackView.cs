@@ -47,6 +47,15 @@ public partial class TrackView : Node3D
     private const double CoreCapInset = 0.01;
     private static readonly Surface[] Surfaces = { Surface.Floor, Surface.Ceiling };
 
+    // A fork or merge is a funnel rather than a wall with holes: the chamber's cross-section, sunk
+    // towards each branch opening so the wall bends into the branch tube. This is how deep the
+    // throats go, at most - shallower on a short split, so both ends fit - and how finely the
+    // surface is meshed, in rings out from the centre and spokes round it.
+    private const float FunnelDepthCap = 12f;
+    private const int FunnelRings = 24;
+    private const int FunnelSpokes = 96;
+    private bool _funnels;
+
     private readonly Dictionary<long, Placed> _chunks = new();
     private readonly Dictionary<int, Placed> _caps = new();
     private readonly List<CapSpec> _capSpecs = new();
@@ -71,6 +80,7 @@ public partial class TrackView : Node3D
     private Vector3 _endWallColor;
     private Vector3 _endRimColor;
     private Vector3 _coreFaceColor;
+    private Vector3 _funnelColor;
     private float _chunkLength;
 
     [Export] public float ViewBehind { get; set; } = 30f;
@@ -178,6 +188,10 @@ public partial class TrackView : Node3D
                 w.Length / 2f, halfWidth, 1.1f * halfWidth, w.Branch));
         }
 
+        // A wireframe level has no caps, so its branch tubes run the whole split; a solid one has
+        // funnels, and the branches start where the funnel's throat ends.
+        _funnels = !theme.Wire;
+
         // Walls where each split forks and merges, plus one closing off the end of the track so a
         // finished level never looks out into the void.
         //
@@ -218,6 +232,10 @@ public partial class TrackView : Node3D
         // core stands in the open bore and would read as a hole in that. It takes a tone between the
         // wall's two cell colours instead - a lit flat end, neither a light cell nor a dark one.
         _coreFaceColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.55f);
+        // A funnel is shaded by its slopes, and a slope shaded darker than near-black is no slope
+        // at all. It takes a tone a little up from the wall's dark cell, so the throats can fall
+        // away from it into the dark.
+        _funnelColor = theme.Darks[0].ToVector3().Lerp(theme.Lights[0].ToVector3(), 0.3f);
         _endWallColor = endsTheRun ? theme.Block.ToVector3() : theme.Far.ToVector3();
         _endRimColor = endsTheRun ? theme.SeamLight.ToVector3() : theme.Far.ToVector3();
 
@@ -292,9 +310,15 @@ public partial class TrackView : Node3D
             if (split.EndS <= s || split.StartS >= s1) continue;
             foreach (var span in AtCoreBounds(s, split.StartS)) yield return span;
 
-            double from = Math.Max(s, split.StartS), to = Math.Min(split.EndS, s1);
-            for (int b = 0; b < split.BranchCount; b++) yield return (from, to, split, b);
-            s = to;
+            // The branch tubes start where the fork's throats end and stop where the merge's begin;
+            // between those the funnel is the wall.
+            float throat = _funnels ? FunnelDepth(split) : 0f;
+            double from = Math.Max(s, split.StartS + throat), to = Math.Min(split.EndS - throat, s1);
+            if (from < to)
+            {
+                for (int b = 0; b < split.BranchCount; b++) yield return (from, to, split, b);
+            }
+            s = Math.Min(split.EndS, s1);
         }
         foreach (var span in AtCoreBounds(s, s1)) yield return span;
     }
@@ -422,9 +446,208 @@ public partial class TrackView : Node3D
         }
     }
 
-    // A disc filling the section, or a core's end; the cap shader cuts any branch openings out of it.
+    private static float FunnelDepth(TrackSplit split) => Math.Min(FunnelDepthCap, split.Length * 0.25f);
+
+    /// <summary>
+    /// The wall where a split's branches begin or end, as a funnel: the chamber's cross-section,
+    /// sunk along the track towards each branch opening until the surface meets the branch tube
+    /// square on. It used to be a flat disc with the openings cut out by the shader, which is a
+    /// wall with holes in it, and flying at a wall with holes is not flying into diverging tubes.
+    ///
+    /// Built on a polar grid of the chamber. Each vertex is sunk by how far it is from the nearest
+    /// opening against how far it is from the chamber wall, so the rim of every opening lies a
+    /// full throat deep, in one plane, where the branch tube takes over, and the chamber wall is
+    /// not sunk at all. Vertices that land inside an opening are moved out onto its rim, which
+    /// cuts the hole with the mesh rather than the shader and gives the tube a rim to meet.
+    /// </summary>
+    private Placed BuildFunnel(CapSpec spec)
+    {
+        var split = spec.Split!;
+        double s = spec.S;
+        var frame = _track.FrameAt(s);
+        var chamber = _track.SectionAt(s);
+        var origin = frame.Position;
+        float depth = FunnelDepth(split);
+        // A fork sinks forward into the split, a merge back into it.
+        var sink = frame.Forward * (spec.Along > 0f ? -depth : depth);
+
+        int holes = split.BranchCount;
+        var centres = new System.Numerics.Vector2[holes];
+        var sections = new CrossSection[holes];
+        for (int b = 0; b < holes; b++)
+        {
+            centres[b] = split.OffsetAt(b, spec.Along);
+            sections[b] = split.Section(b);
+        }
+
+        // The grid: the centre, then rings out to the chamber wall.
+        int count = 1 + FunnelRings * FunnelSpokes;
+        var points = new System.Numerics.Vector2[count];
+        var inside = new int[count];
+        int At(int ring, int spoke) => ring == 0 ? 0 : 1 + (ring - 1) * FunnelSpokes + spoke % FunnelSpokes;
+        int Hole(System.Numerics.Vector2 p)
+        {
+            for (int h = 0; h < holes; h++)
+            {
+                var q = p - centres[h];
+                float along = q.Length();
+                if (along < Radius(sections[h], along > 1e-5f ? q / along : new System.Numerics.Vector2(1f, 0f))) return h;
+            }
+            return -1;
+        }
+        points[0] = System.Numerics.Vector2.Zero;
+        inside[0] = Hole(points[0]);
+        for (int i = 1; i <= FunnelRings; i++)
+        {
+            for (int j = 0; j < FunnelSpokes; j++)
+            {
+                float angle = MathF.Tau * j / FunnelSpokes;
+                var dir = new System.Numerics.Vector2(MathF.Cos(angle), MathF.Sin(angle));
+                var point = dir * (Radius(chamber, dir) * i / FunnelRings);
+                points[At(i, j)] = point;
+                inside[At(i, j)] = Hole(point);
+            }
+        }
+
+        // Vertices inside an opening are moved out onto its rim, so the hole is cut by the mesh and
+        // the branch tube has an exact rim to meet. Moved along their own spoke, to where the spoke
+        // enters the opening for the nearer half of the run of them and where it leaves for the
+        // further half. Moving each one straight out from the opening's centre instead put
+        // neighbours on opposite sides of the rim, and the triangles between them lay right across
+        // the hole - drawn, since their corners were not all inside, and with rim colours all over.
+        System.Numerics.Vector2 Crossing(System.Numerics.Vector2 outside, System.Numerics.Vector2 within, int hole)
+        {
+            for (int step = 0; step < 24; step++)
+            {
+                var mid = (outside + within) * 0.5f;
+                if (Hole(mid) == hole) within = mid;
+                else outside = mid;
+            }
+            return within;
+        }
+        if (inside[0] >= 0)
+        {
+            var q = points[0] - centres[inside[0]];
+            var dir = q.Length() > 1e-5f ? q / q.Length() : new System.Numerics.Vector2(1f, 0f);
+            points[0] = centres[inside[0]] + dir * Radius(sections[inside[0]], dir);
+        }
+        for (int j = 0; j < FunnelSpokes; j++)
+        {
+            int i = 1;
+            while (i <= FunnelRings)
+            {
+                int hole = inside[At(i, j)];
+                if (hole < 0)
+                {
+                    i++;
+                    continue;
+                }
+                int first = i;
+                while (i + 1 <= FunnelRings && inside[At(i + 1, j)] == hole) i++;
+                int last = i;
+                var entry = inside[At(first - 1, j)] == hole ? points[At(first - 1, j)] : Crossing(points[At(first - 1, j)], points[At(first, j)], hole);
+                var exit = last < FunnelRings ? Crossing(points[At(last + 1, j)], points[At(last, j)], hole) : entry;
+                int middle = (first + last) / 2;
+                for (int k = first; k <= last; k++) points[At(k, j)] = k <= middle ? entry : exit;
+                i++;
+            }
+        }
+
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (int v = 0; v < count; v++)
+        {
+            var p = points[v];
+            float toHole = float.MaxValue;
+            for (int h = 0; h < holes; h++)
+            {
+                var q = p - centres[h];
+                float along = q.Length();
+                var dir = along > 1e-5f ? q / along : new System.Numerics.Vector2(1f, 0f);
+                toHole = Math.Min(toHole, Math.Max(0f, along - Radius(sections[h], dir)));
+            }
+            float fromCentre = p.Length();
+            var outward = fromCentre > 1e-5f ? p / fromCentre : new System.Numerics.Vector2(1f, 0f);
+            float toWall = Math.Max(0f, Radius(chamber, outward) - fromCentre);
+            // 0 at an opening's rim, 1 at the chamber wall, and the crotch between two openings
+            // somewhere deep between. Eased at both ends, so the surface leaves the wall and meets
+            // the tube without a crease.
+            float n = toHole + toWall > 1e-5f ? toHole / (toHole + toWall) : 1f;
+            float sunk = 1f - n * n * (3f - 2f * n);
+
+            st.SetUV(new Vector2(p.X, p.Y));
+            st.SetUV2(new Vector2(sunk, 0f));
+            st.AddVertex((frame.PointOnSection(p) + sink * sunk).RelativeTo(origin).ToGodot());
+        }
+
+        void Triangle(int a, int b, int c)
+        {
+            // A triangle whose corners were all inside an opening is a sliver lying on its rim, and
+            // one whose middle is inside one lies across the hole.
+            if (inside[a] >= 0 && inside[b] >= 0 && inside[c] >= 0) return;
+            if (Hole((points[a] + points[b] + points[c]) / 3f) >= 0) return;
+            st.AddIndex(a);
+            st.AddIndex(b);
+            st.AddIndex(c);
+        }
+        for (int j = 0; j < FunnelSpokes; j++) Triangle(0, At(1, j), At(1, j + 1));
+        for (int i = 1; i < FunnelRings; i++)
+        {
+            for (int j = 0; j < FunnelSpokes; j++)
+            {
+                Triangle(At(i, j), At(i + 1, j), At(i + 1, j + 1));
+                Triangle(At(i, j), At(i + 1, j + 1), At(i, j + 1));
+            }
+        }
+
+        var material = CapMaterial(split, spec.Along, core: false);
+        material.SetShaderParameter("funnel", 1f);
+        material.SetShaderParameter("cap_color", _funnelColor);
+        var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
+        AddChild(node);
+        return new Placed(node, origin);
+    }
+
+    // How far the outline of a section lies from its centre in direction <paramref name="dir"/>:
+    // the superellipse's radius, the same sum ProfileShape samples its curve with.
+    private static float Radius(CrossSection c, System.Numerics.Vector2 dir)
+    {
+        float n = c.Exponent;
+        float a = MathF.Abs(dir.X) / c.HalfWidth, b = MathF.Abs(dir.Y) / c.HalfHeight;
+        float m = MathF.Max(a, b);
+        if (m <= 0f) return c.HalfWidth;
+        return 1f / (m * MathF.Pow(MathF.Pow(a / m, n) + MathF.Pow(b / m, n), 1f / n));
+    }
+
+    private ShaderMaterial CapMaterial(TrackSplit? split, float along, bool core)
+    {
+        var holes = new Vector4[Track.MaxBranches];
+        for (int b = 0; b < (split?.BranchCount ?? 0); b++)
+        {
+            var c = split!.OffsetAt(b, along);
+            var section = split.Section(b);
+            holes[b] = new Vector4(c.X, c.Y, section.HalfWidth, section.HalfHeight);
+        }
+        var material = (ShaderMaterial)_capMaterial.Duplicate();
+        // A core's face is a flat end that is not wall and must not read as the end of the level,
+        // nor - standing in the open bore - as a hole.
+        material.SetShaderParameter("cap_color", core ? _coreFaceColor : split is null ? _endWallColor : _capColor);
+        // The rim is a bright ring round a fork opening, which is right there and wrong at the end of
+        // a level that carries on: it draws a hard edge exactly where there should be no edge.
+        if (split is null && !core) material.SetShaderParameter("rim_color", _endRimColor);
+        material.SetShaderParameter("holes", holes);
+        material.SetShaderParameter("hole_count", split?.BranchCount ?? 0);
+        // The shader cuts every hole with one exponent, so branches that differ in squareness all
+        // take the first branch's outline. Sizes are still per branch.
+        material.SetShaderParameter("hole_exponent", split?.Section(0).Exponent ?? 2f);
+        return material;
+    }
+
+    // A disc filling the section, or a core's end; a split's wall is a funnel instead.
     private Placed BuildCap(CapSpec spec)
     {
+        if (spec.Split is not null) return BuildFunnel(spec);
+
         double s = spec.S;
         var frame = _track.FrameAt(s);
         var chamber = new ProfileShape(_track.SectionAt(s));
@@ -452,27 +675,7 @@ public partial class TrackView : Node3D
             st.AddIndex(i + 1);
         }
 
-        var holes = new Vector4[Track.MaxBranches];
-        var split = spec.Split;
-        for (int b = 0; b < (split?.BranchCount ?? 0); b++)
-        {
-            var c = split!.OffsetAt(b, spec.Along);
-            var section = split.Section(b);
-            holes[b] = new Vector4(c.X, c.Y, section.HalfWidth, section.HalfHeight);
-        }
-        var material = (ShaderMaterial)_capMaterial.Duplicate();
-        // A core's face is a flat end that is not wall and must not read as the end of the level,
-        // nor - standing in the open bore - as a hole.
-        material.SetShaderParameter("cap_color", spec.Core ? _coreFaceColor : split is null ? _endWallColor : _capColor);
-        // The rim is a bright ring round a fork opening, which is right there and wrong at the end of
-        // a level that carries on: it draws a hard edge exactly where there should be no edge.
-        if (split is null && !spec.Core) material.SetShaderParameter("rim_color", _endRimColor);
-        material.SetShaderParameter("holes", holes);
-        material.SetShaderParameter("hole_count", split?.BranchCount ?? 0);
-        // The shader cuts every hole with one exponent, so branches that differ in squareness all
-        // take the first branch's outline. Sizes are still per branch.
-        material.SetShaderParameter("hole_exponent", split?.Section(0).Exponent ?? 2f);
-
+        var material = CapMaterial(null, 0f, spec.Core);
         var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material };
         AddChild(node);
         return new Placed(node, origin);

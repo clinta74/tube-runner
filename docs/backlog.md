@@ -150,12 +150,22 @@ choice at a fork is the one decision made in advance and currently made blind, s
 lights up before a split may beat a map that is always there.
 
 ### 10. Fork and merge funnels
-*From item 7. Renderer. User marked it lower priority.*
+*From item 7. Renderer.* **Done.** A fork or merge wall is a funnel (`TrackView.BuildFunnel`): the
+chamber's cross-section on a polar grid, each vertex sunk along the track by how far it is from the
+nearest opening against how far it is from the chamber wall, so every opening's rim lies a full
+throat deep in one plane where the branch tube takes over, and the chamber wall is not sunk at all.
+Vertices that land inside an opening are moved out onto its rim along their own spoke - the hole is
+cut by the mesh, not the shader - and the branch tubes start where the throats end, twelve units
+into the split, and stop the same distance before the merge. The surface is lit off screen
+derivatives like a well's rim, darkened towards the throat, and in a tone a little up from the
+wall's dark cell so the slopes show; the rim glow is kept to the throat, because where an opening
+touches the chamber wall the surface between them is a strip the whole depth of the throat, and lit
+along its length it was a streak across the wall. Wireframe levels have no caps and no funnels.
 
-Its priority depends on (6). The abruptness is structural: a fork is a flat disc across the chamber
-with the branch openings cut out by a shader, so the player flies at a wall with holes rather than
-into diverging tubes. The fix is the technique warp wells already use — displace the vertices into a
-throat instead of cutting a hole.
+The original note: the abruptness was structural, a flat disc across the chamber with the branch
+openings cut out by a shader, so the player flew at a wall with holes rather than into diverging
+tubes; the fix was the technique warp wells already used, displacing the vertices into a throat
+instead of cutting a hole.
 
 ### 11. A better ship model
 *From item 6. Renderer or asset work.*
