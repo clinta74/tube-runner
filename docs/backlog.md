@@ -141,7 +141,9 @@ because obstacle views are individual nodes rather than batched chunks, so the c
 before extending it.
 
 ### 9. A level map on the HUD
-*From item 3. HUD + a testable projection in Core.*
+*From item 3. HUD + a testable projection in Core.* **Dropped** after play testing with the fork
+funnels in: the funnels show the branches diverging early enough that a marker before a split is
+not needed, and the map was already deferred behind the wireframe style for the same reason.
 
 Deferred behind (6) deliberately: same goal, and if seeing through the tube works, an abstraction of
 the tube is redundant. If it does go ahead, the thing worth building is not a top-down map — at 190
