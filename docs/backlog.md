@@ -317,9 +317,20 @@ with the game's icon, uninstall from Windows settings, major upgrades that repla
 refuse downgrades. The release workflow attaches `TubeRunner-<version>.msi` beside the zip.
 
 Still open:
-- **Upgrade over an older install** hasn't been tried: install one release, set a best time, install
-  the next, and check the time survives. Saves live in `%APPDATA%\Godot\app_userdata\Tube Runner`,
-  outside the install folder, so it should.
+- ~~**Upgrade over an older install** hasn't been tried.~~ Tried after v0.9.4, and it found a
+  real fault. The procedure: install the previous release's MSI silently (`msiexec /i <msi> /qn`),
+  run the installed exe with `-- --title-page=times --shot=<png>` to see it read the best times,
+  install the next MSI over it, and check the installed-apps entry (one, at the new version), the
+  install folder, the same shot from the new exe, and that `best_times.json` has the same hash.
+  The saves survived, as expected: they live in `%APPDATA%\Godot\app_userdata\Tube Runner`,
+  outside the install folder. What did not survive was the exe. Every release up to v0.9.4 shipped
+  an exe whose file details said 1.0.0.0, and the first build stamped with its real version was
+  lower than that; Windows Installer skips a file whose version is below the installed one's, and
+  decides so before the old version is removed, so the old exe went and the new one never landed -
+  a "successful" upgrade with no game in it. `Package.wxs` now sets `REINSTALLMODE` so every file
+  is copied whatever the old one claims, and the upgrade from v0.9.3 to a stamped v0.9.4 was
+  rerun to check: exe present at 0.9.4.0, one entry, times intact. Worth rerunning for any change
+  to the installer or the export.
 - **A folder that needs admin rights** (`C:\Program Files`) fails with an access error, since the
   install is per user. WiX's Advanced dialogs would offer "just me / everyone" and elevate for the
   second.

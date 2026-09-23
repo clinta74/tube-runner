@@ -21,6 +21,14 @@
     <!-- A new version replaces the old one outright; an older one refuses rather than downgrading. -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of Tube Runner is already installed." />
 
+    <!-- Every file is copied whatever version the one already there claims. Windows Installer
+         otherwise skips a file whose version is lower than the installed one's, and it decides that
+         before the old version is removed - so the old copy goes and the new one never lands, and
+         the "successful" upgrade leaves no exe. Found by the upgrade test in docs/backlog.md: every
+         release up to 0.9.4 shipped an exe stamped 1.0.0.0, and the first one with its real version
+         is lower than that. ICE40 warns about setting this; the warning is the price. -->
+    <Property Id="REINSTALLMODE" Value="amus" />
+
     <!-- One file: the cabinet goes inside the MSI rather than beside it. -->
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
