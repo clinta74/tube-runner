@@ -297,6 +297,18 @@ track, so tracks differ in key, pace and tune, not instrument; a loader test ref
 that does not exist. Still judgement: whether five is enough, and whether any wants its own
 instrument.
 
+Two things heard in the first play test, both done in the language momentum already speaks:
+- **A change of track is stepped, not cut.** Over the last bar before the line the old track thins
+  to its pad, at the line the two pads cross over one bar at equal power, and the new track's bass,
+  drums, arpeggio and lead come back over the two bars after it. The synth keeps a player per
+  track, so both can sound across the line; a plain crossfade was tried and two keys at once
+  smeared, and the cut at the bar line was a lurch. Rendered offline, the loudness dips to a third
+  over the bar into the line and is back three bars out, with no jump at the join.
+- **A hit dies the music down.** A shield lost drops every layer above the pad at once, and dims
+  the pad by half; they come back in the order they first arrived, bass first and lead last, over
+  the eight seconds after, for as long as no other hit lands. Momentum still does the same thing
+  over a minute and a half; this is it felt at once.
+
 *Before the tracks:* The Unstoppable theme was turned up after a first listen: louder, in
 within a tenth of a second, and the engine and wind duck under it. `GameSession.Momentum` (tested) climbs over 90 s of clean
 flying, loses 0.35 per hit and carries between levels. `MusicSynth` fades in pad, bass, drums,

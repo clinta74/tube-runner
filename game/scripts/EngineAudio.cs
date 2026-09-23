@@ -73,6 +73,7 @@ public partial class EngineAudio : AudioStreamPlayer
             case SessionEvent.Hit:
                 _voices.Add(Voice.Noise(0.5f, 0.55f));
                 _voices.Add(Voice.Tone(120f, 35f, 0.45f, 0.5f));
+                _music.Hit();
                 break;
             case SessionEvent.TargetDestroyed:
                 _voices.Add(Voice.Tone(660f, 1320f, 0.15f, 0.22f));
