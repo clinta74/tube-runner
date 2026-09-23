@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TubeRunner.Build;
 
@@ -135,9 +136,23 @@ internal static class Commands
         // The version reaches the game's assembly through the GameVersion MSBuild property, which the
         // export's own build reads from the environment. It is set for Godot alone, so nothing tracked in
         // git changes, and without one the build reads 0.0.0 - a development build that never checks.
-        Proc.Run(godot,
-            ["--headless", "--path", Repo.Path("game"), options.Flag("debug") ? "--export-debug" : "--export-release", "Windows Desktop", exe],
-            environment: new Dictionary<string, string?> { ["GameVersion"] = stamp });
+        //
+        // The exe's own file details - what Windows shows under Properties - come from the export preset
+        // instead, which is a file in git, so the stamp is written into it for the export and the file
+        // put back after. Without a stamp the preset is left alone and the details say 1.0.0.0.
+        var preset = Repo.Path("game", "export_presets.cfg");
+        var presetText = File.ReadAllText(preset);
+        if (stamp is not null) File.WriteAllText(preset, Stamped(presetText, stamp));
+        try
+        {
+            Proc.Run(godot,
+                ["--headless", "--path", Repo.Path("game"), options.Flag("debug") ? "--export-debug" : "--export-release", "Windows Desktop", exe],
+                environment: new Dictionary<string, string?> { ["GameVersion"] = stamp });
+        }
+        finally
+        {
+            if (stamp is not null) File.WriteAllText(preset, presetText);
+        }
         if (!File.Exists(exe)) throw new BuildFailure("Godot finished without writing the exe.");
 
         // Signed here rather than later for two reasons: `tube installer` packages this exe, so signing
@@ -153,6 +168,24 @@ internal static class Commands
         Console.WriteLine(stamp is null ? "Version  none (a development build, which never checks for updates)" : $"Version  {stamp}");
         Console.WriteLine($"Exported {exe}");
         Console.WriteLine($"Zipped   {zip}");
+    }
+
+    /// <summary>
+    /// The export preset with the Windows file and product versions set to <paramref name="version"/>.
+    /// Godot wants four numbers in each, so the build number is 0. A field already there is replaced;
+    /// a missing one is added at the top of the preset's options.
+    /// </summary>
+    private static string Stamped(string preset, string version)
+    {
+        foreach (var key in new[] { "application/file_version", "application/product_version" })
+        {
+            var line = $"{key}=\"{version}.0\"";
+            var existing = new Regex($"(?m)^{Regex.Escape(key)}=.*$");
+            preset = existing.IsMatch(preset)
+                ? existing.Replace(preset, line, 1)
+                : new Regex(@"\[preset\.0\.options\](\r?\n)").Replace(preset, m => $"[preset.0.options]{m.Groups[1].Value}{m.Groups[1].Value}{line}", 1);
+        }
+        return preset;
     }
 
     private static void Installer(Options options)
