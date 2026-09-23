@@ -641,6 +641,18 @@ gates on a clock set to the time still to go until the line, counting up to zero
 present speed, so they are already moving on the approach and are exactly where the real clock
 finds them when the level starts.
 
+### Gates rising under the ship
+*After v0.9.4, from play testing Clockwork: a shield lost over what looked like clear wall.*
+
+A gate counted as solid from 85% out, judged every frame. So a gate the player had seen was down,
+and flown over, cost a shield the moment it rose past that line under the ship - hidden by the ship
+itself, which is why nothing was seen to be hit. The rule now: only a gate that was solid when the
+ship's nose reached it is a wall. The session records when the nose reaches each gate, from where
+in that frame's travel the gate's near edge lay, and a gate that goes solid after that is something
+the ship is floating over. Arriving at one standing, or on its way in, still costs. The test flies
+the same gate phased to rise mid-overpass (no hit) and half a second before arrival (hit), and
+fails under the old rule.
+
 ## Standing constraints
 
 Any of this has to keep three guards passing, all of which exist because something shipped wrong:

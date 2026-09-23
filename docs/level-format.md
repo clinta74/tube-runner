@@ -464,6 +464,11 @@ out, including unstoppable, which turns any collision into a free scored break. 
 thing that stays, so unstoppable stops being a universal answer. Introduce plates alone on a clear
 stretch: arriving at one with unstoppable running otherwise reads as a bug rather than a rule.
 
+**A gate only hits a ship that arrives at it solid.** One that rises out of the wall under a ship
+already over it does nothing: the ship is floating over whatever comes up beneath. So a gate can
+never catch a player who saw it down and went; the way to be caught is to arrive as it stands, or
+as it is on its way in, when it counts as solid a moment before it looks shut.
+
 **Gates work with the throttle rather than against it.** The player already sets their own speed, so
 a gate cycle asks them to hurry or hold back — which is the one thing a speed pickup could never do,
 since a pad only hands out speed the throttle already had.

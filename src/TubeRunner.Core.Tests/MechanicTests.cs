@@ -88,6 +88,49 @@ public class MechanicTests
         }
     }
 
+    // A gate that rises out of the wall under a ship already over it does not hit it: the ship is
+    // floating over whatever comes up. One that is solid when the nose arrives is a wall. The old
+    // rule judged every frame, and a gate the player had seen was down cost a shield for something
+    // that came up hidden under the ship - which is what Clockwork felt like.
+    [Fact]
+    public void Gate_RisingUnderTheShip_DoesNotHitIt()
+    {
+        const float period = 100f;
+        var gate = new Obstacle { Kind = ObstacleKind.Block, S = 400, Width = 40f, Period = period };
+        double reach = gate.Length / 2f + Settings.ShipHalfLength;
+
+        // When the ship is over the gate, measured on a clear track, and when in its cycle a gate
+        // with no phase becomes solid on its way out.
+        float arrive = 0f, leave = 0f;
+        var clear = Game([]);
+        Fly(clear, to: 500, step: g =>
+        {
+            if (arrive == 0f && g.Ship.Position.S >= gate.S - reach) arrive = g.Elapsed;
+            if (leave == 0f && g.Ship.Position.S >= gate.S + reach) leave = g.Elapsed;
+        });
+        float onset = 0f;
+        while (!gate.IsSolidAt(onset)) onset += 0.001f;
+        Assert.InRange(onset, 0.1f, period * 0.09f);   // in the slide out, past the boundary
+
+        // Phased so the gate goes solid while the ship is over it: no hit, the ship floats.
+        float middle = (arrive + leave) / 2f;
+        Assert.Equal(3, ShieldsWhenSolidAt(middle));
+        // Phased so it went solid half a second before the nose arrived: a wall, hit.
+        Assert.Equal(2, ShieldsWhenSolidAt(arrive - 0.5f));
+
+        int ShieldsWhenSolidAt(float time)
+        {
+            float phase = ((onset - time) / period) % 1f;
+            if (phase < 0f) phase += 1f;
+            var timed = new Obstacle { Kind = ObstacleKind.Block, S = 400, Width = 40f, Period = period, Phase = phase };
+            Assert.False(timed.IsSolidAt(time - 0.05f));
+            Assert.True(timed.IsSolidAt(time + 0.05f));
+            var game = Game([timed]);
+            Fly(game, to: 500);
+            return game.Shields;
+        }
+    }
+
     [Fact]
     public void Mover_SlidesAroundTheSurfaceOverTime()
     {

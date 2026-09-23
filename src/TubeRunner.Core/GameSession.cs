@@ -350,7 +350,7 @@ public sealed class GameSession
         Ship.Step(dt, input.Steer, input.Jump, input.Throttle);
         if (Ship.IsJumping && !wasJumping) _events.Add(SessionEvent.Jumped);
 
-        CheckShipHits(before, Ship.Position.S);
+        CheckShipHits(before, Ship.Position.S, dt);
         CollectPickups(before, Ship.Position.S);
         CheckWarps(before, Ship.Position.S);
         MoveShots(dt);
@@ -389,7 +389,7 @@ public sealed class GameSession
         return TrackSpace.SurfaceDistance(shape, surface, shipX, surface, x);
     }
 
-    private void CheckShipHits(double from, double to)
+    private void CheckShipHits(double from, double to, float dt)
     {
         var pos = Ship.Position;
         foreach (var o in Nearby(_obstacles, o => o.S, from, to))
@@ -397,6 +397,12 @@ public sealed class GameSession
             if (o.Destroyed || o.Branch != pos.Branch || !IsSolid(o)) continue;
             double reach = o.Length / 2f + _settings.ShipHalfLength;
             if (to < o.S - reach || from > o.S + reach) continue;
+
+            // A gate that rises out of the wall under a ship already over it does not hit it: the
+            // ship floats over whatever comes up beneath. Only a gate that was solid when the nose
+            // reached it is a wall the ship flew into. Judged each frame, this cost a shield to a
+            // gate the player had seen was down, for something that came up hidden under the ship.
+            if (o.Period > 0f && !o.IsSolidAt(ArrivalAt(o, from, to, dt))) continue;
 
             // A mover is wherever its sweep has carried it by now, not where it was authored.
             float x = o.XAt(Elapsed);
@@ -477,6 +483,26 @@ public sealed class GameSession
 
     // A gate is only there for half its cycle. Anything without a period is always solid.
     private bool IsSolid(Obstacle o) => o.IsSolidAt(Elapsed) && !IsUnlocked(o);
+
+    // When the ship's nose reached each gate it has been over, by the gate.
+    private readonly Dictionary<Obstacle, float> _arrivals = new();
+
+    /// <summary>
+    /// When the ship's nose reached <paramref name="o"/>: found in the frame whose travel from
+    /// <paramref name="from"/> to <paramref name="to"/> carries it over the gate's near edge, from
+    /// where in that travel the edge lies, and kept for as long as the ship is over it.
+    /// </summary>
+    private float ArrivalAt(Obstacle o, double from, double to, float dt)
+    {
+        double edge = o.S - o.Length / 2f - _settings.ShipHalfLength;
+        if (from > edge && _arrivals.TryGetValue(o, out float arrived)) return arrived;
+        // Already past the edge at the frame's start, with no arrival on record - placed there,
+        // as a test run can be - counts as arriving at the frame's start.
+        float through = to > from ? (float)Math.Clamp((edge - from) / (to - from), 0.0, 1.0) : 1f;
+        arrived = Elapsed - dt * (1f - through);
+        _arrivals[o] = arrived;
+        return arrived;
+    }
 
     /// <summary>
     /// Whether a locked obstacle has had its keys shot and is no longer in the way. The view needs
