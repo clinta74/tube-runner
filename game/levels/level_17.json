@@ -41,7 +41,9 @@
     { "length": 280, "turn": 25 },                                  //    0 -  280
 
     // The widest bore in the level, fast, with a few easy targets to feel good about.
-    { "length": 320, "section": "wide", "speed": 155, "turn": -45, "climb": 10, "obstacles": [   //  280 -  600
+    { "length": 320, "section": "wide", "speed": 155, "turn": -45, "climb": 10, "pickups": [
+      { "at": 40, "kind": "agility", "angle": 180 }
+    ], "obstacles": [   //  280 -  600
       { "at": 120, "kind": "target", "angle": 0, "count": 3, "spacing": 90, "angleStep": 120 }
     ] },
 

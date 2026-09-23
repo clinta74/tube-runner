@@ -68,6 +68,9 @@
     { "length": 200, "section": "ring" },                           //  590 -  790
     { "length": 280, "pickups": [                                   //  790 - 1070
       { "at": 150, "kind": "shield", "surface": "ceiling", "angle": 0 }
+    ], "obstacles": [
+      { "at": 60, "kind": "target", "angle": 90 },
+      { "at": 220, "kind": "target", "angle": -90 }
     ] },
 
     // Blocks on the outer wall, spaced wide enough to steer round - and then blocks on the core,

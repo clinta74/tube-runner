@@ -47,7 +47,8 @@
     // Rapid fire before a wall of breakables with plates seeded through it. Shooting opens most of
     // it; which parts it cannot open is the read.
     { "length": 400, "section": "wide", "pickups": [                //  580 -  980
-      { "at": 70, "kind": "rapid-fire" }
+      { "at": 70, "kind": "rapid-fire" },
+      { "at": 120, "kind": "agility", "angle": 180 }
     ], "obstacles": [
       { "at": 180, "hits": 2, "angle": 0,   "width": 9 },
       { "at": 180, "kind": "plate", "angle": 90, "width": 11, "height": 3 },

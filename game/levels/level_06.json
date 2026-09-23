@@ -47,7 +47,7 @@
       { "at": 240, "kind": "shield", "surface": "ceiling" }
     ] },
 
-    { "length": 300, "section": "tube", "speed": 120 },             //  950 - 1250
+    { "length": 300, "section": "tube", "speed": 120, "obstacles": [ { "at": 130, "kind": "target", "angle": 90, "count": 2, "spacing": 70, "angleStep": 180 } ] },             //  950 - 1250
 
     // A breather in the tube, with the ring gun for the rings ahead.
     { "length": 250, "turn": -40, "pickups": [                      // 1250 - 1500
@@ -67,7 +67,7 @@
       { "at": 320, "width": 80, "height": 2.5 }
     ] },
 
-    { "length": 350, "section": "tube", "speed": 115 },             // 2200 - 2550
+    { "length": 350, "section": "tube", "speed": 115, "obstacles": [ { "at": 100, "hits": 2, "angle": 0, "width": 8 }, { "at": 220, "kind": "target", "angle": 180 } ] },             // 2200 - 2550
 
     { "length": 200, "obstacles": [                                 // 2550 - 2750
       { "at": 80, "kind": "target", "angle": 180 }

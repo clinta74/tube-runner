@@ -55,6 +55,7 @@
       { "at": 95, "angle": 120, "width": 9 }
     ] },
     { "length": 180, "turn": 70, "climb": -14, "obstacles": [       //  900 - 1080
+      { "at": 40, "kind": "target", "angle": 60 },
       { "at": 95, "angle": 240, "width": 9 }
     ] },
 
@@ -76,6 +77,9 @@
 
     { "length": 240, "pickups": [                                   // 1890 - 2130
       { "at": 120, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "kind": "target", "angle": 0 },
+      { "at": 200, "kind": "target", "angle": 90 }
     ] },
 
     // Plates in a twist: unanswerable and unseen until close. Narrow bore, so the wall left over

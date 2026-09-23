@@ -69,7 +69,10 @@
 
     // Rapid fire - a tool, not a gift, and the only one until the shield.
     { "length": 240, "section": "tube", "speed": 155, "pickups": [  // 1500 - 1740
-      { "at": 120, "kind": "rapid-fire" }
+      { "at": 120, "kind": "rapid-fire" },
+      { "at": 200, "kind": "agility", "angle": 180 }
+    ], "obstacles": [
+      { "at": 60, "kind": "target", "angle": 0 }
     ] },
 
     // Flat, with plates that cannot be shot, gates that open, and a forced jump between them.
@@ -86,6 +89,9 @@
     // and the run needs it anyway.
     { "length": 260, "section": "tube", "speed": 155, "pickups": [  // 2320 - 2580
       { "at": 130, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "kind": "target", "angle": 0 },
+      { "at": 220, "kind": "target", "angle": 90 }
     ] },
 
     // An ordered group that is also a key, with plates crowding the lines it can be shot from, at

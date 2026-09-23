@@ -50,7 +50,8 @@
     // Rapid fire, then a wall of blocks with a plate in the middle of it. The blocks give way; the
     // plate does not, so the gap that matters is the one the shooting cannot make.
     { "length": 340, "section": "tube", "pickups": [                //  540 -  880
-      { "at": 70, "kind": "rapid-fire" }
+      { "at": 70, "kind": "rapid-fire" },
+      { "at": 250, "kind": "agility", "angle": 0 }
     ], "obstacles": [
       { "at": 190, "hits": 2, "angle": 0,   "width": 9 },
       { "at": 190, "kind": "plate", "angle": 120, "width": 11, "height": 3 },

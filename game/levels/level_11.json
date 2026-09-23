@@ -58,7 +58,7 @@
       { "at": 420, "surface": "ceiling", "width": 80, "height": 2.5 },
       { "at": 460, "kind": "target" }
     ] },
-    { "length": 360, "section": "tube" },                           // 1100 - 1460
+    { "length": 360, "section": "tube", "obstacles": [ { "at": 100, "kind": "target", "angle": 180, "count": 3, "spacing": 70, "angleStep": -90 } ] }, // 1100 - 1460
 
     { "length": 100, "section": "oval", "turn": 20, "speed": 110, "pickups": [   // 1460 - 1560
       { "at": 40, "kind": "rapid-fire" }

@@ -131,12 +131,14 @@
         { "at": 330, "branch": 1, "kind": "shield" }
       ]
     },
-    { "length": 140, "section": "tube" },                           // 4020 - 4160
+    { "length": 140, "section": "tube", "obstacles": [ { "at": 70, "kind": "target", "angle": 0 } ] },                           // 4020 - 4160
 
     // The ring gun, and the one ring it cannot simply delete: its keys are an ordered group, so a
     // sweep takes the one whose turn it is and is spent. Three keys, three charges, or shoot them.
     { "length": 260, "section": "wide", "pickups": [                // 4160 - 4420
       { "at": 120, "kind": "ring-gun" }
+    ], "obstacles": [
+      { "at": 220, "kind": "target", "angle": 90 }
     ] },
     { "length": 680, "section": "tube", "speed": 160, "obstacles": [ // 4420 - 5100
       { "at": 100, "kind": "target", "angle": 90,   "group": "i8", "order": 0 },

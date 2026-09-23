@@ -66,7 +66,10 @@
     ] },
 
     { "length": 240, "section": "oval", "speed": 145, "pickups": [  // 1520 - 1760
-      { "at": 120, "kind": "shield", "angle": 180 }
+      { "at": 120, "kind": "shield", "angle": 180 },
+      { "at": 40, "kind": "agility", "angle": 0 }
+    ], "obstacles": [
+      { "at": 200, "kind": "target", "angle": 90 }
     ] },
 
     // Movers to shoot past rather than dodge: targets riding the same sweep, so the aim has to lead
@@ -87,6 +90,8 @@
 
     { "length": 260, "section": "wide", "pickups": [                // 2580 - 2840
       { "at": 130, "kind": "shield", "angle": 90 }
+    ], "obstacles": [
+      { "at": 60, "kind": "target", "angle": 180, "count": 2, "spacing": 120 }
     ] },
 
     // Movers on a twist, where the bend hides them until they are close and the sweep cannot be read

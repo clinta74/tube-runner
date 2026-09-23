@@ -98,11 +98,13 @@
         { "at": 160, "branch": 1, "angle": 0, "count": 2, "spacing": 70, "angleStep": 120 }
       ]
     },
-    { "length": 160, "section": "tube" },                           // 2680 - 2840
+    { "length": 160, "section": "tube", "obstacles": [ { "at": 80, "kind": "target", "angle": 90 } ] },                           // 2680 - 2840
 
     // The only refill in the level. Past the midpoint, on the ceiling, off the line.
     { "length": 260, "section": "oval", "pickups": [                // 2840 - 3100
       { "at": 130, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "kind": "target", "angle": 0 }
     ] },
 
     // An ordered group at speed, with a mover crossing the firing line.

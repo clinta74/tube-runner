@@ -103,7 +103,9 @@
     // branches themselves are narrower - which suits it, being the tightest choice in the level.
     // The prize down the gambling road is itself behind a key, and the key is back here in the
     // chamber - so the road has to be paid for before it can be seen whether it was worth taking.
-    { "length": 140, "section": "wide-chamber", "speed": 160, "obstacles": [ // 2000 - 2140
+    { "length": 140, "section": "wide-chamber", "speed": 160, "pickups": [
+      { "at": 30, "kind": "agility", "angle": 90 }
+    ], "obstacles": [ // 2000 - 2140
       { "at": 70, "kind": "target", "angle": -90, "group": "rk" }
     ] },
     { "length": 480, "turn": 100, "split": {                        // 2140 - 2620

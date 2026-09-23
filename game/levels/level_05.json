@@ -55,7 +55,7 @@
       { "at": 260, "surface": "ceiling", "width": 80, "height": 2.5 }
     ] },
 
-    { "length": 350, "section": "tube", "speed": 95 },              // 1300 - 1650
+    { "length": 350, "section": "tube", "speed": 95, "obstacles": [ { "at": 120, "kind": "target", "angle": 0, "count": 3, "spacing": 60, "angleStep": 120 } ] },              // 1300 - 1650
 
     { "length": 250, "turn": 35, "pickups": [                       // 1650 - 1900
       { "at": 40, "kind": "full-shields" }

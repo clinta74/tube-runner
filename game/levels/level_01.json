@@ -56,7 +56,7 @@
       { "at": 80, "angle": 0, "count": 6, "spacing": 25, "angleStep": 60 }
     ] },
 
-    { "length": 200, "climb": -10, "obstacles": [                   // 1050 - 1250
+    { "length": 200, "climb": -10, "pickups": [ { "at": 20, "kind": "rapid-fire" } ], "obstacles": [                   // 1050 - 1250
       { "at": 60, "kind": "target", "angle": 0, "count": 4, "spacing": 30, "angleStep": 90 }
     ] },
 

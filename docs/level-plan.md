@@ -205,7 +205,7 @@ how obstacles are arranged.
 
 | # | Level | Speed | Coverage | Travel | Shapes | Jumps | Shooting | Pickups | Length |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | First Loop | 70 flat | Gaps and half-rings | High: over the top and back | Round only | – | Optional | 1 shield | 1646 |
+| 1 | First Loop | 70 flat | Gaps and half-rings | High: over the top and back | Round only | – | Optional | 1 shield, rapid fire | 1646 |
 | 2 | Power Up | 80 flat | First **sealed** rings | Medium | Round, one oval | – | Required | All five | 2046 |
 | 3 | Throttle | 85 → 120 | Sealed rings, spirals | Medium | Round, oval | – | Required | Shield, rapid, ring | 2496 |
 | 4 | Ovals | 95 → 125 | Half-blocked by shape | High: sides, then floor/ceiling | Wide and tall ovals | – | Required | Shield, rapid, ring | 2376 |
@@ -233,7 +233,7 @@ line or down the meaner branch, so they cost something to take.
 | Rapid fire | 2, before tough blocks | 2, 4-hit blocks |
 | Ring gun | 2, before a ring of targets | 2, second ring at an offset angle |
 | Unstoppable | 6, before the breakable rows | 7 at the box, 11 before the twisting finish; 26, 27 and 31 after a three-key ring's keys, as the answer to the ones that were missed; 27, against a ring no shot opens |
-| Agility | 10, in fours round the wide rings, where a wall is too big to get across | 29, 30 and 31 before their runs for home, where the blocks come faster than the ship can leave |
+| Agility | 10, in fours round the wide rings, where a wall is too big to get across | 16, 17, 18, 19, 20, 21, 23 and 28 just ahead of each level's quickest stretch; 29, 30 and 31 before their runs for home, where the blocks come faster than the ship can leave |
 | Throttle | 3 | long straights and tight gauntlets |
 | Flat planes, jumping | 5 | 6, full-width walls |
 | Rings, and the jump between their walls | 10, a wide bore with a core overhead and a shield on it | 10, collars that force the jump both ways, then the biggest bore at speed |

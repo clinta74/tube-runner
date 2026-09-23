@@ -670,6 +670,20 @@ gates on a clock set to the time still to go until the line, counting up to zero
 present speed, so they are already moving on the approach and are exactly where the real clock
 finds them when the level starts.
 
+### Power-ups spread, and the thin stretches filled
+*After v0.9.5, from play testing with the new throttle range.*
+
+Every level now carries at least two power-ups (First Loop had one; it has rapid fire for its
+closing spiral of targets). Agility, which lived in Sleeve and the three fast finishes, is in
+twelve levels: Speed Trap, Restraint, Shoal, Undertow, Scarlands, Crossfire, Attrition and
+Roulette each got one placed just ahead of their quickest stretch, where three things come inside
+a second and a half of travel. And the tube pieces that had nothing in them for four to eight
+seconds - a survey found the longest in Speed Trap, Sleeve, Flatlands, Undertow and Earthworks -
+got targets, with a couple of breakables, in fourteen levels. Left alone on purpose: Sleeve's
+widening bore and the core's arrival, which are there to be looked at, and every level's
+handover run-out. The survey script lives with the session notes; the rules it checks are the
+ones `LevelLoaderTests` and `RunOutTests` hold, and all levels still load under them.
+
 ### Gates rising under the ship
 *After v0.9.4, from play testing Clockwork: a shield lost over what looked like clear wall.*
 

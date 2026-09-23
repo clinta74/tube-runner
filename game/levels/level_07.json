@@ -77,7 +77,7 @@
       { "at": 290, "kind": "target", "surface": "ceiling", "x": -10 },
       { "at": 370, "surface": "ceiling", "width": 80, "height": 2.5 }     // jump back down
     ] },
-    { "length": 360, "section": "tube", "speed": 90 },              // 1510 - 1870
+    { "length": 360, "section": "tube", "speed": 90, "obstacles": [ { "at": 120, "kind": "target", "angle": 0, "count": 3, "spacing": 70, "angleStep": 120 } ] },              // 1510 - 1870
 
     // Spiral of blocks, then the box.
     { "length": 150, "turn": -45, "climb": 15, "pickups": [         // 1870 - 2020

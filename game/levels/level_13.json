@@ -84,6 +84,8 @@
 
     { "length": 200, "section": "oval", "pickups": [                // 2020 - 2220
       { "at": 100, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "kind": "target", "angle": 0 }
     ] },
 
     // A fork, so branching does not go quiet for the whole of the back half. The quick way round is
@@ -103,7 +105,7 @@
         { "at": 290, "branch": 1, "period": 2.4, "phase": 0.5, "angle": 180, "width": 16, "height": 3 }
       ]
     },
-    { "length": 140, "section": "tube" },                           // 2780 - 2920
+    { "length": 140, "section": "tube", "obstacles": [ { "at": 70, "kind": "target", "angle": 90 } ] },                           // 2780 - 2920
 
     // The hard pairing: flat again, faster, gates on both surfaces on a tighter cycle. A jump takes
     // 0.55 s, so at this speed the crossing itself has to be timed into the gap.

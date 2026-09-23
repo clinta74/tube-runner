@@ -77,6 +77,9 @@
     // Breathe, and hand back what the last stretch probably cost.
     { "length": 220, "pickups": [                                   // 1560 - 1780
       { "at": 110, "kind": "shield", "angle": 180 }
+    ], "obstacles": [
+      { "at": 40, "kind": "target", "angle": 0 },
+      { "at": 180, "kind": "target", "angle": 90 }
     ] },
 
     // A run of three in rhythm, all on the same cycle. Find the beat and they open like a door;
