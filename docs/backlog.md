@@ -331,10 +331,23 @@ Still open:
   is copied whatever the old one claims, and the upgrade from v0.9.3 to a stamped v0.9.4 was
   rerun to check: exe present at 0.9.4.0, one entry, times intact. Worth rerunning for any change
   to the installer or the export.
-- **A folder that needs admin rights** (`C:\Program Files`) fails with an access error, since the
-  install is per user. WiX's Advanced dialogs would offer "just me / everyone" and elevate for the
-  second.
-- **No desktop shortcut or "launch when done"** option; both need a custom dialog in an MSI.
+- ~~**A folder that needs admin rights** fails with an access error.~~ ~~**No desktop shortcut or
+  "launch when done"** option.~~ Done, as two pages of our own after Welcome instead of WiX's
+  folder page: *Who is it for?* (just me, or everyone on this computer, which goes to Program
+  Files and asks for admin rights when the install starts) and *Where does it go?* (the folder,
+  and a checkbox for a desktop shortcut). The finish page has a *Start Tube Runner* checkbox,
+  through WixShellExec, impersonated so an everyone install still starts the game as the person
+  at the keyboard. The scope page's Next sets the folder default for the scope, unless the folder
+  was changed by hand; a radio button's own events were tried first and Windows Installer never
+  fired them. All three are properties too, for a silent install: `INSTALLDESKTOPSHORTCUT=""`
+  leaves the shortcut out, `ALLUSERS=1 MSIINSTALLPERUSER=""` is everyone. The pages' artwork
+  (`installer/banner.bmp` and `dialog.bmp`) is made from the icon by `installer/make_bitmaps.py`;
+  WiX's own bitmaps are red placeholders.
+  Checked by driving the real dialogs with UI Automation: the folder followed the scope both ways,
+  the just-me install put the exe, both shortcuts and the launch where expected, and a silent
+  install with the shortcut off left it out. Not checked from this side: the everyone install
+  itself, which needs the UAC prompt clicked - worth one manual run, then an uninstall from
+  Settings to see it go from Program Files.
 - **Unsigned**, so SmartScreen may warn on download — see *Code signing* below, which now has the
   build side done and is waiting on a certificate.
 

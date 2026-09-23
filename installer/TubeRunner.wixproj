@@ -18,12 +18,18 @@
     <GameIcon Condition="'$(GameIcon)' == ''">$(MSBuildThisFileDirectory)..\game\icon.ico</GameIcon>
     <DefineConstants>GameVersion=$(GameVersion);GameBuild=$(GameBuild);GameIcon=$(GameIcon)</DefineConstants>
 
+    <!-- 1076 is ICE40 on REINSTALLMODE, set on purpose (see Package.wxs). 1077 is WixShellExecTarget
+         holding [INSTALLFOLDER], which is meant: WixShellExec formats it when the finish page runs. -->
+    <SuppressSpecificWarnings>1076;1077</SuppressSpecificWarnings>
+
     <OutputName>TubeRunner-$(GameVersion)</OutputName>
     <OutputPath>$(MSBuildThisFileDirectory)..\builds\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The standard installer dialogs, for choosing the install folder. Same version as the SDK. -->
+    <!-- The standard installer dialogs, which the options page is built from. Same version as the SDK. -->
     <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <!-- WixShellExec, which starts the game from the finish page. -->
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
   </ItemGroup>
 </Project>

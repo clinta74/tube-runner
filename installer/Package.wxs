@@ -1,12 +1,15 @@
 <!--
   Installs per user by default: perUserOrMachine with Windows Installer's single-package authoring
-  puts ProgramFiles64Folder at %LOCALAPPDATA%\Programs and needs no admin rights or UAC prompt.
+  puts ProgramFiles64Folder at %LOCALAPPDATA%\Programs and needs no admin rights or UAC prompt. The
+  options page offers everyone on the computer instead, which installs to Program Files and asks
+  for admin rights when the install starts.
 
   Saves (best times) live in Godot's user folder, %APPDATA%\Godot\app_userdata\Tube Runner, not in
   the install folder, so an upgrade or an uninstall leaves them where they are.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <!-- Manufacturer names the publisher in the installed-apps list only. The publisher Windows shows
        while installing, and in any Defender or SmartScreen warning, comes from the signing
        certificate's subject instead - so once a certificate exists, set this to the same name. -->
@@ -32,20 +35,115 @@
     <!-- One file: the cabinet goes inside the MSI rather than beside it. -->
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <!-- Welcome, then a page to choose the install folder, then install. The standard InstallDir
-         dialogs put a license page between the first two; there is no license to agree to, and left
-         in it shows placeholder text, so Welcome's Next and the folder page's Back skip it. The
-         folder defaults to %LOCALAPPDATA%\Programs\Tube Runner. The install stays per user, so a
-         folder that needs admin rights to write to, like C:\Program Files, fails with an access error. -->
+    <!-- The options, as properties, so a silent install can set them too:
+           msiexec /i TubeRunner-x.y.z.msi /qn                          just me, desktop shortcut
+           msiexec /i TubeRunner-x.y.z.msi /qn INSTALLDESKTOPSHORTCUT=""   without the shortcut
+           msiexec /i TubeRunner-x.y.z.msi /qn ALLUSERS=1 MSIINSTALLPERUSER=""   everyone
+         Secure, so their values survive the hand-over to the elevated half of an everyone install. -->
+    <Property Id="INSTALLSCOPE" Value="user" Secure="yes" />
+    <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" Secure="yes" />
+
+    <!-- Welcome, then who the install is for, then the folder and the desktop shortcut, then
+         install. The standard InstallDir dialogs put a license page after Welcome and offer only the
+         folder; there is no license to agree to. The scope has a page of its own, before the folder,
+         because the folder's default follows it: %LOCALAPPDATA%\Programs for just me, Program Files
+         for everyone. The Next button on the scope page sets it; a radio button's own events were
+         tried first and Windows Installer never fired them. A folder changed by hand is kept whatever
+         the scope is set to afterwards. -->
     <UI>
       <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
-      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
-      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
-    </UI>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="ScopeDlg" Order="2" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="3" Condition="NOT Installed" />
 
-    <!-- The same icon the game uses, for the installed-apps list and the Start menu shortcut. -->
+      <Dialog Id="ScopeDlg" Width="370" Height="270" Title="Tube Runner Setup">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Who is it for?" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Install the game for yourself, or for everyone who uses this computer." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+        <Control Id="Scope" Type="RadioButtonGroup" X="20" Y="60" Width="330" Height="110" Property="INSTALLSCOPE">
+          <RadioButtonGroup Property="INSTALLSCOPE">
+            <RadioButton Value="user" X="0" Y="0" Width="320" Height="16" Text="Just me" />
+            <RadioButton Value="machine" X="0" Y="56" Width="320" Height="16" Text="Everyone on this computer" />
+          </RadioButtonGroup>
+        </Control>
+        <Control Id="UserDescription" Type="Text" X="36" Y="78" Width="300" Height="30" NoPrefix="yes" Text="Goes in your own Programs folder. No admin rights are needed, and only your account sees it." />
+        <Control Id="MachineDescription" Type="Text" X="36" Y="134" Width="300" Height="30" NoPrefix="yes" Text="Goes in Program Files for every account. Windows asks for admin rights when the install starts." />
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
+          <Publish Event="NewDialog" Value="WelcomeDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next">
+          <!-- The scope is two Windows Installer properties: ALLUSERS=1 is everyone, and needs
+               MSIINSTALLPERUSER cleared; ALLUSERS=2 with MSIINSTALLPERUSER=1 is just me. -->
+          <Publish Property="ALLUSERS" Value="2" Order="1" Condition="INSTALLSCOPE = &quot;user&quot;" />
+          <Publish Property="MSIINSTALLPERUSER" Value="1" Order="2" Condition="INSTALLSCOPE = &quot;user&quot;" />
+          <Publish Property="MSIINSTALLPERUSER" Value="{}" Order="3" Condition="INSTALLSCOPE = &quot;machine&quot;" />
+          <Publish Property="ALLUSERS" Value="1" Order="4" Condition="INSTALLSCOPE = &quot;machine&quot;" />
+          <!-- The folder's default for the scope. Read here rather than left to Windows Installer,
+               whose redirection of Program Files to the per-user folder was fixed when costing ran,
+               before any page was shown. -->
+          <Publish Property="INSTALLFOLDER" Value="[LocalAppDataFolder]Programs\Tube Runner\" Order="5" Condition="INSTALLSCOPE = &quot;user&quot; AND NOT FOLDEREDITED" />
+          <Publish Property="INSTALLFOLDER" Value="[%ProgramW6432]\Tube Runner\" Order="6" Condition="INSTALLSCOPE = &quot;machine&quot; AND NOT FOLDEREDITED" />
+          <Publish Event="NewDialog" Value="OptionsDlg" Order="7" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <Dialog Id="OptionsDlg" Width="370" Height="270" Title="Tube Runner Setup">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Where does it go?" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="The install folder, and a shortcut on the desktop." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+        <Control Id="FolderLabel" Type="Text" X="20" Y="60" Width="290" Height="30" NoPrefix="yes" Text="Install Tube Runner to:" />
+        <Control Id="Folder" Type="PathEdit" X="20" Y="100" Width="320" Height="18" Property="WIXUI_INSTALLDIR" Indirect="yes" />
+        <Control Id="ChangeFolder" Type="PushButton" X="20" Y="120" Width="56" Height="17" Text="&amp;Change...">
+          <Publish Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1" />
+          <Publish Property="FOLDEREDITED" Value="1" Order="2" />
+          <Publish Event="SpawnDialog" Value="BrowseDlg" Order="3" />
+        </Control>
+
+        <Control Id="DesktopShortcut" Type="CheckBox" X="20" Y="160" Width="320" Height="16" Property="INSTALLDESKTOPSHORTCUT" CheckBoxValue="1" Text="Put a shortcut on the desktop" />
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
+          <Publish Event="NewDialog" Value="ScopeDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next">
+          <Publish Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" />
+          <Publish Event="DoAction" Value="WixUIValidatePath_X64" Order="2" Condition="NOT WIXUI_DONTVALIDATEPATH" />
+          <Publish Event="SpawnDialog" Value="InvalidDirDlg" Order="3" Condition="NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID&lt;&gt;&quot;1&quot;" />
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" Order="4" Condition="WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID=&quot;1&quot;" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <!-- The finish page's checkbox starts the game. Only on a first install: a repair or an
+           uninstall has nothing to start. -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchGame" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start Tube Runner" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[INSTALLFOLDER]TubeRunner.exe" />
+    <!-- Impersonated, so an everyone install started with admin rights still runs the game as the
+         person at the keyboard, whose saves are the ones it should see. -->
+    <CustomAction Id="LaunchGame" DllEntry="WixShellExec" BinaryRef="Wix4UtilCA_X64" Impersonate="yes" />
+
+    <!-- The same icon the game uses, for the installed-apps list and the shortcuts. -->
     <Icon Id="TubeRunner.ico" SourceFile="$(var.GameIcon)" />
     <Property Id="ARPPRODUCTICON" Value="TubeRunner.ico" />
+
+    <!-- The pages' artwork: the banner across the top of the inner pages and the panel down the left
+         of the first and last. Made from the icon by a script (see docs/backlog.md); WiX's own are
+         red placeholders that look like a warning. -->
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
 
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/clinta74/tube-runner" />
     <Property Id="ARPURLUPDATEINFO" Value="https://github.com/clinta74/tube-runner/releases" />
@@ -66,6 +164,19 @@
                   Icon="TubeRunner.ico" />
         <!-- A shortcut can't be a component's key path, so a registry value stands in for it. -->
         <RegistryValue Root="HKCU" Key="Software\clinta74\Tube Runner" Name="StartMenuShortcut"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Only when asked for, on the options page or by the property on the command line. -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Condition="INSTALLDESKTOPSHORTCUT">
+        <Shortcut Id="TubeRunnerDesktopShortcut"
+                  Name="Tube Runner"
+                  Target="[INSTALLFOLDER]TubeRunner.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="TubeRunner.ico" />
+        <RegistryValue Root="HKCU" Key="Software\clinta74\Tube Runner" Name="DesktopShortcut"
                        Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </StandardDirectory>
