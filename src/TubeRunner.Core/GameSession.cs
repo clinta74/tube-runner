@@ -116,6 +116,8 @@ public readonly record struct ShipInput(
 /// <param name="ThrustZoneCut">
 /// Share of the ship's throttle range, from the bottom, that a thrust zone closes off. Small on
 /// purpose: a zone asks the player not to crawl through, it does not pick their speed for them.
+/// The shares are set so a floor zone's floor is 0.75 of the track's speed and a ceiling zone's
+/// ceiling about 0.81, whatever the ship's own range is; the levels were tuned to those.
 /// </param>
 /// <param name="ThrustZoneCap">
 /// Share of the range, from the top, that a ceiling zone closes off. Large on purpose: being held
@@ -146,8 +148,8 @@ public sealed record SessionSettings(
     float FinishRunOut = 260f,
     float WarpBack = 250f,
     float WarpDive = 0.55f,
-    float ThrustZoneCut = 0.2f,
-    float ThrustZoneCap = 0.75f,
+    float ThrustZoneCut = 0.35f,
+    float ThrustZoneCap = 0.6f,
     float MomentumBuildTime = 90f,
     float MomentumHitLoss = 0.35f);
 

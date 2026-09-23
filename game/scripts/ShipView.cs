@@ -172,8 +172,8 @@ public partial class ShipView : Node3D
         {
             float length = 0.25f + 1.9f * drive;
             float width = 0.5f + 0.2f * drive;
-            // Always lit: the throttle floor is half speed, so an idling ship is still under power
-            // and should look like it rather than like a dead one.
+            // Always lit: the throttle floor is a third of the track's speed, so an idling ship is
+            // still under power and should look like it rather than like a dead one.
             _plumes[i].Scale = new Vector3(width, length, width);
             _plumes[i].Position = new Vector3(Side(i) * 0.28f, -0.01f, 1.14f + 0.35f * length);
         }

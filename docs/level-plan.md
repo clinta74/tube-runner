@@ -87,7 +87,7 @@ shields at 20, a pair at 24 of which one has to be shot for, and a single one at
 **What each new mechanic is for**
 
 Everything here has to work *with* the throttle, not against it. The player already picks their own
-speed, from 0.5x to 1.75x of the track's, and holds it until they change it. That rules out a whole
+speed, from 0.35x to 1.5x of the track's, and holds it until they change it. That rules out a whole
 family of ideas that look obvious on paper: a boost pad is a throttle the player did not press, and a
 slow field is one they will simply press through. Neither is a decision. The mechanics below either
 ignore speed or make the player *spend* it.

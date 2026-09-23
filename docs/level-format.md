@@ -188,7 +188,7 @@ Each piece continues from the end of the previous one.
 | `climb` | `0` | Total pitch change over the piece, in degrees; positive climbs. |
 | `obstacles` | none | Obstacles on this piece, placed from its start (see Obstacles). |
 | `pickups` | none | Power-ups on this piece, placed the same way (see Power-ups). |
-| `speed` | previous | Speed to reach by the end of the piece (units per second), blended smoothly. The player's throttle multiplies it (0.5× to 1.75×). Screen effects, field of view, and engine sound follow the result. |
+| `speed` | previous | Speed to reach by the end of the piece (units per second), blended smoothly. The player's throttle multiplies it (0.35× to 1.5×). Screen effects, field of view, and engine sound follow the result. |
 
 ```json
 "track": [
@@ -637,12 +637,15 @@ bar on the HUD shows the closed-off part while the ship is inside.
 | `kind` | `floor` | `floor` closes off the slow end; `ceiling` closes off the fast end. |
 | `branch` | none | Branch index, inside a split. |
 
-Each kind makes a fixed cut of the ship's range (0.5 to 1.75):
+Each kind makes a fixed cut of the ship's range (0.35 to 1.5):
 
-- **`floor`** takes the slowest **20%**, so the floor becomes 0.75. It stops the player crawling
+- **`floor`** takes the slowest **35%**, so the floor becomes 0.75. It stops the player crawling
   through; a ship already above the cut is left alone.
-- **`ceiling`** takes the fastest **75%**, so the ceiling becomes about 0.81. It holds the player
+- **`ceiling`** takes the fastest **60%**, so the ceiling becomes about 0.81. It holds the player
   back, and a ship arriving faster than that is brought down to it.
+
+The shares were chosen for those two results, and were 20% and 75% when the range was 0.5 to 1.75:
+the levels are tuned to a zone's floor and ceiling, not to its share.
 
 Only one end moves; the other stays open.
 

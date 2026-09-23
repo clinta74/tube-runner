@@ -166,7 +166,7 @@ specific Godot executable.
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
 | Steer | A/D or ←/→ | Left stick left/right |
-| Speed up / slow down (0.5× to 1.75× the level's speed; holds when released) | W/S or ↑/↓ | Left stick up/down, RB/LB |
+| Speed up / slow down (0.35× to 1.5× the level's speed; holds when released) | W/S or ↑/↓ | Left stick up/down, RB/LB |
 | Jump between floor and ceiling (flat sections) | Space | A |
 | Fire (hold) | Ctrl, J, Enter, or left mouse | X or right trigger |
 | Ring gun (needs charges) | E, K, or right mouse | Y |

@@ -12,8 +12,8 @@ public sealed record ShipSettings(
     float SteerSpeed,
     float MaxPlaneOffset = 40f,
     float JumpDuration = 0.55f,
-    float MinThrottle = 0.5f,
-    float MaxThrottle = 1.75f,
+    float MinThrottle = 0.35f,
+    float MaxThrottle = 1.5f,
     float ThrottleRate = 0.75f);
 
 /// <summary>

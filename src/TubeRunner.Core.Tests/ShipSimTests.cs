@@ -129,11 +129,11 @@ public class ShipSimTests
         var sim = Sim(Circle);   // track speed 50
 
         for (int i = 0; i < 60; i++) sim.Step(0.1f, steer: 0f, throttle: 1f);
-        Assert.Equal(1.75f, sim.Throttle, precision: 4);
-        Assert.Equal(87.5f, sim.ForwardSpeed, precision: 3);
+        Assert.Equal(1.5f, sim.Throttle, precision: 4);
+        Assert.Equal(75f, sim.ForwardSpeed, precision: 3);
 
         for (int i = 0; i < 60; i++) sim.Step(0.1f, steer: 0f, throttle: -1f);
-        Assert.Equal(0.5f, sim.Throttle, precision: 4);
+        Assert.Equal(0.35f, sim.Throttle, precision: 4);
     }
 
     [Fact]

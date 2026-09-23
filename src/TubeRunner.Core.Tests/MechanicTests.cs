@@ -256,18 +256,20 @@ public class MechanicTests
     }
 
     [Fact]
-    public void ThrustZone_CutsOnlyTheBottomFifthOfTheRange()
+    public void ThrustZone_CutsOnlyItsShareOfTheSlowEnd()
     {
         var zone = new ThrustZone { S = 400, Length = 200f };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
         var ship = Settings.Ship;
-        float cut = ship.MinThrottle + 0.2f * (ship.MaxThrottle - ship.MinThrottle);
+        float cut = ship.MinThrottle + Settings.ThrustZoneCut * (ship.MaxThrottle - ship.MinThrottle);
+        // The share is set so the floor lands at three quarters of the track's speed.
+        Assert.Equal(0.75f, cut, precision: 2);
 
         // Held all the way down on the way in, so the throttle is at the ship's own floor.
         Fly(game, to: 250, new ShipInput(Throttle: -1f));
         Assert.Equal(ship.MinThrottle, game.Ship.Throttle, precision: 2);
 
-        // Inside, only the slowest fifth is gone: a crawling ship is lifted to the cut and no further,
+        // Inside, only the slow end is gone: a crawling ship is lifted to the cut and no further,
         // and the top of the range is untouched.
         Fly(game, to: 420, new ShipInput(Throttle: -1f));
         Assert.True(zone.Entered);
@@ -278,12 +280,14 @@ public class MechanicTests
     }
 
     [Fact]
-    public void CeilingZone_CutsTheTopThreeQuartersAndBringsAFastShipDown()
+    public void CeilingZone_CutsItsShareOfTheFastEndAndBringsAFastShipDown()
     {
         var zone = new ThrustZone { S = 400, Length = 200f, Kind = ThrustZoneKind.Ceiling };
         var game = new GameSession(Track(), [], Settings, Start, null, null, null, [zone]);
         var ship = Settings.Ship;
-        float cap = ship.MaxThrottle - 0.75f * (ship.MaxThrottle - ship.MinThrottle);
+        float cap = ship.MaxThrottle - Settings.ThrustZoneCap * (ship.MaxThrottle - ship.MinThrottle);
+        // The share is set so the ceiling lands a little over four fifths of the track's speed.
+        Assert.Equal(0.81f, cap, precision: 2);
 
         // Wide open on the way in, so the throttle is at the ship's own ceiling.
         Fly(game, to: 250, new ShipInput(Throttle: 1f));

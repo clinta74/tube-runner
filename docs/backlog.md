@@ -297,6 +297,10 @@ track, so tracks differ in key, pace and tune, not instrument; a loader test ref
 that does not exist. Still judgement: whether five is enough, and whether any wants its own
 instrument.
 
+After the same play test the throttle range went from 0.5-1.75 to 0.35-1.5 of the track's
+speed, both ends brought in; the thrust zones' shares moved with it so a floor zone still leaves
+0.75 and a ceiling zone about 0.81, which is what the levels were tuned to.
+
 Two things heard in the first play test, both done in the language momentum already speaks:
 - **A change of track is stepped, not cut.** Over the last bar before the line the old track thins
   to its pad, at the line the two pads cross over one bar at equal power, and the new track's bass,
