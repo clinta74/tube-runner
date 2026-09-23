@@ -4,6 +4,7 @@
   "next": "level_03.json",
   "speed": 80,
   "segmentLength": 60,
+  "music": "run",
 
   // Still round: introduces breakable blocks and every power-up.
   "theme": {

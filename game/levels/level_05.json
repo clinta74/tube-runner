@@ -4,6 +4,7 @@
   "next": "level_06.json",
   "speed": 90,
   "segmentLength": 60,
+  "music": "run",
 
   // The tube opens into flat floor and ceiling: strafe, then learn to jump between them.
   "theme": {

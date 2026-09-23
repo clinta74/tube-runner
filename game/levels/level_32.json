@@ -3,6 +3,7 @@
   "id": "finale",
   "speed": 160,
   "segmentLength": 60,
+  "music": "wire",
 
   // The end of the run. No new ideas - that is the rule for this level. Everything here has been
   // taught, tested and paid for somewhere in the twenty-five levels before it, and the only thing

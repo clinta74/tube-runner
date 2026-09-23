@@ -4,6 +4,7 @@
   "next": "level_32.json",
   "speed": 155,
   "segmentLength": 60,
+  "music": "wire",
 
   // The longest level in the game, and the one that gives least. Block D's test, and the last thing
   // before the finale, so what it really measures is how much the run has left.

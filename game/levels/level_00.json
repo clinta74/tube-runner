@@ -3,6 +3,7 @@
   "id": "warp-test",
   "speed": 80,
   "segmentLength": 60,
+  "music": "run",
 
   // A bare level for trying the warp by hand: one round tube, no obstacles, no power-ups, and a
   // single mouth on the outside wall of a long left-hander. Not part of the run - play it with

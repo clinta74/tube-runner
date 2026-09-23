@@ -4,6 +4,7 @@
   "next": "level_13.json",
   "speed": 105,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Block A opens here: full shields on the way in, then one new idea taught on its own.
   // Timed gates - solid for half a cycle, gone for the other half. The throttle is the answer, which

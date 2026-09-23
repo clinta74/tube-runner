@@ -4,6 +4,7 @@
   "next": "level_04.json",
   "speed": 85,
   "segmentLength": 60,
+  "music": "run",
 
   // Speed control: open road to push into, gauntlets to back off for.
   "theme": {

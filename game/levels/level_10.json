@@ -4,6 +4,7 @@
   "next": "level_11.json",
   "speed": 105,
   "segmentLength": 60,
+  "music": "pulse",
 
   // A first look at the ring: a bore too wide to see all of at once, with a second cylinder down the
   // middle of it, and the ship flying in the sleeve between the two. The outer wall is the floor and

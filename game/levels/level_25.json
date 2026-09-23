@@ -4,6 +4,7 @@
   "next": "level_26.json",
   "speed": 155,
   "segmentLength": 60,
+  "music": "wire",
 
   // Tollgate's test. Nothing new: locked pads from 23, doors from 21, ordered groups from 13, forks
   // and wells from further back. What changes is that the locks now come with a bill attached.

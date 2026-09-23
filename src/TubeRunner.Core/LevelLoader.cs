@@ -133,6 +133,7 @@ public static class LevelLoader
             Speed = Positive(data.Speed, "speed"),
             SegmentLength = Positive(data.SegmentLength, "segmentLength"),
             Theme = ToTheme(data.Theme),
+            Music = MusicFor(data.Music),
             Track = track,
             Obstacles = obstacles,
             Pickups = pickups,
@@ -616,6 +617,15 @@ public static class LevelLoader
 
     private static string Capitalize(string s) => char.ToUpperInvariant(s[0]) + s[1..];
 
+    // A track that does not exist is a typo, and a level that loaded with the default in its place
+    // would never say so.
+    private static MusicTrack MusicFor(string? name)
+    {
+        if (name is null) return MusicTracks.Default;
+        return MusicTracks.Get(name)
+            ?? throw new LevelFormatException($"Unknown music \"{name}\". The tracks are {string.Join(", ", MusicTracks.All.Select(t => t.Name))}.");
+    }
+
     private sealed class LevelData
     {
         public string Name { get; set; } = "Untitled";
@@ -624,6 +634,7 @@ public static class LevelLoader
         public float Speed { get; set; } = 80f;
         public float SegmentLength { get; set; } = 60f;
         public ThemeData? Theme { get; set; }
+        public string? Music { get; set; }
         public Dictionary<string, SectionData> Sections { get; set; } = new();
         public string Start { get; set; } = "";
         public List<PieceData> Track { get; set; } = new();

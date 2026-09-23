@@ -4,6 +4,7 @@
   "next": "level_08.json",
   "speed": 80,
   "segmentLength": 60,
+  "music": "pulse",
 
   "theme": {
     "darks": ["#3b2919", "#2e4a2b", "#4a4f24"],

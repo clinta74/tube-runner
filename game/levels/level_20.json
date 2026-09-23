@@ -4,6 +4,7 @@
   "next": "level_21.json",
   "speed": 130,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Block C opens here: two shields in - the refills are getting weaker - then one new idea alone.
   // Hazard plates: wall that cannot be shot, broken or rammed, only flown around. Every other

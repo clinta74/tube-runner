@@ -54,6 +54,8 @@ public partial class Main : Node3D
     private bool _practice;
     private bool _debugSummary;
     private bool _running;
+    // How much of the music the title plays: pad, bass and most of the drums, no lead.
+    private const float TitleMomentum = 0.5f;
     private bool _paused;
     private bool _levelDone;
     private float _bank;
@@ -606,7 +608,13 @@ public partial class Main : Node3D
         // Nothing of the level is drawn while the ship holds station in front of it: being put
         // back a segment would make every block in sight jump one further off.
         _obstacles.Visible = !_titleUp || _starting;
-        _audio.SetMusic(_session.Momentum, _session.RamLeft, _running && _session.State == SessionState.Playing);
+        // The title has music of its own - its own track, held at a middling momentum - so there is
+        // something to arrive to. A level's track takes over at the bar line after its start, and
+        // Start from the title is the first of those; the levels after it change at their lines.
+        bool onTitle = _titleUp && !_starting;
+        _audio.SetTrack(onTitle ? MusicTracks.Title : _level.Music);
+        _audio.SetMusic(onTitle ? TitleMomentum : _session.Momentum, _session.RamLeft,
+            onTitle || (_running && _session.State == SessionState.Playing));
 
         var track = _level.Track;
         var split = pos.Branch >= 0 ? track.SplitAt(pos.S) : null;

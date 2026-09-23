@@ -4,6 +4,7 @@
   "next": "level_31.json",
   "speed": 155,
   "segmentLength": 60,
+  "music": "wire",
 
   // Visibility, used as the difficulty rather than density. A straight shows everything early; a
   // bend hides it until the corner opens. A run of tight alternating bends - a twist - keeps the

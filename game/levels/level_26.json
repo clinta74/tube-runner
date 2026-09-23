@@ -4,6 +4,7 @@
   "next": "level_27.json",
   "speed": 150,
   "segmentLength": 60,
+  "music": "wire",
 
   // The block's second idea: an aperture. A ring of blades that seals the tube and irises open as
   // its keys are shot, one blade's worth at a time.

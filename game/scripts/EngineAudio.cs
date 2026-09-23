@@ -57,6 +57,9 @@ public partial class EngineAudio : AudioStreamPlayer
     /// <summary>What the music should be doing; see <see cref="MusicSynth.SetState"/>.</summary>
     public void SetMusic(float momentum, float ramLeft, bool playing) => _music.SetState(momentum, ramLeft, playing);
 
+    /// <summary>The track to play, from the next bar line; see <see cref="MusicSynth.SetTrack"/>.</summary>
+    public void SetTrack(MusicTrack track) => _music.SetTrack(track);
+
     public void OnEvent(SessionEvent e)
     {
         switch (e)

@@ -4,6 +4,7 @@
   "next": "level_28.json",
   "speed": 158,
   "segmentLength": 60,
+  "music": "wire",
 
   // The block's test, and the fourth level of it, so resources are thin and nothing here is a free
   // look. Rings arrive with everything else the game has: keys that slide, keys behind gates, keys

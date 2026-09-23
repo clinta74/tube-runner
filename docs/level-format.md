@@ -14,6 +14,7 @@ Units are world units; the default tube radius is 6 and the default speed is 80 
 | `next` | none | File name of the following level. |
 | `speed` | `80` | Starting forward speed, units per second. Track pieces can change it. |
 | `segmentLength` | `60` | Distance between wall seams. The checker pattern can change at each seam. |
+| `music` | `"run"` | The background track: `drift`, `run`, `pulse`, `undertow` or `wire`. A name that is not one of these refuses to load. It takes over at the bar line after the level starts. |
 | `theme` | Earth theme | Colors; see below. |
 | `sections` | required | Named cross-sections used by the track. |
 | `start` | required | Section name the track starts with. |

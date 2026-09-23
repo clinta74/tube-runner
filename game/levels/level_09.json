@@ -4,6 +4,7 @@
   "next": "level_10.json",
   "speed": 110,
   "segmentLength": 60,
+  "music": "pulse",
 
   // The first see-through level, early on purpose: a look at the wireframe style long before
   // Highwire builds a level around it. Loops and switchbacks on a single track, so the track bends

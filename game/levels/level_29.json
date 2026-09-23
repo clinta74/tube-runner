@@ -4,6 +4,7 @@
   "next": "level_30.json",
   "speed": 150,
   "segmentLength": 60,
+  "music": "wire",
 
   // Narrow tubes at speed, with wells sitting on the fast line. A well is a hazard to steer around,
   // never a gap to thread - it takes about a third of the way round the tube, leaving two thirds

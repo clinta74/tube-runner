@@ -4,6 +4,7 @@
   "next": "level_05.json",
   "speed": 95,
   "segmentLength": 60,
+  "music": "run",
 
   // The wall changes shape under you: wide ovals, then tall ones.
   "theme": {

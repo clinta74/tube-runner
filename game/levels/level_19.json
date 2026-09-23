@@ -4,6 +4,7 @@
   "next": "level_20.json",
   "speed": 135,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Block B's test. Limits from 14 and 15, movers from 16, gates from 10, all together. The pairing
   // that makes this level its own thing is limits against movers: a mover's sweep is timed in

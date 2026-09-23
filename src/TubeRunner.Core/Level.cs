@@ -27,6 +27,9 @@ public sealed class Level
 
     public required Theme Theme { get; init; }
 
+    /// <summary>The background music, which a level names in its file; <see cref="MusicTracks.Default"/> if it says nothing.</summary>
+    public MusicTrack Music { get; init; } = MusicTracks.Default;
+
     public required Track Track { get; init; }
 
     /// <summary>Obstacles. They hold per-run state, so load the level again to replay it.</summary>

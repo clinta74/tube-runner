@@ -4,6 +4,7 @@
   "next": "level_29.json",
   "speed": 145,
   "segmentLength": 60,
+  "music": "wire",
 
   // Block D opens here: one shield in - the weakest refill of the four blocks - then the last new
   // idea, which needs no new code at all. A fork where one branch hides a warp well.

@@ -4,6 +4,7 @@
   "next": "level_17.json",
   "speed": 120,
   "segmentLength": 60,
+  "music": "undertow",
 
   // Block B opens here: full shields in, then one new idea on its own.
   // Speed-limit zones - a stretch that costs a shield if it is taken too fast. The inverse of a

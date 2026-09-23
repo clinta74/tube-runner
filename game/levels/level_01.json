@@ -4,6 +4,7 @@
   "next": "level_02.json",
   "speed": 70,
   "segmentLength": 60,
+  "music": "run",
 
   // Round tubes only: learn to fly around the wall.
   "theme": {

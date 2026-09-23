@@ -9,13 +9,16 @@ namespace TubeRunner.Game;
 /// rises and back out as it falls, so a clean run is heard as music arriving rather than as one track
 /// getting louder, and a run going badly is heard thinning out.
 ///
+/// What the layers play comes from a <see cref="MusicTrack"/>: the tempo, the chords and the tune.
+/// The title has one and each level names one, and a change of track waits for the bar line, so a
+/// level line is heard as the music turning a corner rather than as a cut.
+///
 /// Unstoppable has a theme of its own that replaces the layers while it runs, rather than playing on
 /// top of them. Over its last second the theme hands back to the layers, so the warning beeps land on
 /// the music breaking down, not on silence.
 /// </summary>
 public sealed class MusicSynth
 {
-    private const float Bpm = 112f;
     // Bars in one loop of the clock. The clock wraps so a long session never loses float precision.
     private const int LoopSteps = 16 * 16;
     // How quickly a layer follows its target level, in seconds.
@@ -24,22 +27,19 @@ public sealed class MusicSynth
     // quiet at exactly the moment it mattered. Its hand-back is already paced by its target.
     private const float RamFade = 0.08f;
 
-    // A minor: Am, F, C, G, one bar each.
-    private static readonly int[][] Chords = { new[] { 57, 60, 64 }, new[] { 53, 57, 60 }, new[] { 48, 52, 55 }, new[] { 55, 59, 62 } };
-    private static readonly int[] Roots = { 45, 41, 36, 43 };
-    // One note per eighth over four bars; 0 is a rest.
-    private static readonly int[] Melody =
-    {
-        76, 0, 74, 72, 69, 0, 72, 0,   72, 0, 69, 67, 65, 0, 64, 0,
-        67, 0, 72, 74, 76, 0, 74, 0,   74, 72, 71, 0, 67, 0, 0, 0,
-    };
-    // The unstoppable riff: semitones above A1, one per sixteenth.
+    // The unstoppable riff: semitones above A1, one per sixteenth. The same whatever the track.
     private static readonly int[] RamRiff = { 0, 0, 12, 0, 0, 12, 0, 10, 0, 0, 12, 0, 3, 5, 7, 10 };
 
     private readonly float _dt;
-    private readonly float _stepLength;
     private readonly float _smooth;
     private readonly float _ramSmooth;
+
+    private MusicTrack _track = MusicTracks.Default;
+    private MusicTrack? _pending;
+    private float _stepLength;
+
+    /// <summary>The track playing now; a change asked for waits at the bar line.</summary>
+    public MusicTrack Track => _track;
 
     /// <summary>How loud the unstoppable theme currently is, from 0 to 1. The engine ducks under it.</summary>
     public float RamLevel => _ram;
@@ -67,7 +67,7 @@ public sealed class MusicSynth
     public MusicSynth(int mixRate)
     {
         _dt = 1f / mixRate;
-        _stepLength = 60f / Bpm / 4f;
+        _stepLength = StepLength(_track);
         _smooth = 1f - MathF.Exp(-_dt / LayerFade);
         _ramSmooth = 1f - MathF.Exp(-_dt / RamFade);
         _bassDecay = Decay(0.2f);
@@ -78,6 +78,15 @@ public sealed class MusicSynth
         _ramDecay = Decay(0.1f);
         _ramKickDecay = Decay(0.09f);
         _snareDecay = Decay(0.08f);
+    }
+
+    /// <summary>
+    /// The track to play from the next bar line. Asking for the one already playing cancels a
+    /// change still waiting.
+    /// </summary>
+    public void SetTrack(MusicTrack track)
+    {
+        _pending = ReferenceEquals(track, _track) ? null : track;
     }
 
     /// <param name="momentum">The run's momentum, from 0 to 1.</param>
@@ -103,6 +112,15 @@ public sealed class MusicSynth
         if (step != _lastStep)
         {
             _lastStep = step;
+            // A new track takes over at a bar line, keeping the count of steps so the clock, the
+            // arpeggio and the riff carry straight on at the new pace.
+            if (_pending is not null && step % 16 == 0)
+            {
+                _track = _pending;
+                _pending = null;
+                _stepLength = StepLength(_track);
+                _t = step * _stepLength;
+            }
             Trigger(step);
         }
         _t += _dt;
@@ -129,12 +147,12 @@ public sealed class MusicSynth
     {
         int bar = step / 16 % 4;
         int inBar = step % 16;
-        var chord = Chords[bar];
+        var chord = _track.Chords[bar];
 
         for (int i = 0; i < 3; i++) _padFreq[i] = Midi(chord[i]);
         if (inBar % 2 == 0)
         {
-            _bassFreq = Midi(Roots[bar]);
+            _bassFreq = Midi(_track.Roots[bar]);
             _bassEnv = 1f;
         }
         if (inBar % 4 == 0)
@@ -147,7 +165,7 @@ public sealed class MusicSynth
         _arpFreq = Midi(chord[_arpIndex++ % 3] + 12);
         _arpEnv = 1f;
 
-        if (step % 2 == 0 && Melody[step / 2 % Melody.Length] is int note and > 0)
+        if (step % 2 == 0 && _track.Melody[step / 2 % _track.Melody.Length] is int note and > 0)
         {
             _leadFreq = Midi(note);
             _leadEnv = 1f;
@@ -239,6 +257,8 @@ public sealed class MusicSynth
         }
         return s;
     }
+
+    private static float StepLength(MusicTrack track) => 60f / track.Bpm / 4f;
 
     private float Decay(float seconds) => MathF.Exp(-_dt / seconds);
 

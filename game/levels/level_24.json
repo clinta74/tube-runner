@@ -4,6 +4,7 @@
   "next": "level_25.json",
   "speed": 150,
   "segmentLength": 60,
+  "music": "pulse",
 
   // A new block opens here, and its idea is the gentlest lock in the game: a power-up that has to be
   // shot for. A pad with a `lockedBy` is dead until its key falls - dark, with its label in the key's

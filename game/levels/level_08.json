@@ -4,6 +4,7 @@
   "next": "level_09.json",
   "speed": 95,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Forks as a real choice. Every junction turns hard enough that the inside line is genuinely
   // shorter, and the short way is always the tighter tube with the obstacles in it.

@@ -4,6 +4,7 @@
   "next": "level_23.json",
   "speed": 140,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Shoot-to-open gates: a target that unlocks a wall further down the track. Shooting buys passage
   // instead of points, and missing means arriving at something solid.

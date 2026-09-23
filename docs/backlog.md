@@ -284,7 +284,20 @@ v0.4.2 (update check, build tool):
   moves them.
 
 ### Adaptive background music
-*Shipped in v0.4.0, procedural.* The Unstoppable theme was turned up after a first listen: louder, in
+*Shipped in v0.4.0, procedural. Tracks added after v0.9.5.* The synth plays from a `MusicTrack`
+(`src/TubeRunner.Core/MusicTrack.cs`): a tempo, four bars of chords with a root each, and a tune of
+one note per eighth. Five so far - `drift` for the title (84, D minor), `run` (the original, 112,
+A minor), `pulse` (124, E minor), `undertow` (100, C minor) and `wire` (132, F sharp minor) - and
+every level names one with its `music` field: `run` through Over and Under, `pulse` from Earthworks
+to Clockwork, `undertow` from Metronome to Shoal, `pulse` again from Undertow to Tollgate, and
+`wire` from Ransom to the finale. A change waits for the bar line, so a level line is heard as the
+music turning a corner; the title plays `drift` at a held middling momentum, and Start is the first
+change. The layers, their arrival with momentum and the unstoppable theme are the same whatever the
+track, so tracks differ in key, pace and tune, not instrument; a loader test refuses a track name
+that does not exist. Still judgement: whether five is enough, and whether any wants its own
+instrument.
+
+*Before the tracks:* The Unstoppable theme was turned up after a first listen: louder, in
 within a tenth of a second, and the engine and wind duck under it. `GameSession.Momentum` (tested) climbs over 90 s of clean
 flying, loses 0.35 per hit and carries between levels. `MusicSynth` fades in pad, bass, drums,
 arpeggio and lead at rising momentum, and Unstoppable's own riff replaces them, crossfading back over
@@ -604,8 +617,8 @@ are identical on every wall pixel.
 - **Zones unlock by being reached**: one with a best time, or whose predecessor has one.
 - The name comes from the project's `config/name`, so renaming the game renames the title.
 
-Still open: the title has no music of its own beyond the run's quietest layer, and the Controls
-page is a fixed list, which key rebinding will have to feed. About now credits Clint Andrews with a
+Still open: the Controls page is a fixed list, which key rebinding will have to feed. The title
+now has a track of its own; see *Adaptive background music*. About now credits Clint Andrews with a
 copyright line, and the installer's publisher and the exe's file details say the same.
 
 ### Levels that run into each other without a cut

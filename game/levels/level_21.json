@@ -4,6 +4,7 @@
   "next": "level_22.json",
   "speed": 140,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Plates and movers with a shooting load that will not wait. Unstoppable comes back here, one
   // level after plates were taught - so the player now knows there is one thing it cannot answer,

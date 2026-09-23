@@ -4,6 +4,7 @@
   "next": "level_14.json",
   "speed": 110,
   "segmentLength": 60,
+  "music": "undertow",
 
   // Gates in rhythm with jumps. On a flat section the ship can cross between floor and ceiling, and
   // a gate is a full-width wall - so every obstacle here has two answers, timing or the jump, and

@@ -4,6 +4,7 @@
   "next": "level_07.json",
   "speed": 105,
   "segmentLength": 60,
+  "music": "run",
 
   // Flat sections under pressure: walls that force jump after jump.
   "theme": {

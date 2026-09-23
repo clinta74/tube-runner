@@ -4,6 +4,7 @@
   "next": "level_24.json",
   "speed": 145,
   "segmentLength": 60,
+  "music": "pulse",
 
   // Block C's test, and the point where the scarcity curve starts to bite. Everything from C -
   // plates, keys and doors - over everything from A and B. One shield in the whole level, and it is
