@@ -121,6 +121,8 @@
     // far side of either is a long way off. Collars alternating wall and core - the jump rhythm
     // from Over and Under, wrapped round a cylinder - with shields in fours between them. Speed up
     // for it, and agility on the way in, since a wall this size is a long way to get across.
+    // The middle two collars are gates on one cycle, out of step: the ring breathes, and there is
+    // always a wall to jump but never on both walls at once.
     { "length": 240, "section": "big-ring", "speed": 118, "obstacles": [ // 3230 - 3470
       { "at": 180, "surface": "ceiling", "full": true, "height": 3 }
     ], "pickups": [
@@ -128,18 +130,21 @@
     ] },
     { "length": 640, "obstacles": [                                 // 3470 - 4110
       { "at": 100, "full": true, "height": 3 },
-      { "at": 260, "surface": "ceiling", "full": true, "height": 3 },
-      { "at": 420, "full": true, "height": 3 },
+      { "at": 260, "surface": "ceiling", "full": true, "height": 3, "period": 3.2 },
+      { "at": 420, "full": true, "height": 3, "period": 3.2, "phase": 0.5 },
       { "at": 580, "surface": "ceiling", "full": true, "height": 3 }
     ], "pickups": [
       { "at": 340, "kind": "shield", "angle": 0, "count": 4, "angleStep": 90 }
     ] },
 
-    // A boxy ring, to see the walls with corners in them, and a breather.
+    // A boxy ring, to see the walls with corners in them, and a breather - with a well in the
+    // outer wall, whose answer in a ring is the jump: the core is out of its reach.
     { "length": 220, "section": "box-ring", "speed": 112 },         // 4110 - 4330
     { "length": 380, "obstacles": [                                 // 4330 - 4710
       { "at": 100, "angle": 0, "width": 14 },
       { "at": 220, "surface": "ceiling", "angle": 0, "width": 10 }
+    ], "warps": [
+      { "at": 300, "angle": 180 }
     ], "pickups": [
       { "at": 320, "kind": "shield", "angle": 0 }
     ] },

@@ -358,7 +358,8 @@ public partial class ObstacleView : Node3D
             bool open = o.LockedBy is not null && _session.IsUnlocked(o);
             bool there = !o.Destroyed && !open && InView(o.S, s);
             Sync(_views, o, there, o.Destroyed || open, _createObstacle, origin);
-            if (o.Period > 0f) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
+            // A collar has no socket: it is a band round the whole wall, with nowhere to withdraw to.
+            if (o.Period > 0f && !o.Full) Sync(_socketViews, o, there, burst: false, _createSocket, origin);
         }
         foreach (var ring in _apertureRings) Sync(_lipViews, ring, InView(ring.S, s), burst: false, _createLip, origin);
         foreach (var p in _session.Pickups)
@@ -463,6 +464,7 @@ public partial class ObstacleView : Node3D
     {
         var material = o.Kind == ObstacleKind.Plate ? _hazardMaterial
             : o.LockedBy is not null ? DoorMaterial(o.LockedBy)
+            : o.Period > 0f ? _gateMaterial
             : o.Hits > 0 ? Solid(_breakable)
             : _blockMaterial;
         var shape = _shapes.Get(_session.Track.SectionAt(o.S, o.Branch));
@@ -954,6 +956,21 @@ public partial class ObstacleView : Node3D
             pos -= view.Up * (1f - gate.ExtensionAt(Now)) * (gate.Height + 0.4f);
         }
 
+        // A collar that is a gate cannot withdraw sideways into a socket: it is a band round the
+        // whole wall. So it rises out of the wall and sinks back into it, rebuilt at its present
+        // height whenever that has changed enough to see - a few dozen vertices, and only while
+        // it is on the move.
+        if (view.Obstacle is { Full: true, Period: > 0f } collar && view.Node is MeshInstance3D band)
+        {
+            float extension = collar.ExtensionAt(Now);
+            if (Mathf.Abs(extension - view.ShownExtension) > 0.02f)
+            {
+                view.ShownExtension = extension;
+                var shape = _shapes.Get(_session.Track.SectionAt(collar.S, collar.Branch));
+                band.Mesh = BuildBand(shape, collar.Surface, collar.Length * 0.5f, Mathf.Max(0.05f, collar.Height * extension));
+            }
+        }
+
         view.Node.LookAtFromPosition(pos, pos + view.Forward, view.Up);
         if (view.Spins) view.Node.RotateObjectLocal(Vector3.Up, _time * 2.5f);
     }
@@ -1223,6 +1240,9 @@ public partial class ObstacleView : Node3D
 
         /// <summary>Whether this withdraws into the wall on a gate's cycle. Sockets never do.</summary>
         public bool Slides { get; init; }
+
+        /// <summary>For a collar that is a gate: how far out its band was last built, from 0 to 1.</summary>
+        public float ShownExtension { get; set; } = 1f;
 
         /// <summary>When an aperture blade's key fell, so its swing can be timed; null while it is shut.</summary>
         public float? OpenedAt { get; set; }

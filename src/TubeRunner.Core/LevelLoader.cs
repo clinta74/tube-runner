@@ -266,9 +266,9 @@ public static class LevelLoader
             {
                 throw new LevelFormatException($"{where}: 'full' is for blocks and plates; a target the whole way round has nowhere to be aimed at.");
             }
-            if (o.Full && (o.Period > 0f || o.Sweep > 0f))
+            if (o.Full && o.Sweep > 0f)
             {
-                throw new LevelFormatException($"{where}: a 'full' collar cannot also be a gate or a mover.");
+                throw new LevelFormatException($"{where}: a 'full' collar goes the whole way round, so there is nowhere for it to sweep to. It can be a gate: give it a 'period'.");
             }
 
             foreach (var (s, branch, surface, x) in Place(o, track, offset, where))
@@ -441,10 +441,12 @@ public static class LevelLoader
             foreach (var (s, branch, surface, x) in Place(w, track, offset, where))
             {
                 // A well is sunk into the wall by the renderer against one closed profile, and its
-                // width is a share of that profile - neither of which means anything on a core.
-                if (track.SectionAt(s, branch).IsAnnulus)
+                // width is a share of that profile's perimeter - the outer one. In a ring that is the
+                // outer wall, and a well there is a hole the jump to the core puts out of reach; on the
+                // core neither the sinking nor the share means anything.
+                if (track.SectionAt(s, branch).IsAnnulus && surface == Surface.Ceiling)
                 {
-                    throw new LevelFormatException($"{where}: a warp well cannot be sunk into a ring's wall.");
+                    throw new LevelFormatException($"{where}: a warp well cannot be sunk into a ring's core; in a ring, put it in the outer wall, which is the floor.");
                 }
                 // Defaults come from the Warp itself rather than being written out again here. They
                 // were duplicated once, and the copy in this file quietly won: every well in the

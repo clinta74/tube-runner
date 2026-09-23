@@ -293,7 +293,7 @@ public class AnnulusTests
 
     [Theory]
     [InlineData("""{ "at": 300, "kind": "target", "full": true }""", "blocks and plates")]
-    [InlineData("""{ "at": 300, "full": true, "period": 2 }""", "gate or a mover")]
+    [InlineData("""{ "at": 300, "full": true, "sweep": 6 }""", "nowhere for it to sweep to")]
     public void AFullBlock_ThatCannotBeOne_FailsToLoad(string obstacle, string says)
     {
         var e = Assert.Throws<LevelFormatException>(() => LevelLoader.Parse($$"""

@@ -8,13 +8,19 @@ namespace TubeRunner.Core;
 /// <param name="MinThrottle">Slowest the player can go, as a multiple of the track's speed.</param>
 /// <param name="MaxThrottle">Fastest the player can go, as a multiple of the track's speed.</param>
 /// <param name="ThrottleRate">How fast the throttle changes at full input, in multiples per second.</param>
+/// <param name="JumpGap">
+/// The gap <paramref name="JumpDuration"/> crosses: a flat section's. A bigger gap takes
+/// proportionally longer and a smaller one less, within a factor of two either way, so the ship
+/// crosses at the same pace whatever the room.
+/// </param>
 public sealed record ShipSettings(
     float SteerSpeed,
     float MaxPlaneOffset = 40f,
     float JumpDuration = 0.55f,
     float MinThrottle = 0.35f,
     float MaxThrottle = 1.5f,
-    float ThrottleRate = 0.75f);
+    float ThrottleRate = 0.75f,
+    float JumpGap = 12f);
 
 /// <summary>
 /// Engine-independent ship simulation. In a closed tube the ship steers around the wall; on open
@@ -37,6 +43,7 @@ public sealed class ShipSim
         Position = start;
         ThrottleFloor = settings.MinThrottle;
         ThrottleCeiling = settings.MaxThrottle;
+        _jumpSeconds = settings.JumpDuration;
     }
 
     /// <summary>Position on the surface the ship is on, or is jumping away from.</summary>
@@ -57,6 +64,12 @@ public sealed class ShipSim
 
     /// <summary>Progress through the current jump, from 0 to 1.</summary>
     public float JumpProgress { get; private set; }
+
+    // How long the jump under way takes: the tuned duration scaled by the gap it set out across.
+    private float _jumpSeconds;
+
+    /// <summary>Seconds the current or last jump takes, from its gap.</summary>
+    public float JumpSeconds => _jumpSeconds;
 
     /// <summary>The player's speed setting, as a multiple of the track's speed. Holds until changed.</summary>
     public float Throttle { get; set; } = 1f;
@@ -100,6 +113,9 @@ public sealed class ShipSim
         {
             IsJumping = true;
             JumpProgress = 0f;
+            // The crossing takes time in proportion to the gap: the tuned duration across the flat
+            // section's twelve, longer across a roomier ring, within a factor of two either way.
+            _jumpSeconds = _settings.JumpDuration * Math.Clamp(Gap() / _settings.JumpGap, 0.5f, 2f);
         }
 
         double s = Position.S + ForwardSpeed * dt;
@@ -122,7 +138,7 @@ public sealed class ShipSim
 
         if (IsJumping)
         {
-            JumpProgress += dt / _settings.JumpDuration;
+            JumpProgress += dt / _jumpSeconds;
             if (JumpProgress >= 1f)
             {
                 // The walls of a ring are different sizes, so the same place around the section is a
@@ -239,13 +255,19 @@ public sealed class ShipSim
     /// How far the ship is off <paramref name="surface"/> while jumping between floor and ceiling.
     /// 0 while riding a surface (lateral distance is what separates surfaces then).
     /// </summary>
+    /// <summary>The distance between the two surfaces at the ship's place: what a jump has to cross.</summary>
+    private float Gap()
+    {
+        var other = Opposite(Position.Surface);
+        return Vector2.Distance(
+            Shape.PointAt(Position.Surface, Position.X),
+            Shape.PointAt(other, Shape.Across(Position.Surface, Position.X)));
+    }
+
     public float HeightAbove(Surface surface)
     {
         if (!IsJumping) return 0f;
-        var other = Opposite(Position.Surface);
-        float gap = Vector2.Distance(
-            Shape.PointAt(Position.Surface, Position.X),
-            Shape.PointAt(other, Shape.Across(Position.Surface, Position.X)));
+        float gap = Gap();
         float e = MathUtil.SmoothStep(JumpProgress);
         return surface == Position.Surface ? e * gap : (1f - e) * gap;
     }

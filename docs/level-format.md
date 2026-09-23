@@ -153,11 +153,18 @@ a wall that goes all the way round - a tube, a ring's outer wall, or its core - 
 and the width is looked up from that wall's perimeter, which on a core depends on the ring height
 and is not a number worth making an author know. There is no way past a collar on its own wall,
 only the jump over it, which is what makes one on the core the way to bring a player down off it.
-It is drawn as a band round the wall rather than as a slab across it. A collar cannot also be a
-gate or a mover, yet.
+It is drawn as a band round the wall rather than as a slab across it. A collar can be a gate
+(`period`, `phase`): it rises out of its wall and sinks back into it as a band, and a shut one on
+the outer wall is a wall the jump answers. It cannot be a mover: it goes the whole way round, so
+there is nowhere for it to sweep to.
 
-**Not yet supported in a ring:** splits, apertures and warp wells. The first two assume a single
-wall closing around the middle, which is exactly what a core is in the way of.
+**A warp well goes in a ring's outer wall**, never in the core, and in a ring the answer to one is
+the jump: the core is out of its reach. Its width is still a share of the outer wall's perimeter,
+so in a wide bore it is a big hole.
+
+**Not supported in a ring:** splits and apertures. Both assume a single wall closing round the
+middle, which is exactly what a core is in the way of. End the ring at the piece before a split,
+and the core stops there.
 
 ### Flat sections
 
@@ -349,8 +356,9 @@ measured from the start of the track.
 ```
 
 On flat sections the ship can strafe 40 units either side of center, so a block 80 wide spans
-the whole floor. The ship jumps between floor and ceiling in about 0.55 s, covering
-`0.55 × speed` units, so leave that much room before a full-width wall.
+the whole floor. The ship jumps between floor and ceiling in 0.55 s across a flat section's 12
+units of gap, covering `0.55 × speed` units, so leave that much room before a full-width wall. A
+bigger gap takes proportionally longer, and a smaller one less, within a factor of two.
 
 ## Power-ups
 

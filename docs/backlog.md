@@ -598,8 +598,23 @@ hairline seam down the top of a ring's wall, noted earlier, could not be reprodu
 the strip's two ends land on the same point and the same texture coordinate - and is taken as
 fixed along the way.
 
-Still open, as design room rather than faults: collars cannot be gates or movers; the jump is a
-fixed 0.55 s whatever the gap; and splits, apertures and warps are refused in a ring.
+The design room, taken after v0.9.6:
+- **A collar can be a gate.** It rises out of its wall and sinks back as a band, rebuilt at its
+  height while it moves, with no socket, since a band round the whole wall has nowhere to withdraw
+  to. A mover it cannot be: nowhere to sweep to, and the loader says so. Sleeve's big ring has its
+  two middle collars breathing on one cycle, out of step.
+- **The jump takes time in proportion to the gap.** The tuned 0.55 s is for a flat section's 12
+  units; a roomier ring takes longer, a tighter one less, within a factor of two, so the ship
+  crosses at the same pace whatever the room. The shipped rings all keep 12, so nothing changed
+  under them; the rule is there for the ring that does not.
+- **A warp well goes in a ring's outer wall.** Never the core, where neither the sinking nor the
+  width means anything. In a ring the answer to a well is the jump. Sleeve's boxy ring has one.
+- **Splits and apertures stay out of rings**, as a decision: both assume a single wall closing
+  round the middle, which is what a core is in the way of, and a ring can end at the piece before
+  a split. An annular iris, blades spanning wall to core, would be its own feature.
+- **The Finale has a ring**, stop 7, from Sleeve: collars alternating wall and core, a well in the
+  outer wall, a collar that is a gate, and a last collar bringing the ship off the core before the
+  core ends. The level grew by 1200 units.
 
 ### A title screen, and a Start with no cut
 

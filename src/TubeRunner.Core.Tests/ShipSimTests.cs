@@ -106,11 +106,38 @@ public class ShipSimTests
     {
         var sim = Sim(Open);
 
-        sim.Step(0.25f, steer: 0f, jump: true);   // halfway through a 0.5 s jump
+        // Halfway through the jump, whose length the gap sets: the open section is 8 across, so
+        // it is shorter than the 0.5 s tuned for 12.
+        sim.Step(0.001f, steer: 0f, jump: true);
+        sim.Step(sim.JumpSeconds / 2f - 0.001f, steer: 0f);
 
         var (point, up) = sim.Pose(0.5f);
         Assert.Equal(0f, point.Y, precision: 3);
         Assert.Equal(-1f, up.X, precision: 3);
+    }
+
+    // A jump crosses a bigger gap in proportionally more time: the same pace across, whatever the
+    // room. A ring with half again the flat section's room takes half again as long.
+    [Fact]
+    public void Jump_TakesLongerAcrossABiggerGap()
+    {
+        // Stepped in hundredths, so a jump can run one step over its length.
+        Assert.InRange(JumpSeconds(CrossSection.Circle(30f).WithRing(12f)), 0.49f, 0.52f);
+        Assert.InRange(JumpSeconds(CrossSection.Circle(30f).WithRing(18f)), 0.74f, 0.77f);
+
+        static float JumpSeconds(CrossSection section)
+        {
+            var sim = Sim(section);
+            sim.Step(0.01f, steer: 0f, jump: true);
+            Assert.True(sim.IsJumping);
+            float seconds = 0.01f;
+            while (sim.IsJumping && seconds < 5f)
+            {
+                sim.Step(0.01f, steer: 0f);
+                seconds += 0.01f;
+            }
+            return seconds;
+        }
     }
 
     [Fact]
