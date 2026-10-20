@@ -685,6 +685,21 @@ gates on a clock set to the time still to go until the line, counting up to zero
 present speed, so they are already moving on the approach and are exactly where the real clock
 finds them when the level starts.
 
+### Openings through the fork funnels
+*After v0.10.0, from play testing: holes through the tube at splits.*
+
+Two faults, found by painting the void magenta so a hole could not pass for dark shading. The
+funnel's rim was placed by sinking the chamber straight ahead, but by a throat's depth a branch has
+already drifted out along its offsets, tilted and turned with the bend: about two units on a tube
+of six at Metronome's fork, a black crescent in the throat. And the levels put openings right
+against the chamber wall - tangent at the sides, half a unit off the floor - where the funnel's
+polar grid from the chamber's centre had no triangles, so the void showed in wedges and slivers
+either side of every throat and at the merges. The funnel is now built opening by opening: strips
+from each branch tube's real first ring out to the chamber wall or the line halfway to the next
+opening, which tiles the funnel whatever the gap and gives an opening that overhangs the wall a
+skirt. Checked at Metronome, Speed Trap and Roulette's three-way, both ends, against a magenta and
+a green background.
+
 ### Power-ups spread, and the thin stretches filled
 *After v0.9.5, from play testing with the new throttle range.*
 

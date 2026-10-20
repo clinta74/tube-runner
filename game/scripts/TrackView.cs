@@ -50,10 +50,10 @@ public partial class TrackView : Node3D
     // A fork or merge is a funnel rather than a wall with holes: the chamber's cross-section, sunk
     // towards each branch opening so the wall bends into the branch tube. This is how deep the
     // throats go, at most - shallower on a short split, so both ends fit - and how finely the
-    // surface is meshed, in rings out from the centre and spokes round it.
+    // surface is meshed: strips round each opening, and steps along each strip from rim to wall.
     private const float FunnelDepthCap = 12f;
-    private const int FunnelRings = 24;
-    private const int FunnelSpokes = 96;
+    private const int FunnelColumns = 128;
+    private const int FunnelSteps = 10;
     private bool _funnels;
 
     private readonly Dictionary<long, Placed> _chunks = new();
@@ -449,16 +449,24 @@ public partial class TrackView : Node3D
     /// square on. It used to be a flat disc with the openings cut out by the shader, which is a
     /// wall with holes in it, and flying at a wall with holes is not flying into diverging tubes.
     ///
-    /// Built on a polar grid of the chamber. Each vertex is sunk by how far it is from the nearest
-    /// opening against how far it is from the chamber wall, so the rim of every opening lies a
-    /// full throat deep, in one plane, where the branch tube takes over, and the chamber wall is
-    /// not sunk at all. Vertices that land inside an opening are moved out onto its rim, which
-    /// cuts the hole with the mesh rather than the shader and gives the tube a rim to meet.
+    /// Built opening by opening. Round each opening, strips run out from its rim to wherever that
+    /// opening's share of the chamber ends: the chamber wall, or the line halfway to the next
+    /// opening. Every point of the chamber that is not an opening belongs to the opening nearest
+    /// it, so the strips tile the funnel between them. The rim end of each strip is the branch
+    /// tube's own first ring, where it really is - drifted out along its offsets, tilted and turned
+    /// with the bend by a throat's depth - so tube and funnel share an edge.
     ///
-    /// It wears the wall's own material. Each spoke carries the texture coordinate of the point
-    /// where it meets the chamber wall and the depth carries on the distance along the segment, so
-    /// the chamber's checker runs off the wall and down the funnel unbroken, converging on the
-    /// throats. A flat colour, however it was shaded, read as a blur between the tubes.
+    /// It was a polar grid from the chamber's centre before, with vertices snapped onto the rims.
+    /// The levels put openings right against the chamber wall - tangent at the sides, half a unit
+    /// off the floor - and a radial grid has no triangles in a sliver that thin: they were dropped,
+    /// and the void showed through in wedges and slivers either side of every throat. Strips from
+    /// the rim cover a sliver of any width, and an opening that pokes past the chamber wall by a
+    /// throat's depth just gets a skirt from the wall out to its ring.
+    ///
+    /// Each vertex is sunk by how far it is from the nearest opening against how far it is from the
+    /// chamber wall, so the chamber wall is not sunk at all, the rims lie a full throat deep, and
+    /// the crotch between two openings settles somewhere between. It wears the wall's own material,
+    /// its checker running off the chamber wall and down into the throats.
     /// </summary>
     private Placed BuildFunnel(CapSpec spec)
     {
@@ -480,142 +488,146 @@ public partial class TrackView : Node3D
         int holes = split.BranchCount;
         var centres = new System.Numerics.Vector2[holes];
         var sections = new CrossSection[holes];
+        // Each branch tube's first ring, a throat's depth along the branch.
+        double ringS = merge ? split.EndS - depth : split.StartS + depth;
+        var rings = new TrackFrame[holes];
         for (int b = 0; b < holes; b++)
         {
             centres[b] = split.OffsetAt(b, spec.Along);
             sections[b] = split.Section(b);
+            rings[b] = split.BranchFrame(_track, ringS, b);
         }
 
-        // The grid: the centre, then rings out to the chamber wall.
-        int count = 1 + FunnelRings * FunnelSpokes;
-        var points = new System.Numerics.Vector2[count];
-        var inside = new int[count];
-        int At(int ring, int spoke) => ring == 0 ? 0 : 1 + (ring - 1) * FunnelSpokes + spoke % FunnelSpokes;
-        int Hole(System.Numerics.Vector2 p)
+        // Signed distance from an opening's rim: negative inside it.
+        float FromRim(System.Numerics.Vector2 p, int h)
         {
-            for (int h = 0; h < holes; h++)
-            {
-                var q = p - centres[h];
-                float along = q.Length();
-                if (along < Radius(sections[h], along > 1e-5f ? q / along : new System.Numerics.Vector2(1f, 0f))) return h;
-            }
-            return -1;
+            var q = p - centres[h];
+            float along = q.Length();
+            var dir = along > 1e-5f ? q / along : new System.Numerics.Vector2(1f, 0f);
+            return along - Radius(sections[h], dir);
         }
-        points[0] = System.Numerics.Vector2.Zero;
-        inside[0] = Hole(points[0]);
-        for (int i = 1; i <= FunnelRings; i++)
+        float ToWall(System.Numerics.Vector2 p)
         {
-            for (int j = 0; j < FunnelSpokes; j++)
+            float fromCentre = p.Length();
+            var outward = fromCentre > 1e-5f ? p / fromCentre : new System.Numerics.Vector2(1f, 0f);
+            return Radius(chamber, outward) - fromCentre;
+        }
+        // Whether p is in opening h's share of the chamber: inside the chamber, and no nearer
+        // any other opening's rim.
+        bool Owns(int h, System.Numerics.Vector2 p)
+        {
+            if (ToWall(p) < 0f) return false;
+            float mine = FromRim(p, h);
+            for (int g = 0; g < holes; g++)
             {
-                float angle = MathF.Tau * j / FunnelSpokes;
-                var dir = new System.Numerics.Vector2(MathF.Cos(angle), MathF.Sin(angle));
-                var point = dir * (Radius(chamber, dir) * i / FunnelRings);
-                points[At(i, j)] = point;
-                inside[At(i, j)] = Hole(point);
+                if (g != h && FromRim(p, g) < mine) return false;
             }
+            return true;
         }
 
-        // Vertices inside an opening are moved out onto its rim, so the hole is cut by the mesh and
-        // the branch tube has an exact rim to meet. Moved along their own spoke, to where the spoke
-        // enters the opening for the nearer half of the run of them and where it leaves for the
-        // further half. Moving each one straight out from the opening's centre instead put
-        // neighbours on opposite sides of the rim, and the triangles between them lay right across
-        // the hole - drawn, since their corners were not all inside, and with rim colours all over.
-        System.Numerics.Vector2 Crossing(System.Numerics.Vector2 outside, System.Numerics.Vector2 within, int hole)
+        // How far a point is sunk: 1 at a rim, 0 at the chamber wall, eased at both ends so the
+        // surface leaves the wall and meets the tube without a crease. Where the measure has no
+        // meaning - outside the chamber, on a skirt - the strip's own fraction stands in, which is
+        // what the measure tends to anyway as a rim closes on the wall.
+        float Sunk(System.Numerics.Vector2 p, float u)
         {
-            for (int step = 0; step < 24; step++)
-            {
-                var mid = (outside + within) * 0.5f;
-                if (Hole(mid) == hole) within = mid;
-                else outside = mid;
-            }
-            return within;
-        }
-        if (inside[0] >= 0)
-        {
-            var q = points[0] - centres[inside[0]];
-            var dir = q.Length() > 1e-5f ? q / q.Length() : new System.Numerics.Vector2(1f, 0f);
-            points[0] = centres[inside[0]] + dir * Radius(sections[inside[0]], dir);
-        }
-        for (int j = 0; j < FunnelSpokes; j++)
-        {
-            int i = 1;
-            while (i <= FunnelRings)
-            {
-                int hole = inside[At(i, j)];
-                if (hole < 0)
-                {
-                    i++;
-                    continue;
-                }
-                int first = i;
-                while (i + 1 <= FunnelRings && inside[At(i + 1, j)] == hole) i++;
-                int last = i;
-                var entry = inside[At(first - 1, j)] == hole ? points[At(first - 1, j)] : Crossing(points[At(first - 1, j)], points[At(first, j)], hole);
-                if (last == FunnelRings)
-                {
-                    // The opening touches the chamber wall here. The wall's own vertex stays on the
-                    // wall - it is at most a hair inside the opening, since openings fit inside the
-                    // chamber - so the funnel still reaches the wall along this spoke; moved onto
-                    // the rim it left a slit between the two, open onto the void.
-                    inside[At(last, j)] = -1;
-                    last--;
-                }
-                var exit = last < FunnelRings ? Crossing(points[At(last + 1, j)], points[At(last, j)], hole) : entry;
-                int middle = (first + last) / 2;
-                for (int k = first; k <= last; k++) points[At(k, j)] = k <= middle ? entry : exit;
-                i++;
-            }
-        }
-
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-        for (int v = 0; v < count; v++)
-        {
-            var p = points[v];
-            // Round the chamber, the spoke's own place on the wall; the centre has no spoke and
-            // takes the floor's middle.
-            float around = v == 0 ? 0.75f : outline.ParameterAt(MathF.Tau * ((v - 1) % FunnelSpokes) / FunnelSpokes);
             float toHole = float.MaxValue;
+            for (int h = 0; h < holes; h++) toHole = Math.Min(toHole, FromRim(p, h));
+            float toWall = ToWall(p);
+            float n = toHole >= 0f && toWall >= 0f && toHole + toWall > 1e-3f ? toHole / (toHole + toWall) : u;
+            return 1f - n * n * (3f - 2f * n);
+        }
+
+        // How far a point is carried off the straight sink onto the real rings: each opening's
+        // correction in the direction of the point, weighted to the nearest rim, so a point at a
+        // rim lands on its ring and the crotch between two is a blend with no crease.
+        System.Numerics.Vector3 Shift(System.Numerics.Vector2 p)
+        {
+            var total = System.Numerics.Vector3.Zero;
+            float weights = 0f;
             for (int h = 0; h < holes; h++)
             {
                 var q = p - centres[h];
                 float along = q.Length();
                 var dir = along > 1e-5f ? q / along : new System.Numerics.Vector2(1f, 0f);
-                toHole = Math.Min(toHole, Math.Max(0f, along - Radius(sections[h], dir)));
+                var rim = dir * Radius(sections[h], dir);
+                var guess = frame.PointOnSection(centres[h] + rim) + sink;
+                var shift = (rings[h].PointOnSection(rim) - guess).ToVector3();
+                float d = Math.Max(0f, FromRim(p, h));
+                float w = 1f / (d * d + 1e-4f);
+                total += shift * w;
+                weights += w;
             }
-            float fromCentre = p.Length();
-            var outward = fromCentre > 1e-5f ? p / fromCentre : new System.Numerics.Vector2(1f, 0f);
-            float toWall = Math.Max(0f, Radius(chamber, outward) - fromCentre);
-            // 0 at an opening's rim, 1 at the chamber wall, and the crotch between two openings
-            // somewhere deep between. Eased at both ends, so the surface leaves the wall and meets
-            // the tube without a crease.
-            float n = toHole + toWall > 1e-5f ? toHole / (toHole + toWall) : 1f;
-            float sunk = 1f - n * n * (3f - 2f * n);
-
-            st.SetUV(new Vector2(around, into + (merge ? -depth : depth) * sunk));
-            st.SetUV2(new Vector2(0f, sunk));
-            st.AddVertex((frame.PointOnSection(p) + sink * sunk).RelativeTo(origin).ToGodot());
+            return total / weights;
         }
 
-        void Triangle(int a, int b, int c)
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        int vertex = 0;
+        for (int h = 0; h < holes; h++)
         {
-            // A triangle whose corners were all inside an opening is a sliver lying on its rim, and
-            // one whose middle is inside one lies across the hole.
-            if (inside[a] >= 0 && inside[b] >= 0 && inside[c] >= 0) return;
-            if (Hole((points[a] + points[b] + points[c]) / 3f) >= 0) return;
-            st.AddIndex(a);
-            st.AddIndex(b);
-            st.AddIndex(c);
-        }
-        for (int j = 0; j < FunnelSpokes; j++) Triangle(0, At(1, j), At(1, j + 1));
-        for (int i = 1; i < FunnelRings; i++)
-        {
-            for (int j = 0; j < FunnelSpokes; j++)
+            // Every column is emitted, including a closing one that repeats the first with the
+            // texture carried on round rather than wrapped back, so the checker does not smear
+            // across the last quad.
+            float lastRim = float.NaN, previous = 0f;
+            for (int k = 0; k <= FunnelColumns; k++)
             {
-                Triangle(At(i, j), At(i + 1, j), At(i + 1, j + 1));
-                Triangle(At(i, j), At(i + 1, j + 1), At(i, j + 1));
+                float angle = MathF.Tau * k / FunnelColumns;
+                var dir = new System.Numerics.Vector2(MathF.Cos(angle), MathF.Sin(angle));
+                float radius = Radius(sections[h], dir);
+                var rimPoint = centres[h] + dir * radius;
+
+                // Where this opening's share ends along this direction. Bisected along the ray
+                // from the opening's centre: a share is star-shaped about its centre, so the ray
+                // leaves it once and does not come back.
+                float lo = 0f, hi = 4f * Math.Max(chamber.HalfWidth, chamber.HalfHeight);
+                for (int step = 0; step < 32; step++)
+                {
+                    float mid = (lo + hi) * 0.5f;
+                    if (Owns(h, centres[h] + dir * mid)) lo = mid;
+                    else hi = mid;
+                }
+                var endPoint = centres[h] + dir * lo;
+                // Ending halfway to another opening, run a hair past the line: the strip beyond
+                // lies exactly on the neighbour's, the same surface sampled twice, and the overlap
+                // closes the pinholes two differently sampled edges of one curve would leave.
+                if (ToWall(endPoint) > 0.01f) endPoint += dir * 0.05f;
+
+                for (int i = 0; i <= FunnelSteps; i++)
+                {
+                    float u = (float)i / FunnelSteps;
+                    var p = System.Numerics.Vector2.Lerp(rimPoint, endPoint, u);
+                    float sunk = i == 0 ? 1f : Sunk(p, u);
+                    var position = i == 0
+                        ? rings[h].PointOnSection(dir * radius)
+                        : frame.PointOnSection(p) + sink * sunk + Shift(p) * sunk;
+
+                    // The checker repeats every whole turn, so of all the copies of this point's
+                    // place round the wall, take the one nearest its neighbour's: down the column
+                    // from its rim, and rim to rim round the opening.
+                    float around = outline.ParameterAt(MathF.Atan2(p.Y, p.X));
+                    float reference = i == 0 ? (float.IsNaN(lastRim) ? around : lastRim) : previous;
+                    float x = around + MathF.Round(reference - around);
+                    if (i == 0) lastRim = x;
+                    previous = x;
+
+                    st.SetUV(new Vector2(x, into + (merge ? -depth : depth) * sunk));
+                    st.SetUV2(new Vector2(0f, sunk));
+                    st.AddVertex(position.RelativeTo(origin).ToGodot());
+                }
             }
+
+            int stride = FunnelSteps + 1;
+            for (int k = 0; k < FunnelColumns; k++)
+            {
+                for (int i = 0; i < FunnelSteps; i++)
+                {
+                    int a = vertex + k * stride + i, b = a + 1, c = a + stride + 1, d = a + stride;
+                    st.AddIndex(a); st.AddIndex(b); st.AddIndex(c);
+                    st.AddIndex(a); st.AddIndex(c); st.AddIndex(d);
+                }
+            }
+            vertex += (FunnelColumns + 1) * stride;
         }
 
         var node = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = _material };
