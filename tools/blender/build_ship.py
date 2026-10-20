@@ -1,6 +1,9 @@
 """Builds the Tube Runner ship in Blender, renders preview views, and exports a .glb.
 
-    blender -b --factory-startup --python build_ship.py -- <out_dir> <variant>
+    blender -b --factory-startup --python tools/blender/build_ship.py -- <out_dir> <variant> [install]
+
+The game flies variant B. With `install`, the .glb is also written to game/models/ship.glb, which
+`tube play` imports before it starts; commit that file and the .import Godot writes beside it.
 
 Everything is written in Godot's frame - X right, Y up, forward is -Z - and converted on the way
 in, so the numbers line up with ShipView.cs. Blender is Z up, and glTF export maps Blender +Y to
@@ -20,7 +23,8 @@ from mathutils import Matrix, Vector
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0] if argv else os.path.join(os.getcwd(), 'out')
-VARIANT = argv[1] if len(argv) > 1 else 'A'
+VARIANT = argv[1] if len(argv) > 1 else 'B'
+INSTALL = len(argv) > 2 and argv[2] == 'install'
 os.makedirs(OUT, exist_ok=True)
 
 
@@ -442,6 +446,10 @@ bpy.ops.object.select_all(action='DESELECT')
 glb = os.path.join(OUT, f'ship_{VARIANT}.glb')
 bpy.ops.export_scene.gltf(filepath=glb, export_format='GLB', export_yup=True, export_apply=False)
 print('exported', glb)
+if INSTALL:
+    game = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game', 'models', 'ship.glb')
+    bpy.ops.export_scene.gltf(filepath=os.path.normpath(game), export_format='GLB', export_yup=True, export_apply=False)
+    print('installed', os.path.normpath(game))
 
 # ------------------------------------------------------------------ preview renders
 world = bpy.data.worlds.new('World')

@@ -77,6 +77,12 @@ internal static class Commands
     {
         Proc.Run("dotnet", ["build", Repo.Path("game", "TubeRunner.sln"), "-v", "q", "-nologo"]);
 
+        // Models are imported assets: a fresh clone has none imported, and a changed .glb is stale
+        // until it is reimported. The editor does this on opening and an export does it first;
+        // playing straight from the command line does neither, so it is done here. Quick when
+        // nothing has changed.
+        Proc.Run(Godot.Find(console: true), ["--headless", "--path", Repo.Path("game"), "--import"]);
+
         var godot = Godot.Find(console: false);
         var engine = new List<string> { "--path", Repo.Path("game") };
         if (options.Flag("editor")) engine.Add("--editor");

@@ -685,6 +685,21 @@ gates on a clock set to the time still to go until the line, counting up to zero
 present speed, so they are already moving on the approach and are exactly where the real clock
 finds them when the level starts.
 
+### The ship as a model
+*After v0.10.1. Blender is available for models now.*
+
+The ship was about thirty primitives assembled in `ShipView`; it is now a model,
+`game/models/ship.glb`, built headless by `tools/blender/build_ship.py` in Godot's frame and to the
+old ship's dimensions. Two directions were rendered side by side with the ship in game - A, the old
+ship rebuilt as one chined body, and B, a flatter blended body with strakes and the engines buried -
+and B was picked. The parts that move are their own nodes with their pivots where the code turns
+them, so the ailerons, rudders, airbrake flare and nozzle stretch are driven as before; the model's
+materials are named Hull, Dark, Accent, Nozzle and Glass and each is swapped for one of
+`ShipView`'s own, so every level still recolours the ship. Plumes, flash and the recovery shell
+stay in code. `tube play` now runs Godot's import first, since a model is an imported asset and
+playing from the command line imported nothing; the editor and an export already did. Next
+candidates for models, by the same route: pickup icons, then targets.
+
 ### Openings through the fork funnels
 *After v0.10.0, from play testing: holes through the tube at splits.*
 
