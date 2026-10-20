@@ -19,7 +19,8 @@ public partial class ObstacleView : Node3D
     private const float BurstSeconds = 0.8f;
     private const int FunnelSegments = 40;
 
-    // Placeholder power-up looks: pad color and floating label.
+    // Each power-up's colour, for its pad and its icon, and the word that once floated over the
+    // pad in place of the icon - kept, since it still names the kind wherever one is wanted.
     private static readonly Dictionary<PickupKind, (Color Color, string Label)> PickupLooks = new()
     {
         [PickupKind.Shield] = (new Color(0.3f, 1f, 0.45f), "+1"),
@@ -58,6 +59,16 @@ public partial class ObstacleView : Node3D
     private readonly Dictionary<(Warp Warp, int Index), View> _signViews = new();
     private readonly Dictionary<Warp, View> _dustViews = new();
     private readonly Dictionary<PickupKind, StandardMaterial3D> _pickupMaterials = new();
+
+    // The models: one icon per power-up, floating over its pad, and the target. Built by
+    // tools/blender/build_props.py. Loaded once, since every level draws them the same way;
+    // each surface is given one of this view's materials by the name the model gives it.
+    private static Dictionary<PickupKind, Mesh>? _iconMeshes;
+    private static Mesh? _targetMesh;
+    private readonly Dictionary<PickupKind, StandardMaterial3D> _iconMaterials = new();
+    private readonly Dictionary<string, StandardMaterial3D> _deadIconMaterials = new();
+    private StandardMaterial3D _iconTrimMaterial = null!;
+    private StandardMaterial3D _targetFrameMaterial = null!;
     private readonly List<MeshInstance3D> _shotViews = new();
     private readonly List<MeshInstance3D> _ringViews = new();
     private readonly List<Burst> _bursts = new();
@@ -271,6 +282,24 @@ public partial class ObstacleView : Node3D
         _ringMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
         foreach (var (kind, look) in PickupLooks) _pickupMaterials[kind] = Glowing(look.Color, 2.5f);
 
+        // The icons face the camera, as the labels they replace did, so they read on any wall.
+        LoadModels();
+        _iconMaterials.Clear();
+        _deadIconMaterials.Clear();
+        foreach (var (kind, look) in PickupLooks) _iconMaterials[kind] = Billboarded(Glowing(look.Color, 2.5f));
+        _iconTrimMaterial = Billboarded(Faded(new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.03f, 0.035f, 0.05f),
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        }));
+        // The ring and spikes a target is held in: dark, so the lit core is what reads.
+        _targetFrameMaterial = Faded(new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.1f, 0.11f, 0.14f),
+            Metallic = 0.4f,
+            Roughness = 0.5f,
+        });
+
         // A road sign: a yellow triangular plate with a black hole on it.
         _plateMaterial = Glowing(new Color(1f, 0.86f, 0.32f), 2.1f);
         _plateMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
@@ -428,10 +457,7 @@ public partial class ObstacleView : Node3D
         var (center, forward, up) = Pose(o.S, o.Branch, o.Surface, o.XAt(Now), o.Height / 2f);
         bool target = o.Kind == ObstacleKind.Target;
         float size = Mathf.Min(o.Width, o.Height);
-        Mesh mesh = target
-            // A four-sided "sphere" with one ring is a diamond.
-            ? new SphereMesh { Radius = size / 2f, Height = size, RadialSegments = 4, Rings = 1 }
-            : new BoxMesh { Size = new Vector3(o.Width, o.Height, o.Length) };
+        Mesh mesh = target ? _targetMesh! : new BoxMesh { Size = new Vector3(o.Width, o.Height, o.Length) };
         // Breakable blocks get their own material so each can darken as it takes hits. A plate has
         // to be unmistakable: it is the one obstacle nothing answers, so a player who meets one while
         // unstoppable has to read it as a rule rather than a bug.
@@ -446,9 +472,20 @@ public partial class ObstacleView : Node3D
             _ when o.LockedBy is not null => DoorMaterial(o.LockedBy),
             _ => o.Period > 0f ? _gateMaterial : o.Hits > 0 ? Solid(_breakable) : _blockMaterial,
         };
+        if (target)
+        {
+            // The model fits a unit box and the target is as big as its smaller side. It is held
+            // under a node of its own so the size survives being placed, which sets the rotation.
+            var holder = new Node3D();
+            var model = new MeshInstance3D { Mesh = mesh, Scale = Vector3.One * size };
+            Paint(model, new() { ["Shell"] = material, ["Frame"] = _targetFrameMaterial });
+            holder.AddChild(model);
+            AddChild(holder);
+            return new View(holder, center, forward, up, Spins: true, material) { Obstacle = o, Slides = o.Period > 0f };
+        }
         var node = new MeshInstance3D { Mesh = mesh, MaterialOverride = material };
         AddChild(node);
-        return new View(node, center, forward, up, Spins: target, material)
+        return new View(node, center, forward, up, Spins: false, material)
         {
             Obstacle = o,
             Slides = o.Period > 0f,
@@ -711,33 +748,81 @@ public partial class ObstacleView : Node3D
         if (view.LiveShown == live) return;
         view.LiveShown = live;
 
-        var (color, _) = PickupLooks[p.Kind];
         ((MeshInstance3D)view.Node).MaterialOverride = live ? _pickupMaterials[p.Kind] : _deadPadMaterial;
-        if (view.Node.GetChildCount() > 0 && view.Node.GetChild(0) is Label3D label)
+        if (view.Node.GetChildCount() > 0 && view.Node.GetChild(0) is MeshInstance3D icon)
         {
-            label.Modulate = live ? color : PairColor(p.LockedBy!).Darkened(0.3f);
+            Paint(icon, new() { ["Icon"] = live ? _iconMaterials[p.Kind] : DeadIconMaterial(p.LockedBy!) });
         }
     }
 
-    // Placeholder power-up: a glowing pad set into the surface with a floating label.
+    // A power-up: a glowing pad set into the surface with its icon floating over it. The icon
+    // replaced a word - +1, MAX, RAPID - which was hard to read at speed; a shape is read before
+    // a word is.
     private View CreatePickupView(Pickup p)
     {
         var (center, forward, up) = Pose(p.S, p.Branch, p.Surface, p.X, 0.06f);
-        var (color, text) = PickupLooks[p.Kind];
         var material = _pickupMaterials[p.Kind];
         var pad = new MeshInstance3D { Mesh = _padMesh, MaterialOverride = material };
-        pad.AddChild(new Label3D
+        var icon = new MeshInstance3D
         {
-            Text = text,
-            Position = new Vector3(0f, 1.4f, 0f),
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            FontSize = 72,
-            PixelSize = 0.012f,
-            OutlineSize = 16,
-            Modulate = color,
-        });
+            Mesh = _iconMeshes![p.Kind],
+            Position = new Vector3(0f, 1.45f, 0f),
+            Scale = Vector3.One * 1.15f,
+        };
+        Paint(icon, new() { ["Icon"] = _iconMaterials[p.Kind], ["Trim"] = _iconTrimMaterial });
+        pad.AddChild(icon);
         AddChild(pad);
         return new View(pad, center, forward, up, Spins: true, material);
+    }
+
+    // A pad waiting on its key shows its icon dark, in the key's colour, the way the label was.
+    private StandardMaterial3D DeadIconMaterial(string group)
+    {
+        if (_deadIconMaterials.TryGetValue(group, out var material)) return material;
+        material = Billboarded(Faded(new StandardMaterial3D
+        {
+            AlbedoColor = PairColor(group).Darkened(0.3f),
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        }));
+        _deadIconMaterials[group] = material;
+        return material;
+    }
+
+    private static void LoadModels()
+    {
+        if (_iconMeshes is not null) return;
+        _iconMeshes = new Dictionary<PickupKind, Mesh>();
+        var icons = GD.Load<PackedScene>("res://models/pickups.glb").Instantiate();
+        foreach (var kind in PickupLooks.Keys) _iconMeshes[kind] = ModelMesh(icons, $"Icon_{kind}");
+        icons.Free();
+        var target = GD.Load<PackedScene>("res://models/target.glb").Instantiate();
+        _targetMesh = ModelMesh(target, "Target");
+        target.Free();
+    }
+
+    private static Mesh ModelMesh(Node model, string name) =>
+        (model.FindChild(name, recursive: true, owned: false) as MeshInstance3D)?.Mesh
+        ?? throw new System.InvalidOperationException($"Model has no mesh called {name}.");
+
+    // Gives each surface of a model the material its name asks for, leaving the others as they are.
+    private static void Paint(MeshInstance3D instance, Dictionary<string, Material> materials)
+    {
+        var mesh = instance.Mesh;
+        for (int i = 0; i < mesh.GetSurfaceCount(); i++)
+        {
+            if (materials.TryGetValue(mesh.SurfaceGetMaterial(i)?.ResourceName ?? "", out var material))
+            {
+                instance.SetSurfaceOverrideMaterial(i, material);
+            }
+        }
+    }
+
+    // Turned to face the camera, keeping whatever size the node gives it.
+    private static StandardMaterial3D Billboarded(StandardMaterial3D material)
+    {
+        material.BillboardMode = BaseMaterial3D.BillboardModeEnum.Enabled;
+        material.BillboardKeepScale = true;
+        return material;
     }
 
     // A wireframe picture of a well, for the warning signs: rings down to a throat, plus meridians.
@@ -914,7 +999,13 @@ public partial class ObstacleView : Node3D
         bool ready = _session.CanBreak(o);
         if (view.ReadyShown == ready) return;
         view.ReadyShown = ready;
-        if (view.Node is MeshInstance3D mesh) mesh.MaterialOverride = TurnMaterial(o, ready);
+        var material = TurnMaterial(o, ready);
+        if (view.Node is MeshInstance3D mesh) mesh.MaterialOverride = material;
+        // A target is a model with its core and its frame: only the core shows whose turn it is.
+        else if (view.Node.GetChildCount() > 0 && view.Node.GetChild(0) is MeshInstance3D model)
+        {
+            Paint(model, new() { ["Shell"] = material });
+        }
     }
 
     private StandardMaterial3D TurnMaterial(Obstacle o, bool ready)

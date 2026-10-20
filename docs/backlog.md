@@ -713,7 +713,13 @@ the ship colour on the facets the chase camera sees (the rear facet of each wing
 of the body, the strakes, the trailing half of each fin), and dark panel lines - frames across the
 body, shoulder creases, the seam behind the nose, panel breaks and a hinge line on each wing, rudder
 lines, canopy bars. The hull itself sits a little below the ship colour, with a softer self-glow.
-Next candidates for models, by the same route: pickup icons, then targets.
+Then the pickup icons and the target, by the same route (`tools/blender/build_props.py`): a
+shape per power-up in place of the word over its pad - a shield with a plus, a shield with three
+bars, a hollow shield with a plus for the extra slot, three chevrons for rapid fire, a spiked ring
+for the ring gun, an impact star for unstoppable, a wing for agility - billboarded as the labels
+were, in the pad's colour, and dark in the key's colour while the pad waits on it. The target keeps
+its diamond as a lit core, held in a dark ring with four spikes, and the core alone takes the
+target's, key's or turn's colour.
 
 ### Openings through the fork funnels
 *After v0.10.0, from play testing: holes through the tube at splits.*
