@@ -14,7 +14,7 @@ namespace TubeRunner.Game;
 /// ailerons and rudders work the way an aircraft's do, the fins flare as you ease off, and the
 /// hull runs hot while unstoppable. Forward is -Z, matching Godot's look_at.
 ///
-/// The model's materials are named Hull, Dark, Accent, Nozzle and Glass, and each is replaced by
+/// The model's materials are named Hull, Panel, Dark, Accent, Nozzle and Glass, and each is replaced by
 /// one of this class's own, which is what lets every level recolour the ship. The parts that move
 /// are their own nodes, Aileron_R and _L hinged on their front edge, Fin_R and _L at their root,
 /// Nozzle_R and _L at their middle, so they are driven exactly as the primitives they replace were.
@@ -60,6 +60,7 @@ public partial class ShipView : Node3D
     private StandardMaterial3D _nozzleMaterial = null!;
     private StandardMaterial3D _shellMaterial = null!;
     private StandardMaterial3D _glassMaterial = null!;
+    private StandardMaterial3D _panelMaterial = null!;
     private MeshInstance3D _flash = null!;
     private MeshInstance3D _shell = null!;
 
@@ -83,7 +84,9 @@ public partial class ShipView : Node3D
         _accentColor = theme.SeamLight.ToColor();
         _glow = theme.Glow;
 
-        _hullMaterial.AlbedoColor = _shipColor;
+        // A touch off the ship colour itself: a pure white hull under the key light read as a
+        // white blob, and the panels and lines need something to stand against.
+        _hullMaterial.AlbedoColor = _shipColor.Darkened(HullShade);
         // A floor under the theme's glow keeps unlit faces in the ship's color instead of black.
         // Low: the ship is lit by a key, a fill and the environment's ambient now, and a hull that
         // glows on its own washes out the shading those give it.
@@ -93,6 +96,11 @@ public partial class ShipView : Node3D
 
         _darkMaterial.AlbedoColor = _shipColor.Darkened(0.7f);
         _glassMaterial.AlbedoColor = _shipColor.Darkened(0.85f);
+        // The hull's second tone, on the facets the chase camera sees most.
+        _panelMaterial.AlbedoColor = _shipColor.Darkened(PanelShade);
+        _panelMaterial.EmissionEnabled = true;
+        _panelMaterial.Emission = _shipColor.Darkened(PanelShade);
+        _panelMaterial.EmissionEnergyMultiplier = HullGlow;
 
         _accentMaterial.AlbedoColor = _accentColor;
         _accentMaterial.Emission = _accentColor;
@@ -206,7 +214,11 @@ public partial class ShipView : Node3D
         if (_flash.Visible) _flash.Scale = Vector3.One * (0.35f + 0.9f * flash);
     }
 
-    private float HullGlow => 0.1f + 0.3f * _glow;
+    private float HullGlow => 0.06f + 0.2f * _glow;
+
+    // How far the hull and its second tone sit below the level's ship colour.
+    private const float HullShade = 0.12f;
+    private const float PanelShade = 0.45f;
 
     // Right-hand parts are built first, so even indices are the +X side.
     private static float Side(int index) => index % 2 == 0 ? 1f : -1f;
@@ -219,6 +231,7 @@ public partial class ShipView : Node3D
         _darkMaterial = new StandardMaterial3D { AlbedoColor = Colors.Gray, Metallic = 0.25f, Roughness = 0.55f };
         // The cockpit: dark like the trim, but glossy, so the key light catches it as glass.
         _glassMaterial = new StandardMaterial3D { AlbedoColor = Colors.DimGray, Metallic = 0.5f, Roughness = 0.15f };
+        _panelMaterial = new StandardMaterial3D { AlbedoColor = Colors.Gray, Metallic = 0.2f, Roughness = 0.45f };
         // Above the 1.3 HDR threshold, or these read as flat paint: the accents are the few bright
         // marks meant to carry the silhouette from six units back.
         _accentMaterial = Glowing(1.7f);
@@ -246,6 +259,7 @@ public partial class ShipView : Node3D
             ["Accent"] = _accentMaterial,
             ["Nozzle"] = _nozzleMaterial,
             ["Glass"] = _glassMaterial,
+            ["Panel"] = _panelMaterial,
         };
         Recolour(model, materials);
 

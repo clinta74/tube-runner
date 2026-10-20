@@ -11,7 +11,13 @@ in, so the numbers line up with ShipView.cs. Blender is Z up, and glTF export ma
 
 Parts the game animates are separate objects with their pivots where the game turns them:
 ailerons (hinged on their front edge), fins (at the root), nozzles (at their centre). Materials
-are named Hull, Dark, Accent, Nozzle and Glass so the game can recolour each per theme.
+are named Hull, Panel, Dark, Accent, Nozzle and Glass so the game can recolour each per theme.
+
+Panel is the hull's second tone, on facets the chase camera sees - the rear facet of each wing,
+the upper sides of the body, the strakes, the trailing half of each fin - so the two tones follow
+the ship's own structure and the lighter facets ahead read as leading-edge bands. Dark also draws the panel lines: frames across the body, the
+creases along its shoulders, the seam behind the nose, panel breaks and the hinge line on each
+wing, the rudder line on each fin, and the bars across the canopy.
 """
 import math
 import os
@@ -59,7 +65,12 @@ DARK = material('Dark', (0.16, 0.17, 0.2), rough=0.55, metal=0.25)
 ACCENT = material('Accent', CYAN, emission=0.9)
 NOZZLE = material('Nozzle', CYAN, emission=1.3)
 GLASS = material('Glass', (0.05, 0.08, 0.12), emission=0.3, rough=0.12, metal=0.6)
-MATERIALS = [HULL, DARK, ACCENT, NOZZLE, GLASS]
+PANEL = material('Panel', (0.50, 0.53, 0.58), emission=0.04, rough=0.45, metal=0.2)
+MATERIALS = [HULL, DARK, ACCENT, NOZZLE, GLASS, PANEL]
+
+# Panel lines: narrow, and lifted just clear of the surface they are drawn on.
+LINE_WIDTH = 0.012
+LINE_LIFT = 0.004
 
 
 def make_object(name, build, parent=None, location=None, rotation=None):
@@ -96,29 +107,37 @@ def empty(name, parent=None, location=(0, 0, 0), rotation=(0, 0, 0)):
     return obj
 
 
-def loft(bm, sections, mat, cap_start=True, cap_end=True):
+def loft(bm, sections, mat, cap_start=True, cap_end=True, edge_mats=None):
     """Quads between consecutive rings of points (Blender coordinates). A ring of one point is an
-    apex. Rings must share a winding and a length, apexes aside."""
+    apex. Rings must share a winding and a length, apexes aside. `edge_mats` gives the facets
+    between ring points i and i+1 a material of their own, all the way along."""
     rings = [[bm.verts.new(p) for p in ring] for ring in sections]
     faces = []
+    edges = []
     for a, b in zip(rings, rings[1:]):
         if len(a) == 1 and len(b) == 1:
             continue
         if len(a) == 1:
             for i in range(len(b)):
                 faces.append(bm.faces.new((a[0], b[i], b[(i + 1) % len(b)])))
+                edges.append(i)
         elif len(b) == 1:
             for i in range(len(a)):
                 faces.append(bm.faces.new((a[i], a[(i + 1) % len(a)], b[0])))
+                edges.append(i)
         else:
             for i in range(len(a)):
                 faces.append(bm.faces.new((a[i], a[(i + 1) % len(a)], b[(i + 1) % len(b)], b[i])))
+                edges.append(i)
     if cap_start and len(rings[0]) > 2:
         faces.append(bm.faces.new(rings[0]))
+        edges.append(None)
     if cap_end and len(rings[-1]) > 2:
         faces.append(bm.faces.new(list(reversed(rings[-1]))))
-    for f in faces:
-        f.material_index = MATERIALS.index(mat)
+        edges.append(None)
+    for f, edge in zip(faces, edges):
+        chosen = (edge_mats or {}).get(edge, mat) if edge is not None else mat
+        f.material_index = MATERIALS.index(chosen)
     return faces
 
 
@@ -136,6 +155,13 @@ def ribbon(bm, points, ups, width, thickness, mat):
         w, d = side * width / 2, up * thickness / 2
         sections.append([G(*(p - w - d)), G(*(p + w - d)), G(*(p + w + d)), G(*(p - w + d))])
     loft(bm, sections, mat)
+
+
+def line(bm, points, normals):
+    """A panel line: a narrow dark strip over a polyline of Godot surface points, each lifted
+    along its outward normal so it sits just clear of the surface."""
+    lifted = [tuple(Vector(p) + Vector(n).normalized() * LINE_LIFT) for p, n in zip(points, normals)]
+    ribbon(bm, lifted, normals, LINE_WIDTH, LINE_LIFT * 1.5, DARK)
 
 
 def lerp(a, b, t):
@@ -197,6 +223,16 @@ def fuselage_section(z):
     return [G(x, y, z) for x, y in pts]
 
 
+def section_points(z):
+    """The fuselage section at z in Godot coordinates, with each point's outward direction from
+    the section's middle."""
+    w, t, b, c = table(FUSELAGE, z)
+    pts = [(0, t), (w * 0.6, t * 0.82), (w, c), (w * 0.65, b * 0.9),
+           (0, b), (-w * 0.65, b * 0.9), (-w, c), (-w * 0.6, t * 0.82)]
+    middle = (t + b) / 2
+    return [((x, y, z), (x, y - middle, 0)) for x, y in pts]
+
+
 def top_at(z):
     return table(FUSELAGE, z)[1]
 
@@ -210,7 +246,19 @@ def build_body(bm):
     # Extra rings so the facets stay even along the length.
     stations = sorted(set(zs + [lerp(a, b, 0.5) for a, b in zip(zs, zs[1:])]))
     sections = [[G(0, 0.0, NOSE_TIP)]] + [fuselage_section(z) for z in stations]
-    loft(bm, sections, HULL, cap_start=False, cap_end=True)
+    # The upper sides, between the shoulder crease and the chine, in the second tone.
+    loft(bm, sections, HULL, cap_start=False, cap_end=True, edge_mats={1: PANEL, 6: PANEL})
+
+    # Panel lines. The seam behind the nose goes right round; the frames run over the top from
+    # chine to chine; the shoulder creases run the length of the body.
+    seam = section_points(-1.18)
+    line(bm, [p for p, n in seam] + [seam[0][0]], [n for p, n in seam] + [seam[0][1]])
+    for z in (-0.2, 0.18, 0.56):
+        frame = [section_points(z)[i] for i in (6, 7, 0, 1, 2)]
+        line(bm, [p for p, n in frame], [n for p, n in frame])
+    for i in (1, 7):
+        crease = [section_points(z)[i] for z in (-1.0, -0.6, -0.2, 0.2, 0.6, 0.88)]
+        line(bm, [p for p, n in crease], [n for p, n in crease])
 
     # The keel: a shallow ventral fin, pure silhouette.
     keel = [[G(-0.022, -0.17, 0.42), G(0.022, -0.17, 0.42)],
@@ -248,13 +296,15 @@ def build_body(bm):
             bot = [G(x, y - 0.012, z) for x, y, z in outline]
             vt = [bm.verts.new(p) for p in top]
             vb = [bm.verts.new(p) for p in bot]
-            bm.faces.new(vt).material_index = MATERIALS.index(HULL)
+            bm.faces.new(vt).material_index = MATERIALS.index(PANEL)
             bm.faces.new(list(reversed(vb))).material_index = MATERIALS.index(HULL)
             for i in range(4):
                 j = (i + 1) % 4
                 bm.faces.new((vt[i], vb[i], vb[j], vt[j])).material_index = MATERIALS.index(HULL)
-            # A lit edge along the strake's leading edge.
+            # A lit edge along the strake's leading edge, and a line where it meets the body.
             ribbon(bm, [outline[0], outline[1]], [(0, 1, 0)] * 2, 0.022, 0.03, ACCENT)
+            root_line = [(x, y + 0.012, z) for x, y, z in (outline[0], outline[3])]
+            line(bm, root_line, [(0, 1, 0)] * 2)
 
 
 make_object('Body', build_body, parent=root)
@@ -288,6 +338,18 @@ def build_canopy(bm):
             w = half * (math.sin(math.pi * u) ** 0.5)
             sill.append((side * (w + 0.008), top_at(z) - 0.012, z))
         ribbon(bm, sill, [(side * 0.6, 1, 0)] * len(sill), 0.016, 0.012, ACCENT)
+
+    # The frame bars across the glass, which is what makes it read as a canopy and not a gem.
+    for u in (0.36, 0.64):
+        z = lerp(z0, z1, u)
+        t = top_at(z)
+        rise = bulge * (math.sin(math.pi * u) ** 0.7)
+        w = half * (math.sin(math.pi * u) ** 0.5)
+        base = t - 0.012
+        bar = [(-w, base, z), (-w * 0.82, t + rise * 0.55, z), (0, t + rise, z),
+               (w * 0.82, t + rise * 0.55, z), (w, base, z)]
+        normals = [(-1, 0.3, 0), (-0.6, 1, 0), (0, 1, 0), (0.6, 1, 0), (1, 0.3, 0)]
+        line(bm, bar, normals)
 
 
 make_object('Canopy', build_canopy, parent=root)
@@ -382,7 +444,28 @@ def build_wing(side):
 
         stations = [(-0.16, False), (AILERON_FROM, False), (AILERON_FROM, True),
                     (AILERON_TO, True), (AILERON_TO, False), (SPAN, False)]
-        loft(bm, [section(x, c) for x, c in stations], HULL)
+        # The facet from the ridge back to the trailing edge in the second tone: it is the one the
+        # chase camera sees, and the lighter facet ahead of it reads as a leading-edge band.
+        loft(bm, [section(x, c) for x, c in stations], HULL, edge_mats={1: PANEL})
+
+        def top(x, z):
+            """A point on the wing's upper surface, at span x and chord position z."""
+            zl, zt = lead(x), trail(x)
+            ridge = zl + 0.38 * (zt - zl)
+            if AILERON_FROM < x < AILERON_TO:
+                zt -= AILERON_CHORD
+            h = thick(x) / 2
+            y = h * (z - zl) / (ridge - zl) if z <= ridge else h * (zt - z) / (zt - ridge)
+            return (side * x, max(0.0, y), z)
+
+        # Panel breaks across the wing, and the hinge line in front of the aileron.
+        for x in (0.42, 0.74):
+            zl, zt = lead(x), trail(x) - AILERON_CHORD
+            ridge = zl + 0.38 * (trail(x) - zl)
+            pts = [top(x, z) for z in (zl + 0.05, ridge, zt - 0.02)]
+            line(bm, pts, [(0, 1, 0)] * 3)
+        hinge = [top(x, trail(x) - AILERON_CHORD - 0.025) for x in (0.42, 0.7, 0.98)]
+        line(bm, hinge, [(0, 1, 0)] * 3)
 
         # The lit leading edge, and a lit tip.
         edge = [(side * x, 0.0, lead(x) - 0.006) for x in (0.0, 0.35, 0.7, SPAN)]
@@ -429,7 +512,15 @@ def build_fin(bm):
     root_s = [G(0, 0, -rc / 2), G(t0 / 2, 0, -rc / 2 + rc * 0.4), G(0, 0, rc / 2), G(-t0 / 2, 0, -rc / 2 + rc * 0.4)]
     tz = -rc / 2 + sw
     tip_s = [G(0, hgt, tz), G(t1 / 2, hgt, tz + tc * 0.4), G(0, hgt, tz + tc), G(-t1 / 2, hgt, tz + tc * 0.4)]
-    loft(bm, [root_s, tip_s], HULL)
+    # The trailing half of each side in the second tone, the half the chase camera sees.
+    loft(bm, [root_s, tip_s], HULL, edge_mats={1: PANEL, 2: PANEL})
+    # The rudder's hinge line, on both sides.
+    chord = 0.62
+    for flank in (1, -1):
+        thin = 1 - (chord - 0.4) / 0.6
+        rudder = [(flank * t0 / 2 * thin, 0.03, -rc / 2 + chord * rc),
+                  (flank * t1 / 2 * thin, hgt - 0.03, tz + chord * tc)]
+        line(bm, rudder, [(flank, 0, 0)] * 2)
     # A lit cap along the top of the fin.
     cap = [(0, hgt + 0.006, tz - 0.004), (0, hgt + 0.006, tz + tc + 0.004)]
     ribbon(bm, cap, [(1, 0, 0)] * 2, 0.022, 0.035, ACCENT)

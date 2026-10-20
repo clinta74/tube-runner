@@ -697,8 +697,13 @@ them, so the ailerons, rudders, airbrake flare and nozzle stretch are driven as 
 materials are named Hull, Dark, Accent, Nozzle and Glass and each is swapped for one of
 `ShipView`'s own, so every level still recolours the ship. Plumes, flash and the recovery shell
 stay in code. `tube play` now runs Godot's import first, since a model is an imported asset and
-playing from the command line imported nothing; the editor and an export already did. Next
-candidates for models, by the same route: pickup icons, then targets.
+playing from the command line imported nothing; the editor and an export already did. After play
+testing it was too white and too plain: the hull now has a second tone, Panel, a darker shade of
+the ship colour on the facets the chase camera sees (the rear facet of each wing, the upper sides
+of the body, the strakes, the trailing half of each fin), and dark panel lines - frames across the
+body, shoulder creases, the seam behind the nose, panel breaks and a hinge line on each wing, rudder
+lines, canopy bars. The hull itself sits a little below the ship colour, with a softer self-glow.
+Next candidates for models, by the same route: pickup icons, then targets.
 
 ### Openings through the fork funnels
 *After v0.10.0, from play testing: holes through the tube at splits.*
