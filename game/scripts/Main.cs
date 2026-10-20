@@ -179,6 +179,7 @@ public partial class Main : Node3D
             if (arg.StartsWith("--steer=")) _debugSteer = float.Parse(arg["--steer=".Length..], CultureInfo.InvariantCulture);
             if (arg.StartsWith("--view=")) _debugView = float.Parse(arg["--view=".Length..], CultureInfo.InvariantCulture);
             if (arg.StartsWith("--shot-at=")) _shotAt = double.Parse(arg["--shot-at=".Length..], CultureInfo.InvariantCulture);
+            if (arg.StartsWith("--shot-in=")) _shotIn = arg["--shot-in=".Length..];
             if (arg == "--settings") _debugSettings = true;
             if (arg == "--title") forceTitle = true;
             if (arg.StartsWith("--title-page="))
@@ -305,6 +306,9 @@ public partial class Main : Node3D
     /// Frames take longer while chunks are being built, so a count lands somewhere different every
     /// run - no use at all for looking at one particular join twice.</summary>
     private double? _shotAt;
+    // --shot-in: the level file a --shot-at distance is measured in, for a shot taken in a level
+    // reached through a handover rather than the one the run started on.
+    private string? _shotIn;
 
     /// <summary>Start the run on the ceiling rather than the floor, for looking at the far surface
     /// of a flat section or the core of a ring without anyone having to fly there and jump.</summary>
@@ -464,7 +468,8 @@ public partial class Main : Node3D
         // --shot: fly on for a moment so the track and its obstacles have streamed in, then save
         // what is on screen and stop. The image is the frame already drawn, which is why this can
         // read the viewport straight out rather than waiting on the renderer.
-        bool shotDue = _shotAt is double at ? _session.Ship.Position.S >= at : --_shotFrames <= 0;
+        bool inShotLevel = _shotIn is null || LevelPath.GetFile() == _shotIn;
+        bool shotDue = _shotAt is double at ? inShotLevel && _session.Ship.Position.S >= at : --_shotFrames <= 0;
         if (_shotPath is not null && shotDue)
         {
             var image = GetViewport().GetTexture().GetImage();

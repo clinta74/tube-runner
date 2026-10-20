@@ -42,6 +42,11 @@ public partial class ObstacleRenderer : Node3D
             _nextLevel = null;
             _current.Transform = Transform3D.Identity;
             _current.ShipS = null;
+            // The preview ran its movers and gates on a clock counting up to the line. From here
+            // the session's own clock is the truth, as it is for the collision; left set, every
+            // mover and gate in the level froze where it stood at the line while its hit area went
+            // on moving without it.
+            _current.Clock = null;
             _current.Rebind(session);
             return;
         }

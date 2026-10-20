@@ -685,6 +685,16 @@ gates on a clock set to the time still to go until the line, counting up to zero
 present speed, so they are already moving on the approach and are exactly where the real clock
 finds them when the level starts.
 
+### Movers frozen after a level line
+*After v0.10.1, from play testing Neon Run into Clockwork.*
+
+The next level is drawn ahead from a session that is never stepped, its movers and gates run on a
+clock counting up to the line. At the line that view becomes the level's, and its clock override
+was never cleared: every mover and gate in a level reached through a handover froze where it stood
+at the line, while the collision went on with the session's own clock - a hit area moving without
+its obstacle. A retry or a start builds a fresh view, which is why it came and went. Fixed where the
+view is promoted. `--shot-in` was added to see it: a `--shot-at` distance measured in a later level.
+
 ### The ship as a model
 *After v0.10.1. Blender is available for models now.*
 

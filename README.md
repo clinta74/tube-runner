@@ -53,6 +53,13 @@ first of the next, drawn at the same instant, so the handover can be checked to 
 tube play --level level_10.json --start 5850 --join --shot builds/shots/join.png
 ```
 
+`--shot-at <s>` takes the shot once the ship reaches a distance instead of after a moment, and
+`--shot-in <file>` measures that distance in a later level, for a frame taken after a handover:
+
+```bash
+tube play --level level_11.json --start 4600 --shot-in level_12.json --shot-at 390 --shot builds/shots/gate.png
+```
+
 `--view <units>` draws the things on the walls out to a fixed distance instead of as far as the
 level's style does (450 in a solid level, twice the fade in a see-through one), for comparing reaches:
 

@@ -55,7 +55,7 @@ internal static class Commands
         switch (args[0])
         {
             case "play":
-                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title", "front", "join"], values: ["level", "start", "record-fps", "shot", "shot-at", "title-page", "steer", "view"]));
+                Play(Options.Parse(options, flags: ["editor", "record", "summary", "menu", "settings", "ceiling", "title", "front", "join"], values: ["level", "start", "record-fps", "shot", "shot-at", "shot-in", "title-page", "steer", "view"]));
                 break;
             case "export":
                 Export(Options.Parse(options, flags: ["debug", "signed"], values: ["version"]));
@@ -120,6 +120,7 @@ internal static class Commands
         if (options.Flag("title")) game.Add("--title");
         if (options.Value("title-page") is string page) game.Add("--title-page=" + page);
         if (options.Number("shot-at") is double shotAt) game.Add("--shot-at=" + shotAt.ToString(CultureInfo.InvariantCulture));
+        if (options.Value("shot-in") is string shotIn) game.Add("--shot-in=" + shotIn);
         if (game.Count > 0) engine.AddRange(["--", .. game]);
 
         Proc.Run(godot, engine, wait: false);
