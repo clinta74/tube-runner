@@ -36,12 +36,53 @@
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <!-- The options, as properties, so a silent install can set them too:
-           msiexec /i TubeRunner-x.y.z.msi /qn                          just me, desktop shortcut
-           msiexec /i TubeRunner-x.y.z.msi /qn INSTALLDESKTOPSHORTCUT=""   without the shortcut
+           msiexec /i TubeRunner-x.y.z.msi /qn                       just me; the desktop shortcut as last time
+           msiexec /i TubeRunner-x.y.z.msi /qn DESKTOPSHORTCUT=0     without the shortcut, 1 with it
            msiexec /i TubeRunner-x.y.z.msi /qn ALLUSERS=1 MSIINSTALLPERUSER=""   everyone
-         Secure, so their values survive the hand-over to the elevated half of an everyone install. -->
+         Secure, so their values survive the hand-over to the elevated half of an everyone install.
+         DESKTOPSHORTCUT is the switch; INSTALLDESKTOPSHORTCUT is what the checkbox and the
+         shortcut's component use, worked out from it below. The switch is 0 or 1 rather than set or
+         empty because an empty property cannot be told apart from one that was never given, and
+         "never given" is what lets the last install's choice stand. -->
     <Property Id="INSTALLSCOPE" Value="user" Secure="yes" />
-    <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" Secure="yes" />
+    <Property Id="INSTALLDESKTOPSHORTCUT" Secure="yes" />
+    <Property Id="DESKTOPSHORTCUT" Secure="yes" />
+
+    <!-- What the last install chose, read back so this one offers the same: who it was for, the
+         folder, and whether there was a desktop shortcut. Written by RememberSettings below. -->
+    <Property Id="REMEMBEREDSCOPE" Secure="yes">
+      <RegistrySearch Id="RememberedScope" Root="HKCU" Key="Software\clinta74\Tube Runner\Install" Name="Scope" Type="raw" />
+    </Property>
+    <Property Id="REMEMBEREDFOLDER" Secure="yes">
+      <RegistrySearch Id="RememberedFolder" Root="HKCU" Key="Software\clinta74\Tube Runner\Install" Name="Folder" Type="raw" />
+    </Property>
+    <Property Id="REMEMBEREDDESKTOP" Secure="yes">
+      <RegistrySearch Id="RememberedDesktop" Root="HKCU" Key="Software\clinta74\Tube Runner\Install" Name="Desktop" Type="raw" />
+    </Property>
+    <!-- An install from before any of this was remembered still says whether it made a desktop
+         shortcut: the shortcut's component keeps a value of its own while it is installed. -->
+    <Property Id="OLDDESKTOP" Secure="yes">
+      <RegistrySearch Id="OldDesktop" Root="HKCU" Key="Software\clinta74\Tube Runner" Name="DesktopShortcut" Type="raw" />
+    </Property>
+
+    <!-- The scope page starts on the last install's answer. Only with the pages: a silent install
+         takes its scope from the command line, as ever. -->
+    <SetProperty Id="INSTALLSCOPE" Value="[REMEMBEREDSCOPE]" After="AppSearch" Sequence="ui"
+                 Condition="REMEMBEREDSCOPE" />
+    <!-- The desktop shortcut: the switch if one was given; otherwise as last time; otherwise, over
+         an install from before this was remembered, as that one had it; otherwise yes. Once, in
+         whichever sequence runs first, so the execute half does not overrule the checkbox. -->
+    <SetProperty Id="INSTALLDESKTOPSHORTCUT" Value="1" After="AppSearch" Sequence="first"
+                 Condition="DESKTOPSHORTCUT = &quot;1&quot; OR (NOT DESKTOPSHORTCUT AND (REMEMBEREDDESKTOP = &quot;1&quot; OR (NOT REMEMBEREDDESKTOP AND (OLDDESKTOP OR NOT WIX_UPGRADE_DETECTED))))" />
+    <!-- What this install chose, in the form it is remembered in. -->
+    <SetProperty Action="RememberDesktopOn" Id="DESKTOPCHOICE" Value="1" Before="WriteRegistryValues"
+                 Sequence="execute" Condition="INSTALLDESKTOPSHORTCUT" />
+    <SetProperty Action="RememberDesktopOff" Id="DESKTOPCHOICE" Value="0" Before="WriteRegistryValues"
+                 Sequence="execute" Condition="NOT INSTALLDESKTOPSHORTCUT" />
+    <SetProperty Action="RememberScopeMachine" Id="SCOPECHOICE" Value="machine" Before="WriteRegistryValues"
+                 Sequence="execute" Condition="ALLUSERS" />
+    <SetProperty Action="RememberScopeUser" Id="SCOPECHOICE" Value="user" Before="WriteRegistryValues"
+                 Sequence="execute" Condition="NOT ALLUSERS" />
 
     <!-- Welcome, then who the install is for, then the folder and the desktop shortcut, then
          install. The standard InstallDir dialogs put a license page after Welcome and offer only the
@@ -86,7 +127,9 @@
                before any page was shown. -->
           <Publish Property="INSTALLFOLDER" Value="[LocalAppDataFolder]Programs\Tube Runner\" Order="5" Condition="INSTALLSCOPE = &quot;user&quot; AND NOT FOLDEREDITED" />
           <Publish Property="INSTALLFOLDER" Value="[%ProgramW6432]\Tube Runner\" Order="6" Condition="INSTALLSCOPE = &quot;machine&quot; AND NOT FOLDEREDITED" />
-          <Publish Event="NewDialog" Value="OptionsDlg" Order="7" />
+          <!-- Or the last install's folder, when this one is for the same people. -->
+          <Publish Property="INSTALLFOLDER" Value="[REMEMBEREDFOLDER]" Order="7" Condition="REMEMBEREDFOLDER AND INSTALLSCOPE = REMEMBEREDSCOPE AND NOT FOLDEREDITED" />
+          <Publish Event="NewDialog" Value="OptionsDlg" Order="8" />
         </Control>
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
           <Publish Event="SpawnDialog" Value="CancelDlg" />
@@ -168,7 +211,17 @@
       </Component>
     </StandardDirectory>
 
-    <!-- Only when asked for, on the options page or by the property on the command line. -->
+    <!-- The choices this install was made with, for the next one to offer again. Removed with the
+         game on an uninstall; an upgrade reads them before the old version goes. -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="RememberSettings">
+        <RegistryValue Root="HKCU" Key="Software\clinta74\Tube Runner\Install" Name="Scope" Type="string" Value="[SCOPECHOICE]" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="Software\clinta74\Tube Runner\Install" Name="Folder" Type="string" Value="[INSTALLFOLDER]" />
+        <RegistryValue Root="HKCU" Key="Software\clinta74\Tube Runner\Install" Name="Desktop" Type="string" Value="[DESKTOPCHOICE]" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Only when asked for, on the options page or by the switch on the command line. -->
     <StandardDirectory Id="DesktopFolder">
       <Component Id="DesktopShortcut" Condition="INSTALLDESKTOPSHORTCUT">
         <Shortcut Id="TubeRunnerDesktopShortcut"

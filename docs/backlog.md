@@ -368,7 +368,7 @@ Still open:
   through WixShellExec, impersonated so an everyone install still starts the game as the person
   at the keyboard. The scope page's Next sets the folder default for the scope, unless the folder
   was changed by hand; a radio button's own events were tried first and Windows Installer never
-  fired them. All three are properties too, for a silent install: `INSTALLDESKTOPSHORTCUT=""`
+  fired them. All three are properties too, for a silent install: `DESKTOPSHORTCUT=0`
   leaves the shortcut out, `ALLUSERS=1 MSIINSTALLPERUSER=""` is everyone. The pages' artwork
   (`installer/banner.bmp` and `dialog.bmp`) is made from the icon by `installer/make_bitmaps.py`;
   WiX's own bitmaps are red placeholders.
@@ -377,6 +377,19 @@ Still open:
   install with the shortcut off left it out. Not checked from this side: the everyone install
   itself, which needs the UAC prompt clicked - worth one manual run, then an uninstall from
   Settings to see it go from Program Files.
+- **The installer remembers the last install's choices.** Who it was for, the folder and the desktop
+  shortcut are written under `HKCU\Software\clinta74\Tube Runner\Install` and read back before the
+  first page: the scope page starts on the last answer, the folder page on the last folder when the
+  scope is the same, and the shortcut box as it was left - which also stops an upgrade putting back
+  a shortcut that was deleted. Upgrading from a version from before this, it reads the old desktop
+  shortcut's own registry marker instead. A silent install keeps the remembered shortcut choice;
+  `DESKTOPSHORTCUT=0` or `1` beats it, and takes over from `INSTALLDESKTOPSHORTCUT=""`, since an
+  empty property cannot be told apart from one not given. Uninstalling forgets. Checked by upgrade
+  chains through test builds 0.11.1 to 0.11.5: from v0.10.0 silently (shortcut kept from the
+  marker), through the pages (the box came up ticked; unticked, it stayed off), silently with no
+  switch (still off), silently with the switch and a test folder, and through the pages again (the
+  test folder and the ticked box preselected). Note for local builds: MSBuild's incremental clean
+  deletes the previous version's MSI from `builds/` when a new version is built.
 - **Unsigned**, so SmartScreen may warn on download — see *Code signing* below, which now has the
   build side done and is waiting on a certificate.
 
